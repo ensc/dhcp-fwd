@@ -5,6 +5,7 @@ ChangeLog
 aclocal.m4
 autom4te-2.53.cache
 autoscan.log
+compile
 config.h
 config.log
 config.status
