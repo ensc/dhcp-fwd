@@ -133,9 +133,9 @@ following environment:
                                                     |   ~~~~~~    |
                                                      -------------
 
-The clients have the a netmask of 192.168.2.231/255.255.248.0; the
-dhcp-fwd itself one interface with an IP of 192.168.0.6. Then I am
-using the following core-configuration:
+The clients have the a netmask of 192.168.0.0/255.255.248.0; the
+dhcp-fwd itself has one interface with an IP of 192.168.0.6. Then I
+am using the following core-configuration:
 
 | if              eth0    true true true
 | name            eth0    ws-c
