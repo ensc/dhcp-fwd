@@ -34,7 +34,9 @@ writeUInt(int fd, unsigned int val)
     val   /= 10;
   } while (val!=0);
 
-  write(fd, ptr+1, buffer+sizeof(buffer) - ptr - 1);
+  ++ptr;
+  
+  write(fd, ptr, (buffer+sizeof(buffer)) - ptr);
 }
 
   // Local Variables:
