@@ -135,8 +135,9 @@ logDHCPPackage(char const *data, size_t	len,
 
     (void)Xinet_ntop(saddr->sa_family, ptr, addr_buffer, sizeof addr_buffer);
 
-    buffer_ptr = buffer;
-    avail      = sizeof(buffer);
+    buffer_ptr    = buffer;
+    avail         = sizeof(buffer)-1;
+    buffer[avail] = '\0';
     
 #if 1
     Xsnprintf(&buffer_ptr, &avail, "from %s (", addr_buffer) ;
