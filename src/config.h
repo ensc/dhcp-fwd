@@ -16,12 +16,14 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_CONFIG_H
-#define DHCP_FORWARDER_CONFIG_H
+#ifndef DHCP_FORWARDER_SRC_CONFIG_H
+#define DHCP_FORWARDER_SRC_CONFIG_H
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
+
+#include "splint_compat.h"
 
 #include <net/if.h>
 #include <netinet/in.h>
@@ -46,37 +48,42 @@ struct InterfaceInfo {
 };
 
 struct InterfaceInfoList {
-    /*@only@*/ struct InterfaceInfo	*dta;	//< array of InterfaceInfo
+    /*@only@*//*@null@*/
+    struct InterfaceInfo		*dta;	//< array of InterfaceInfo
     size_t				len;	//< length of InterfaceInfoList
 };
 
 struct ServerInfo {
     enum { svUNICAST, svBCAST }		type;	//< type of server
     union {
-	/*@dependent@*/
+	/*@observer@*/
 	struct InterfaceInfo const	*iface;
 	struct in_addr			ip;
     }					info;
 };
 
 struct ServerInfoList {
-    /*@only@*/ struct ServerInfo	*dta;
+    /*@only@*//*@null@*/
+    struct ServerInfo			*dta;
     size_t				len;
 };
 
+
 struct FdInfo {
     int					fd;
-    /*@dependent@*/
+    /*@observer@*/
     struct InterfaceInfo const		*iface;
 };
 
 struct FdInfoList {
-    /*@only@*/ struct FdInfo		*dta;
+    /*@only@*//*@null@*/
+    struct FdInfo			*dta;
     size_t				len;
 
     int					sender_fd;
     int					raw_fd;
 };
+
 
 struct ConfigInfo {
     uid_t				uid;
@@ -92,12 +99,17 @@ struct ConfigInfo {
     struct ServerInfoList		servers;
 };
 
-extern int		initializeSystem(int argc, char *argv[],
-					 struct InterfaceInfoList *	ifs,
-					 struct ServerInfoList *	servers,
-					 struct FdInfoList *		fds);
+extern int		initializeSystem(int argc, /*@in@*/char *argv[],
+					 /*@out@*/struct InterfaceInfoList *	ifs,
+					 /*@out@*/struct ServerInfoList *	servers,
+					 /*@out@*/struct FdInfoList *		fds)
+  /*@modifies *ifs, *servers, *fds, fileSystem@*/
+  /*@requires (maxRead(argv)+1)==argc
+           /\ maxSet(ifs)==0
+	   /\ maxSet(servers)==0
+	   /\ maxRead(fds)==0@*/  ;
 
-#endif	// DHCP_FORWARDER_CONFIG_H
+#endif	// DHCP_FORWARDER_SRC_CONFIG_H
 
   // Local Variables:
   // compile-command: "make -C .. -k"

@@ -16,8 +16,8 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_INET_H
-#define DHCP_FORWARDER_INET_H
+#ifndef DHCP_FORWARDER_SRC_INET_H
+#define DHCP_FORWARDER_SRC_INET_H 1
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -44,7 +44,7 @@ struct DHCPllPacket
     __extension__ char		data __flexarr;
 } __attribute__((__packed__));
 
-#endif	/* DHCP_FORWARDER_INET_H */
+#endif	/* DHCP_FORWARDER_SRC_INET_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"
