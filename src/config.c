@@ -40,20 +40,31 @@
 #include "wrappers.h"
 #include "inet.h"
 
+#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg))
+
+static void
+exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn));
+  
+inline static void
+exitFatal(char const msg[], register size_t len)
+{
+  write(2, msg, len);
+  write(2, "\n", 1);
+
+  exit(2);
+}
+
 
 inline static in_addr_t
 sockaddrToInet4(/*@dependent@*/struct sockaddr const *addr)
 {
 
-  if (addr->sa_family!=AF_INET) {
-    (void)write(2, "Interface has not IPv4 address\n", 31);
-    exit(2);
-  }
+  if (addr->sa_family!=AF_INET) EXITFATAL("Interface has not IPv4 address");
 
   return (reinterpret_cast(struct sockaddr_in const *)(addr))->sin_addr.s_addr;
 }
 
-void
+inline static void
 initClientFD(struct FdInfo *fd,
 	     struct InterfaceInfo const *iface)
 {
@@ -77,7 +88,7 @@ initClientFD(struct FdInfo *fd,
   Ebind(fd->fd, &s);
 }
 
-void
+inline static void
 initRawFD(int *fd)
 {
   assert(fd!=0);
@@ -85,7 +96,7 @@ initRawFD(int *fd)
   *fd = Esocket(AF_PACKET, SOCK_RAW, 0xFFFF);
 }
 
-inline void
+inline static void
 initSenderFD(int *fd)
 {
   struct sockaddr_in	s;
@@ -102,30 +113,24 @@ initSenderFD(int *fd)
   Ebind(*fd, &s);
 }
 
-static void
+inline static void
 sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
 		 /*@out@*/uint8_t		mac[],
 		 /*@out@*/size_t		*len)
 {
-  if (addr==0) {
-    (void)write(2, "Invalid pointer to hw-address\n", 30);
-    abort();
-  }
-  
+  assert(addr!=0);
+
   switch (addr->sa_family) {
     case ARPHRD_EETHER	:
     case ARPHRD_IEEE802	:
     case ARPHRD_ETHER	:  *len = ETH_ALEN; break;
-    default		:
-      (void)write(2, "Unsupported hardware-type\n", 26);
-      exit(2);
+    default		:  EXITFATAL("Unsupported hardware-type");
   }
 
   memcpy(mac, addr->sa_data, *len);
 }
-		 
 
-static void
+inline static void
 fillInterfaceInfo(struct InterfaceInfoList *ifs)
 {
   size_t		i;
@@ -142,7 +147,7 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     ifs->dta[i].if_ip  = sockaddrToInet4(&iface.ifr_addr);
 
     if (ioctl(fd, SIOCGIFMTU,    &iface)==-1) goto err;
-    ifs->dta[i].if_mtu = reinterpret_cast(size_t)(iface.ifr_mtu);
+    ifs->dta[i].if_mtu = static_cast(size_t)(iface.ifr_mtu);
 
     if (ioctl(fd, SIOCGIFHWADDR, &iface)==-1) goto err;
     sockaddrToHwAddr(&iface.ifr_hwaddr,
@@ -153,15 +158,15 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
   return;
   
   err:
-  (void)write(2, "ioctl() failed\n", 15);
-  exit(2);
+  perror("ioctl()");
+  EXITFATAL("Can not set interface information");
 }
 
-static void
+inline static void
 initFDs(/*@out@*/struct FdInfoList 		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
 {
-  register int					i;
+  register size_t				i;
   register size_t				idx;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
   
@@ -169,7 +174,7 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   initRawFD(&fds->raw_fd);
   
   fds->len = ifs->len;
-  fds->dta = Emalloc(fds->len * (sizeof(fds->dta[0])));
+  fds->dta = reinterpret_cast(struct FdInfo*)(Emalloc(fds->len * (sizeof(fds->dta[0]))));
 
   
   for (idx=0, i=0; i<ifs->len; ++i) {
@@ -178,7 +183,7 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   }
 }
 
-static void
+inline static void
 getConfig(char const		*filename,
 	  struct ConfigInfo	*cfg)
 {
@@ -210,17 +215,14 @@ initializeSystem(int argc, char *argv[],
   struct ConfigInfo		cfg;
   char const *			cfg_name = CFG_FILENAME;
   register bool			do_fork  = true;
-  register size_t		i = 1;
+  register int			i = 1;
   register pid_t		pid;
   register int			pidfile_fd;
 
   while (i<argc) {
     if      (strcmp(argv[i], "-c")==0) { cfg_name = argv[i+1]; i+=2; }
     else if (strcmp(argv[i], "-d")==0) { do_fork  = false;     ++i;  }
-    else {
-      write(2, "Bad cmd-line option\n", 20);
-      exit(4);
-    }
+    else EXITFATAL("Bad cmd-line option");
   }
   
   getConfig(cfg_name, &cfg);
