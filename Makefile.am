@@ -63,8 +63,6 @@ noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
 CLEANFILES		=  doc/dhcp-fwd.1
 
 EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
-		 	   contrib/dhcp-fwd.init contrib/dhcp-fwd.conf		\
-			   contrib/dhcp-fwd.sysconfig				\
 			   doc/dhcp-fwd.man
 
 %.1:			%.man
@@ -78,14 +76,6 @@ $(PACKAGE).lcd:		Makefile.am splint.conf $(noinst_HEADERS)
 splint:
 			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -f splint.conf 	\
 				$(dhcp_fwd_SOURCES) $(neg_SRCS)
-
-install-contrib:
-			$(mkinstalldirs) $(DESTDIR)$(sysconfdir)/init.d $(DESTDIR)$(sysconfdir)/sysconfig
-			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init      $(DESTDIR)$(sysconfdir)/init.d/dhcp-fwd
-			$(INSTALL_DATA)   contrib/dhcp-fwd.sysconfig $(DESTDIR)$(sysconfdir)/sysconfig/dhcp-fwd
-
-uninstall-contrib:
-			rm -f $(DESTDIR)/etc/init.d/dhcp-fwd
 
 www:			.www-timestamp
 
@@ -112,3 +102,4 @@ include $(top_srcdir)/m4/changelog.am
 include $(top_srcdir)/m4/diet.am
 include $(top_srcdir)/m4/gpgsig.am
 include $(top_srcdir)/m4/substrule.am
+include $(top_srcdir)/contrib/Makefile-files
