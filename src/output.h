@@ -19,11 +19,9 @@
 #ifndef DHCP_FORWARDER_OUTPUT_H
 #define DHCP_FORWARDER_OUTPUT_H
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
-void		writeUInt(int fd, unsigned int val);
+void		writeUInt(int fd, unsigned int val)
+  /*@globals internalState, errno@*/
+  /*@modifies internalState, errno@*/ ;
 
 #endif	//  DHCP_FORWARDER_OUTPUT_H
 

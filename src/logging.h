@@ -19,19 +19,17 @@
 #ifndef DHCP_FORWARDER_LOGGING_H
 #define DHCP_FORWARDER_LOGGING_H
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include <netinet/in.h>
 
 #define LOG(MSG)	((void)write(2, MSG, sizeof(MSG)))
 #define LOGSTR(MSG)	((void)write(2, MSG, strlen(MSG)))
 
 #ifdef ENABLE_LOGGING
-void logDHCPPackage(char const *buffer, size_t len,
-		    struct in_pktinfo const	*pkinfo,
-		    void const			*addr);
+void logDHCPPackage(/*@in@*/char const *buffer, size_t len,
+		    /*@in@*/struct in_pktinfo const	*pkinfo,
+		    /*@in@*/void const			*addr)
+  /*@globals internalState, errno@*/
+  /*@modifies internalState, errno@*/ ;
 #endif
 
 #endif	//  DHCP_FORWARDER_LOGGING_H

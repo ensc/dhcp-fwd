@@ -19,11 +19,6 @@
 #ifndef H_DHCP_FORWARDER_SRC_RECVFROMFLAGS_H
 #define H_DHCP_FORWARDER_SRC_RECVFROMFLAGS_H
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -34,7 +29,8 @@ recvfrom_flags(int fd,
 	       int *flagsp,
 	       /*@out@*/struct sockaddr *sa, socklen_t *salenptr,
 	       /*@out@*/struct in_pktinfo *pktp)
-  /*@modifies *ptr, *flagsp, *sa, *salenptr, *pktp, errno, fileSystem@*/
+  /*@globals errno@*/
+  /*@modifies *ptr, *flagsp, *sa, *salenptr, *pktp, errno@*/
   /*@requires maxSet(ptr) >= nbytes@*/ ;
 
 

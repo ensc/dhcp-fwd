@@ -62,17 +62,38 @@ struct DHCPSingleOption {
     __extension__ uint8_t	data __flexarr;
 } __attribute__((__packed__));
 
+
+  /*@-exportconst@*/
+  /*@constant unsigned int flgDHCP_BCAST@*/
+  /*@constant unsigned int MAX_HOPS@*/
+  /*@constant unsigned int optDHCP_COOKIE@*/
+
+  /*@constant unsigned int opBOOTREQUEST@*/
+  /*@constant unsigned int opBOOTREPLY@*/
+
+  /*@constant uint8_t cdPAD@*/
+  /*@constant uint8_t cdRELAY_AGENT@*/
+  /*@constant uint8_t cdEND@*/
+
+  /*@constant uint8_t agCIRCUITID@*/
+  /*@constant uint8_t agREMOTEID@*/
+
+  /*@=exportconst@*/
+
+
+#ifndef S_SPLINT_S
+
 enum {
-  MAX_HOPS	= 16
+  MAX_HOPS	= 16u
 };
 
 enum {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  optDHCP_COOKIE = 0x63538263,
-  flgDHCP_BCAST	 = 0x0080
+  optDHCP_COOKIE = 0x63538263u,
+  flgDHCP_BCAST	 = 0x0080u
 #else
-  DHCP_COOKIE  	 = 0x63825363,
-  flgDHCP_BCAST	 = 0x8000
+  DHCP_COOKIE  	 = 0x63825363u,
+  flgDHCP_BCAST	 = 0x8000u
 #endif
 };
 
@@ -91,10 +112,12 @@ enum {
   agCIRCUITID	= 1u,
   agREMOTEID	= 2u
 };
+#endif
 
 /*@unused@*/
 inline static size_t
 DHCP_getOptionLength(/*@sef@*//*@in@*/struct DHCPSingleOption const *opt)
+    /*@*/
 {
   switch (opt->code) {
     case cdPAD	:
@@ -106,31 +129,36 @@ DHCP_getOptionLength(/*@sef@*//*@in@*/struct DHCPSingleOption const *opt)
 /*@unused@*/
 inline static void
 DHCP_zeroOption(struct DHCPSingleOption *opt)
+    /*@modifies *opt@*/
 {
   size_t	len = DHCP_getOptionLength(opt);
   size_t	i;
 
     
   for (i=0; i<len; ++i) {
-    /*@+charint@*/
-    reinterpret_cast(char *)(opt)[i] = cdPAD;
-    /*@=charint@*/
+    static_cast(uint8_t *)(opt)[i] = cdPAD;
   }
 }
 
 /*@unused@*/
 inline static struct DHCPSingleOption *
 DHCP_nextSingleOption(/*@sef@*//*@in@*//*@returned@*/struct DHCPSingleOption *opt)
+    /*@*/
+    /*@ensures result >= opt@*/
 {
   size_t cnt = DHCP_getOptionLength(opt);
 
+    /*@-ptrarith@*/
   return (reinterpret_cast(struct DHCPSingleOption *)
 	  (reinterpret_cast(char *)(opt) + cnt));
+    /*@=ptrarith@*/
 }
 
 /*@unused@*/
 inline static struct DHCPSingleOption const *
 DHCP_nextSingleOptionConst(/*@sef@*//*@in@*//*@returned@*/struct DHCPSingleOption const *opt)
+    /*@*/
+    /*@ensures result >= opt@*/
 {
   return DHCP_nextSingleOption(const_cast(struct DHCPSingleOption *)(opt));
 }

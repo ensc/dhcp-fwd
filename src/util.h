@@ -19,20 +19,18 @@
 #ifndef DHCP_FORWARDER_UTIL_H
 #define DHCP_FORWARDER_UTIL_H
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
+  /*@-namechecks@*/
 #ifndef __cplusplus
-#  define _cAsT_(X)		(X))
-#  define reinterpret_cast(X)	((X) _cAsT_
-#  define static_cast(X)	((X) _cAsT_
-#  define const_cast(X)		((X) _cAsT_
+#  define cAsT_(X)		(X))
+#  define reinterpret_cast(X)	((X) cAsT_
+#  define static_cast(X)	((X) cAsT_
+#  define const_cast(X)		((X) cAsT_
 #else	/* __cplusplus */
 #  define reinterpret_cast(X)	reinterpret_cast<X>
 #  define static_cast(X)	static_cast<X>
 #  define const_cast(X)		const_cast<X>
 #endif
+  /*@=namechecks@*/
 
 #endif	/* DHCP_FORWARDER_UTIL_H */
 

@@ -19,12 +19,12 @@
 #ifndef H_DHCP_FORWARDER_SRC_PARSER
 #define H_DHCP_FORWARDER_SRC_PARSER
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+struct ConfigInfo;
 
-extern void	parse(/*@in@*/char const		*filename,
-		      /*@in@*/struct ConfigInfo		*cfg);
+void	parse(/*@in@*/char const		*filename,
+	      /*@dependent@*/struct ConfigInfo	*cfg)
+  /*@globals fileSystem, internalState@*/
+  /*@modifies fileSystem, internalState, *cfg@*/ ;
 
 #endif	//  H_DHCP_FORWARDER_SRC_PARSER
 

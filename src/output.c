@@ -23,6 +23,8 @@
 #include "splint.h"
 
 #include <unistd.h>
+#include <assert.h>
+
 #include "output.h"
 #include "util.h"
 
@@ -30,17 +32,22 @@ void
 writeUInt(int fd, unsigned int val)
 {
   char			buffer[32];
-  register char		*ptr = buffer + sizeof(buffer) - 1;
+  register char		*ptr = &buffer[sizeof(buffer) - 1];
 
   do {
+      /*@-strictops@*/
     *ptr-- = '0' + static_cast(char)(val%10);
+      /*@=strictops@*/
     val   /= 10;
   } while (val!=0);
 
   ++ptr;
   assertDefined(ptr);
-  
-  (void)write(fd, ptr, (buffer+sizeof(buffer)) - ptr);
+  assert(ptr<=&buffer[sizeof(buffer)]);
+
+    /*@-strictops@*/
+  (void)write(fd, ptr, &buffer[sizeof(buffer)] - ptr);
+    /*@=strictops@*/
 }
 
   // Local Variables:

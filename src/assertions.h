@@ -19,10 +19,6 @@
 #ifndef DHCP_FORWARDER_ASSERTIONS_H
 #define DHCP_FORWARDER_ASSERTIONS_H
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include "dhcp.h"
 #include "inet.h"
 
@@ -36,9 +32,9 @@ extern void 	dhcpsingleoption_not_2();
 extern void	dhcpllpacket_not_42();
 #endif
 
-/*@unused@*/
+  /*@unused@*//*@maynotreturn@*/
 inline static void
-checkCompileTimeAssertions()
+checkCompileTimeAssertions() /*@*/
 {
 #ifndef NDEBUG
 #  ifdef __OPTIMIZE__

@@ -21,7 +21,10 @@
 
 #include "splint_compat.h"
 
-extern void assertDefined (/*@out@*/ /*@sef@*/ /*@unused@*/ void *p_x) ;
+  /*@-declundef@*/
+  /*@unused@*/
+extern void assertDefined (/*@out@*/ /*@sef@*/ /*@unused@*/ void * ) /*@*/;
+  /*@=declundef@*/
 
 #ifndef S_SPLINT_S
 #  define assertDefined(x)

@@ -16,14 +16,10 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-  /*@-macromatchname@*/
 #ifndef H_DHCP_FORWARDER_SRC_COMPAT_H
 #define H_DHCP_FORWARDER_SRC_COMPAT_H
-  /*@=macromatchname@*/
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+  /*@-namechecks@*/
 
 #if defined(HAVE_STDBOOL_H) && !defined(__cplusplus)
 #  include <stdbool.h>
@@ -94,6 +90,8 @@ struct ether_header
         while (m_result == -1L && errno == EINTR);	\
         m_result; }))
 #endif
+
+  /*@=namechecks@*/
 
 #endif	/* H_DHCP_FORWARDER_SRC_COMPAT_H */
 

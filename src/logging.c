@@ -35,12 +35,19 @@
 #include "logging.h"
 #include "dhcp.h"
 
-#define WRITE(FD, MSG)	(void)write(FD, MSG, sizeof(MSG)-1)
+static void WRITE(int FD, /*@sef@*//*@observer@*/char const MSG[])
+  /*@globals internalState@*/
+  /*@modifies internalState@*/ ;
+
+  /*@-sizeofformalarray@*/
+#define WRITE(FD, MSG)	(void)write(FD, (MSG), sizeof(MSG)-1)
+  /*@=sizeofformalarray@*/
 
 inline static char *
 Xinet_ntop(sa_family_t af, /*@in@*/void const *src,
 	   /*@returned@*//*@out@*/char *dst, size_t cnt)
     /*@requires cnt>=8 /\ maxSet(dst) >= cnt@*/
+    /*@modifies *dst@*/
 {
   if (inet_ntop(af, src, dst, cnt)==0) {
     strcpy(dst, "< ???? >");
@@ -56,7 +63,8 @@ Xsnprintf(/*@out@*/char_outptr * const buffer, size_t * const len,
 	  /*@in@*/char const * const format, ...)
     /*@requires notnull *buffer@*/
     /*@requires maxRead(*buffer) >= 0@*/
-    /*@modifies *buffer, *len@*/
+    /*@globals internalState@*/
+    /*@modifies internalState, *buffer, *len@*/
 {
   va_list	ap;
   int		l;
@@ -73,14 +81,15 @@ Xsnprintf(/*@out@*/char_outptr * const buffer, size_t * const len,
     WRITE(2, " required\n\n");
   }
   else {
-    *len    -= 1;
+    *len    -= l;
     *buffer += l;
   }
 }
 
 inline static void
-Xstrncat(/*@unique@*/char * __restrict const buffer,
+Xstrncat(/*@unique@*/char * const buffer,
 	 /*@in@*/char const * const what, size_t *len)
+    /*@modifies *buffer, *len@*/
 {
   size_t const		what_len = strlen(what);
   
@@ -92,15 +101,15 @@ Xstrncat(/*@unique@*/char * __restrict const buffer,
 
 
 void
-logDHCPPackage(/*@in@*/char const *data, size_t	len,
-	       /*@in@*/struct in_pktinfo const		*pkinfo,
-	       /*@in@*/void const			*addr)
+logDHCPPackage(char const *data, size_t	len,
+	       struct in_pktinfo const		*pkinfo,
+	       void const			*addr)
 {
   /*@temp@*/char		buffer[256];
   char 				*buffer_ptr;
   char				addr_buffer[128];	/* adjust if needed */
   /*@dependent@*/char const	*msg = 0;
-  struct tm			tm;
+  struct tm			tmval;
   struct timeval		tv;
   size_t			avail;
   int				error = errno;
@@ -109,9 +118,9 @@ logDHCPPackage(/*@in@*/char const *data, size_t	len,
   
 
   (void)gettimeofday(&tv, 0);
-  (void)localtime_r(&tv.tv_sec, &tm);
+  (void)localtime_r(&tv.tv_sec, &tmval);
   
-  if (strftime(buffer, sizeof buffer, "%T", &tm)==-1) goto err;		/*   8 chars */
+  if (strftime(buffer, sizeof buffer, "%T", &tmval)==-1) goto err;	/*   8 chars */
   avail      = sizeof(buffer)-strlen(buffer);
   buffer_ptr = buffer + strlen(buffer);
   Xsnprintf(&buffer_ptr, &avail, ".%06li: ", tv.tv_usec);

@@ -26,9 +26,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/time.h>
-#include <sys/ioctl.h>
+#include <sys/types.h>
 #include <net/if.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
@@ -38,6 +37,7 @@
 #include <errno.h>
 #include <netpacket/packet.h>
 #include <net/if_arp.h>
+#include <sys/ioctl.h>
 
 #include "cfg.h"
 #include "wrappers.h"
@@ -60,19 +60,27 @@ typedef enum {
 #endif  
 } OptionFillAction;
 
-static struct ServerInfoList	servers;
-static struct FdInfoList	fds;
+/*@checkmod@*/static struct ServerInfoList	servers;
+/*@checkmod@*/static struct FdInfoList	fds;
 
 inline static void
 fillFDSet(/*@out@*/fd_set			*fdset,
 	  /*@out@*/int				*max)
+    /*@globals fds@*/
+    /*@modifies *fdset, *max@*/
 {
-  size_t		i;
+    /*@-nullptrarith@*/
+  struct FdInfo const *		fdinfo;
+  struct FdInfo const * const	end_fdinfo = fds.dta+fds.len;
+    /*@=nullptrarith@*/
+
+  assert(fds.dta!=0 || fds.len==0);
+
   FD_ZERO(fdset);
   *max = -1;
 
-  for (i=0; i<fds.len; ++i) {
-    struct FdInfo const * const		fdinfo = fds.dta + i;
+  for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
+    assert(fdinfo!=0);
     
     *max = MAX(*max, fdinfo->fd);
     FD_SET(fdinfo->fd, fdset);
@@ -81,14 +89,21 @@ fillFDSet(/*@out@*/fd_set			*fdset,
 
 inline static /*@exposed@*//*@null@*/struct FdInfo const *
 lookupFD(/*@in@*/struct in_addr const addr)
+    /*@globals fds@*/
 {
-  size_t		i;
+    /*@-nullptrarith@*/
+  struct FdInfo const *			fdinfo;
+  struct FdInfo const * const		end_fdinfo = fds.dta+fds.len;
+    /*@=nullptrarith@*/
 
-  for (i=0; i<fds.len; ++i) {
-    struct FdInfo const * const		fd = fds.dta + i;
-
-      /* We must check for the real IP here since IP_PKTINFO returns it... */
-    if (fd->iface->if_real_ip==addr.s_addr) return fd;
+  assert(fds.dta!=0 || fds.len==0);
+  
+  for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
+    assert(fdinfo!=0);
+    
+      /* We must check for both the real and "faked" giaddr IP here */
+    if (fdinfo->iface->if_real_ip==addr.s_addr ||
+	fdinfo->iface->if_ip     ==addr.s_addr) return fdinfo;
   }
 
   return 0;
@@ -96,25 +111,35 @@ lookupFD(/*@in@*/struct in_addr const addr)
 
 inline static size_t
 determineMaxMTU()
+    /*@globals fds@*/
+    /*@modifies@*/
 {
-  size_t		result = 1500;
-  size_t		i;
+  size_t				result = 1500;
+    /*@-nullptrarith@*/
+  struct FdInfo const *			fdinfo;
+  struct FdInfo const * const		end_fdinfo = fds.dta+fds.len;
+    /*@=nullptrarith@*/
 
-  for (i=0; i<fds.len; ++i) {
-    struct FdInfo const * const		fd = fds.dta + i;
+  assert(fds.dta!=0 || fds.len==0);
+  
+  for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
+    assert(fdinfo!=0);
     
-    result = MAX(result, fd->iface->if_mtu);
+    result = MAX(result, fdinfo->iface->if_mtu);
   }
 
   return result;
 }
 
 inline static bool
-isValidHeader(struct DHCPHeader *header)
+isValidHeader(/*@in@*/struct DHCPHeader *header)
+    /*@*/
 {
   char const		*reason = 0;
- 
+
+    /*@-strictops@*/
   if ((header->flags&~flgDHCP_BCAST)!=0) { reason = "Invalid flags field\n"; }
+    /*@=strictops@*/
   else if (header->hops>=MAX_HOPS)       { reason = "Looping detected\n"; }
 #if 0  
   else switch (header->htype) {
@@ -124,7 +149,10 @@ isValidHeader(struct DHCPHeader *header)
     default		:
       break;	// Not active handled by us; will be forwarded as-is
   }
-#endif  
+#else
+  else {}
+#endif
+  
   if (reason==0) switch (header->op) {
     case opBOOTREPLY	:
     case opBOOTREQUEST	:  break;
@@ -139,10 +167,11 @@ isValidHeader(struct DHCPHeader *header)
 inline static bool
 isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 	       size_t				o_len)
+    /*@*/
 {
   bool				seen_end     = false;
   struct DHCPSingleOption const	*opt         = reinterpret_cast(struct DHCPSingleOption const *)(options->data);
-  struct DHCPSingleOption const	*end_options = reinterpret_cast(struct DHCPSingleOption const *)(reinterpret_cast(uint8_t const *)(options) + o_len);
+  struct DHCPSingleOption const	*end_options = reinterpret_cast(struct DHCPSingleOption const *)(&reinterpret_cast(uint8_t const *)(options)[o_len]);
 
     /* Is this really ok? Is an empty option-field RFC compliant? */
   if (o_len==0) return true;
@@ -157,7 +186,7 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 
     opt = DHCP_nextSingleOptionConst(opt);
   } while (opt < end_options);
-
+  
   return (seen_end && opt==end_options);
 }
 
@@ -165,6 +194,7 @@ inline static size_t
 addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 	       struct DHCPSingleOption				*end_opt,
 	       size_t						len)
+    /*@modifies *end_opt@*/
 {
     /* Replace the end-tag
        
@@ -200,7 +230,7 @@ addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
     end_opt->data[0] = agCIRCUITID;	/* circuit id code as specified by RFC 3046 */
     end_opt->data[1] = static_cast(uint8_t)(strlen(iface->aid));
     end_opt->len     = 2 + end_opt->data[1];
-    memcpy(end_opt->data+2, iface->aid, end_opt->data[1]);
+    memcpy(&end_opt->data[2], iface->aid, end_opt->data[1]);
 
       /* set new end-tag */
     end_opt = DHCP_nextSingleOption(end_opt);
@@ -239,14 +269,16 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 }
 #endif
 
+  /*@-mustmod@*/
 inline static size_t
 fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
-	    void					*option_ptr,
+	    /*@dependent@*/void				*option_ptr,
 	    OptionFillAction				action)
+    /*@modifies *option_ptr@*/
 {
-  struct DHCPSingleOption 	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
-  struct DHCPSingleOption	*end_opt   = 0;
-  struct DHCPSingleOption	*relay_opt = 0;
+  /*@dependent@*/struct DHCPSingleOption 	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
+  /*@dependent@*/struct DHCPSingleOption	*end_opt   = 0;
+  /*@dependent@*/struct DHCPSingleOption	*relay_opt = 0;
   size_t			len;
 
   do {
@@ -261,10 +293,14 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
     opt = DHCP_nextSingleOption(opt);
   } while (end_opt==0);
 
+  assert(end_opt>=option_ptr);
+
     /* Determine used space until end-tag and add space for the end-tag itself
      * (1 octet). */
+    /*@-strictops@*/
   len  = (reinterpret_cast(char *)(end_opt) -
 	  static_cast(char *)(option_ptr) + 1u);
+    /*@=strictops@*/
 
   switch (action) {
     case acREMOVE_ID	:
@@ -285,11 +321,13 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
       
   return len;
 }
+  /*@=mustmod@*/
 
 inline static uint16_t
 calculateCheckSum(/*@in@*/void const * const	dta,
 		  size_t size,
 		  uint32_t sum)
+    /*@*/
 {
   size_t		i;
   uint16_t const	*data = reinterpret_cast(uint16_t const *)(dta);
@@ -316,6 +354,7 @@ calculateCheckSum(/*@in@*/void const * const	dta,
 
 inline static void
 fixCheckSumIP(struct iphdr * const	ip)
+    /*@modifies *ip@*/
 {
   ip->check = 0;
   ip->check = htons(~calculateCheckSum(ip, sizeof(*ip), 0));
@@ -324,7 +363,8 @@ fixCheckSumIP(struct iphdr * const	ip)
 static void
 fixCheckSumUDP(struct udphdr * const			udp,
 	       /*@in@*/struct iphdr const * const	ip,
-	       void const * const			data)
+	       /*@in@*/void const * const		data)
+    /*@modifies *udp@*/
 {
   uint32_t		sum;
   struct {
@@ -352,14 +392,19 @@ fixCheckSumUDP(struct udphdr * const			udp,
 }
 
 inline static void
-sendEtherFrame(struct InterfaceInfo const		*iface,
+sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
 	       /*@dependent@*/struct DHCPllPacket	*frame,
-	       /*@dependent@*/char const		*buffer,
+	       /*@dependent@*//*@in@*/char const	*buffer,
 	       size_t					size)
+    /*@globals internalState, fds@*/
+    /*@modifies internalState, *frame@*/
 {
   struct sockaddr_ll		sock;
   struct msghdr			msg;
   /*@temp@*/struct iovec	iovec_data[2];
+    /*@-sizeoftype@*/
+  size_t const			szUDPHDR = sizeof(struct udphdr);
+    /*@=sizeoftype@*/
 
     /* We support ethernet only and the config-part shall return ethernet-macs
      * only... */
@@ -373,17 +418,17 @@ sendEtherFrame(struct InterfaceInfo const		*iface,
 
   memcpy(frame->eth.ether_shost, iface->if_mac,  iface->if_maclen);
   
-  frame->ip.version  = 4;
+  frame->ip.version  = 4u;
   frame->ip.ihl      = sizeof(frame->ip)/4u;
   frame->ip.tos      = 0;
-  frame->ip.tot_len  = htons(sizeof(frame->ip) + sizeof(struct udphdr) + size);
+  frame->ip.tot_len  = htons(sizeof(frame->ip) + szUDPHDR + size);
   frame->ip.id       = 0;
   frame->ip.frag_off = htons(IP_DF);
   frame->ip.ttl      = 64;
   frame->ip.protocol = IPPROTO_UDP;
   frame->ip.saddr    = iface->if_ip;
 
-  frame->udp.len     = htons(sizeof(struct udphdr) + size);
+  frame->udp.len     = htons(szUDPHDR + size);
 
   fixCheckSumIP(&frame->ip);
   fixCheckSumUDP(&frame->udp, &frame->ip, buffer);
@@ -411,6 +456,8 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
 	     /*@in@*/struct DHCPHeader const * const	header,
 	     /*@in@*//*@dependent@*/char const * const	buffer,
 	     size_t const				size)
+    /*@globals internalState, fds@*/
+    /*@modifies internalState@*/
 {
   struct DHCPllPacket		frame;
   struct InterfaceInfo const	*iface = fd->iface;
@@ -442,9 +489,11 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
 }
 
 inline static void
-sendServerBcast(struct ServerInfo const	* const		server,
-		/*@dependent@*/char const * const	buffer,
-		size_t const				size)
+sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
+		/*@dependent@*//*@in@*/char const * const	buffer,
+		size_t const					size)
+    /*@globals internalState, fds@*/
+    /*@modifies internalState@*/
 {
   struct DHCPllPacket		frame;
   struct InterfaceInfo const	*iface = server->info.iface;
@@ -463,9 +512,11 @@ sendServerBcast(struct ServerInfo const	* const		server,
 }
 
 inline static void
-sendServerUnicast(struct ServerInfo const * const	server,
-		  char const * const			buffer,
-		  size_t const				size)
+sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
+		  /*@in@*/char const * const			buffer,
+		  size_t const					size)
+    /*@globals internalState, fds@*/
+    /*@modifies internalState@*/
 {
   struct sockaddr_in	sock;
 
@@ -483,11 +534,18 @@ sendServerUnicast(struct ServerInfo const * const	server,
 inline static void
 sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
 	     size_t const				size)
+    /*@globals servers, fds, internalState@*/
+    /*@modifies internalState@*/
 {
-  size_t		i;
+    /*@-nullptrarith@*/
+  struct ServerInfo const *		server;
+  struct ServerInfo const * const	end_server = servers.dta+servers.len;
+    /*@=nullptrarith@*/
 
-  for (i=0; i<servers.len; ++i) {
-    struct ServerInfo const * const	server = servers.dta + i;
+  assert(servers.len==0 || servers.dta!=0);
+
+  for (server=servers.dta; server<end_server; ++server) {
+    assert(server!=0);
     
     switch (server->type) {
       case svUNICAST	:
@@ -507,9 +565,11 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 	     /*@in@*/struct InterfaceInfo const * const		iface_orig,
 	     /*@dependent@*/char * const			buffer,
 	     size_t						size)
+    /*@globals fds, servers, internalState@*/
+    /*@modifies internalState@*/
 {
   struct DHCPHeader * const	header  = reinterpret_cast(struct DHCPHeader *)(buffer);
-  struct DHCPOptions * const	options = reinterpret_cast(struct DHCPOptions *)(buffer + sizeof(*header));
+  struct DHCPOptions * const	options = reinterpret_cast(struct DHCPOptions *)(&buffer[sizeof(*header)]);
   size_t			options_len = size - sizeof(*header);
   
 
@@ -567,34 +627,43 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 /*@noreturn@*/
 inline static void
 execRelay()
+    /*@globals fds, servers, internalState@*/
+    /*@modifies internalState@*/
 {
   size_t const			max_mtu   = determineMaxMTU();
-  size_t const			total_len = max_mtu + IFNAMSIZ + 4;
-  char				*buffer   = static_cast(char *)(Ealloca(total_len));
+  size_t const			len_total = max_mtu + IFNAMSIZ + 4;
+  char				*buffer   = static_cast(char *)(Ealloca(len_total));
+    /*@-sizeoftype@*/
+  size_t const			szDHCPHDR = sizeof(struct DHCPHeader);
+    /*@=sizeoftype@*/
 
   assert(buffer!=0);
+  assert(fds.dta!=0 || fds.len==0);
 
   while (true) {
     fd_set			fd_set;
     int				max;
-    size_t			i;
+      /*@-nullptrarith@*/
+    struct FdInfo const *	fdinfo;
+    struct FdInfo const * const end_fdinfo = fds.dta+fds.len;
+      /*@=nullptrarith@*/
     
     fillFDSet(&fd_set, &max);
-      
     if /*@-type@*/(Wselect(max+1, &fd_set, 0, 0, 0)==-1)/*@=type@*/ continue;
 
-    for (i=0; i<fds.len; ++i) {
-      struct FdInfo const * const	fd_info = fds.dta + i;
+    for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
       size_t				size;
       struct sockaddr_in		addr;
       struct in_pktinfo			pkinfo;
       int				flags = 0;
+
+      assert(fdinfo!=0);
       
-      if (!FD_ISSET(fd_info->fd, &fd_set)) continue;
+      if (!FD_ISSET(fdinfo->fd, &fd_set)) /*@innercontinue@*/continue;
 
 	/* Is this really correct? Can we receive fragmented IP datagrams being
 	 * assembled larger than the MTU of the attached interfaces? */
-      size = WrecvfromFlagsInet4(fd_info->fd, buffer, total_len, &flags,
+      size = WrecvfromFlagsInet4(fdinfo->fd, buffer, len_total, &flags,
 				 &addr, &pkinfo);
 
 #ifdef ENABLE_LOGGING      
@@ -606,12 +675,12 @@ execRelay()
 	LOG("recvfrom(): ");
 	LOGSTR(strerror(error));
       }
-      else if (size < sizeof(struct DHCPHeader)) {
+      else if (size < szDHCPHDR) {
 	LOG("Malformed package\n");
       }
       else {
-	struct InterfaceInfo const * const	iface_orig = fd_info->iface;
-	struct FdInfo const *			fd_real    = fd_info;
+	struct InterfaceInfo const * const	iface_orig = fdinfo->iface;
+	struct FdInfo const *			fd_real    = fdinfo;
 	
 	  /* Broadcast messages are designated for the interface, so lookup the
 	   * "real" dest-interface for unicast-messages only.
@@ -634,6 +703,8 @@ execRelay()
 
 int
 main(int argc, char *argv[])
+    /*@globals fds, servers, internalState, fileSystem@*/
+    /*@modifies fds, servers, internalState, fileSystem@*/
 {
   struct InterfaceInfoList		ifs;
 
@@ -641,8 +712,9 @@ main(int argc, char *argv[])
 
     /* We create a mem-leak here, but this is not important because the parent
      * exits immediately and frees the resources and the child never exits */
-    /*@-compdestroy@*/ 
+    /*@-compdestroy@*//*@-superuser@*/
   switch (initializeSystem(argc, argv, &ifs, &servers, &fds)) {
+    /*@=superuser@*/
     case -1	:  return 5;
     case 0	:  execRelay();
     default	:  return 0;

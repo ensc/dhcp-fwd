@@ -19,25 +19,25 @@
 #ifndef DHCP_FORWARDER_SRC_INET_H
 #define DHCP_FORWARDER_SRC_INET_H 1
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include "splint.h"
 
-#include "splint_compat.h"
-
-#ifndef S_SPLINT_S
-#  include <netinet/ip.h>
-#endif
-
+#include <netinet/ip.h>
 #include <netinet/ether.h>
 #include <netinet/udp.h>
 
 #include "compat.h"
 
+  /*@-exportconst@*/
+  /*@constant uint16_t DHCP_PORT_CLIENT@*/
+  /*@constant uint16_t DHCP_PORT_SERVER@*/
+  /*@=exportconst@*/
+
+#ifndef S_SPLINT_S
 enum {
-  DHCP_PORT_SERVER = 67,
-  DHCP_PORT_CLIENT = 68
+  DHCP_PORT_SERVER = 67u,
+  DHCP_PORT_CLIENT = 68u
 };
+#endif // S_SPLINT_S
 
 struct DHCPllPacket
 {
