@@ -1,3 +1,11 @@
+Version 0.6
+-----------
+
+	- allowed to bind sender-side sockets to one interface only; this
+	  should allow to run multiple instances of dhcp-forwarder. To
+	  enable this feature, an additional parameter was added to the
+	  'server ip ...' option
+
 Version 0.5
 -----------
 	- minor cleanups in the spec-file
