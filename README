@@ -99,11 +99,6 @@ BUGS
   * cooperation within an IPv6 network or
   * running on a big-endian host (will probably fail)
   * IP fragmentation
-  * resource limits; they were set for my i386 system. Other
-    architectures or libraries may have higher requirements so I
-    should make this configurably (will add additional 5k code to
-    the parser :( )
-
 
 
 SAMPLE CONFIGURATIONS
@@ -141,4 +136,3 @@ using the following core-configuration:
 | if              eth0    true true true
 | name            eth0    ws-c
 | server          ip      192.168.8.66
-
