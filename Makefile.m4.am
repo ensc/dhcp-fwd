@@ -19,7 +19,7 @@
 local_DTA               =  lf_warnings.m4
 MACRO_FILES		=  validate.am changelog.am diet.am gpgsig.am		\
 			   ensc_tools.m4 ensc_diet.m4 ensc_developing.m4	\
-			   substrule.am
+			   substrule.am ensc_compat.m4
 
 dist-hook:              local-DTA-inst
 
