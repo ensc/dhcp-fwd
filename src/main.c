@@ -247,6 +247,7 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 		   struct DHCPSingleOption			*relay_opt,
 		   struct DHCPSingleOption			*end_opt,
 		   size_t					len)
+    /*@requires end_opt > relay_opt@*/
 {
   size_t	opt_len = DHCP_getOptionLength(relay_opt);
   size_t	str_len = strlen(iface->aid);
@@ -259,16 +260,40 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
     memcpy(relay_opt->data+2, iface->aid, str_len);
 
     if (str_len+4<opt_len)
+	// TODO: move memory; do not pad to satisfy WinNT
       memset(relay_opt->data+2+str_len, /*@+charint@*/cdPAD/*@=charint@*/, opt_len-str_len-4);
   }
+  else if (opt_len>=len) {
+    DHCP_removeOption(relay_opt, end_opt);
+
+    len -= opt_len;
+    len  = addAgentOption(iface, end_opt, len);
+  }
   else {
-    DHCP_zeroOption(relay_opt);
-    len = addAgentOption(iface, end_opt, len);
+    LOGSTR("Failed assertion 'opt_len < len'");
   }
 
   return len;
 }
 #endif
+
+inline static size_t
+removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
+		  struct DHCPSingleOption const 		*end_opt,
+		  size_t					len)
+    /*@requires end_opt > opt@*/
+    /*@modifies *opt@*/
+{
+  size_t	opt_len = DHCP_getOptionLength(opt);
+  
+  if (opt_len < len) {
+    DHCP_removeOption(opt, end_opt);
+    len -= opt_len;
+  }
+  else LOGSTR("Failed assertion 'opt_len < len'");
+
+  return len;
+}
 
   /*@-mustmod@*/
 inline static size_t
@@ -295,6 +320,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
   } while (end_opt==0);
 
   assert(end_opt>=option_ptr);
+  assert(end_opt>=relay_opt || relay_opt==0);
 
     /* Determine used space until end-tag and add space for the end-tag itself
      * (1 octet). */
@@ -305,7 +331,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 
   switch (action) {
     case acREMOVE_ID	:
-      if (relay_opt!=0) DHCP_zeroOption(relay_opt);
+      if (relay_opt!=0) len = removeAgentOption(relay_opt, end_opt, len);
       break;
     case acADD_ID	:
       if (relay_opt==0) len = addAgentOption(iface, end_opt, len);
