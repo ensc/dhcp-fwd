@@ -25,7 +25,7 @@ WWW_FILES_FILES		=  $(distdir).tar.bz2 $(distdir).tar.bz2.asc $(srcdir)/README $
 
 man_MANS		=  doc/dhcp-fwd.1
 
-SUBDIRS			=  .
+SUBDIRS			=  . test
 DIST_SUBDIRS		=  $(SUBDIRS) m4
 
 confdir			=  $(sysconfdir)
@@ -49,7 +49,8 @@ splint_HDRS		=  src/splint.h src/splint_compat.h
 noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
 			   src/dhcp.h src/inet.h src/recvfromflags.h		\
 			   src/util.h src/wrappers.h src/assertions.h		\
-			   src/parser.h src/output.h src/logging.h
+			   src/parser.h src/output.h src/logging.h		\
+			   src/ulimit_codes.h
 
 CLEANFILES		=  doc/dhcp-fwd.1
 
