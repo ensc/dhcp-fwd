@@ -4,7 +4,7 @@
 
 Summary:	An DHCP relay agent
 Name:		dhcp-forwarder
-Version:	0.1
+Version:	@VERSION@
 Release:	0.1
 License:	GPL
 Group:		System Environment/Daemons
@@ -20,9 +20,6 @@ BuildRequires:	dietlibc
 %setup -q
 
 %build
-## When not setting CC, ./configure will choose a name like
-## i386-redhat-linux-gcc which breaks the cross-compile detection of
-## 'diet' :(
 %configure --enable-release
 make
 
