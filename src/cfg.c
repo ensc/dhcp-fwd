@@ -366,7 +366,6 @@ parseCommandline(int argc, char *argv[],
       case 'd'	:
       case 'n'	:  cfg->do_fork       = false;  break;
       case 'c'	:  cfg->conffile_name = optarg; break;
-      default	:  scEXITFATAL("Use '-h' to get help about possible options");
       case '-'	:
 	if (strcmp(argv[optind], "--version")==0) { showVersion();     exit(0); }
 	if (strcmp(argv[optind], "--help")==0)    { showHelp(argv[0]); exit(0); }
