@@ -8,14 +8,19 @@ networks with different broadcast domains.
 FEATURES:
 - runs as non-root in a chroot-environment
 
-- supports DHCP Agent IDs as described in RFC 3046. These IDs can be
-  defined freely.
-
-- uses AF_INET sockets to listen for DHCP messages so packetfilters
+- uses AF_INET sockets to listen for DHCP messages. Thus, packetfilters
   like iptables can be used to filter incoming messages
 
-- small memory-footprint; the static-linked executable is <40KiB, the
-  runtime memory-usage <70KiB
+- supports DHCP agent IDs as described in RFC 3046. These IDs can be
+  defined freely.
+
+- small memory-footprint:
+  | #  ls -l dhcp-fwd; file dhcp-fwd; ps u 24528
+  | -rwxrwxr-x    1 ensc     ensc        30584 Jun 12 04:02 dhcp-fwd
+  | dhcp-fwd: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), statically linked, stripped
+  | USER       PID %CPU %MEM   VSZ  RSS TTY      STAT START   TIME COMMAND
+  | nobody   24528  0.0  0.1    64   64 pts/2    S    04:02   0:00 ./dhcp-fwd
+
 
 
 
@@ -27,5 +32,15 @@ BUGS:
 
          [Server]-- Ethernet --[Router]-- PPP --[Forwarder]
 
+  (example is not completely correct since the program assumes an MTU
+  of 1500 or greater; but when server is on a special device (IPSec
+  VLAN??) a similar situation can occur)
+
 - on client-side only ethernet supported; same holds on server-side if
   server is a broadcast-address
+
+- works with Linux only; the device-binding stuff is not specified
+  by SUSv3 and I do not know enough other systems to give a better
+  solution
+
+- untested
