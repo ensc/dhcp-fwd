@@ -3,45 +3,40 @@
 # chkconfig: - 95 05
 # description: The dhcp-forward agent relays DHCP messages between two \
 #              networks
-# processname: dhcp-fwd
-# config:      /etc/dhcp-fwd.conf
-# pidfile:     /var/run/dhcp-fwd.pid
 
 # Source function library.
 . /etc/init.d/functions
 
 # Get config.
-. /etc/sysconfig/network
+test -e /etc/sysconfig/network && . /etc/sysconfig/network
 
 # Check that networking is up.
-if [ "$NETWORKING" = "no" ]
-then
-	exit 0
-fi
+test "$NETWORKING" != "no" || exit 0
+
 
 DHCPFWD_CFGFILE=/etc/dhcp-fwd.conf
 DHCPFWD_OPTIONS=
-test -f /etc/sysconfig/dhcp-fwd && . /etc/sysconfig/dhcp-fwd
+test -e /etc/sysconfig/dhcp-fwd && . /etc/sysconfig/dhcp-fwd
 
-RETVAL=0
 prog="dhcp-fwd"
+lockfile=/var/lock/subsys/dhcp-fwd
 
 start () {
 	echo -n $"Starting $prog: "
 	daemon dhcp-fwd -c ${DHCPFWD_CFGFILE} ${DHCPFWD_OPTIONS}
-	RETVAL=$?
+	retval=$?
 	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/dhcp-fwd
-	return $RETVAL
+	[ $retval -eq 0 ] && touch $lockfile
+	return $retval
 }
 
 stop () {
 	echo -n $"Stopping $prog: "
 	killproc dhcp-fwd
-	RETVAL=$?
+	retval=$?
 	echo
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/dhcp-fwd
-	return $RETVAL
+	[ $retval -eq 0 ] && rm -f $lockfile
+	return $retval
 }
 
 restart () {
@@ -51,24 +46,15 @@ restart () {
 
 # See how we were called.
 case "$1" in
-  start)
-	start
-	;;
-  stop)
-	stop
-	;;
+  start|stop|restart)	$1 ;;
+  reload)		restart ;;
   status)
 	status dhcp-fwd
 	;;
-  restart|reload)
-	restart
-	;;
   condrestart)
-	[ -f /var/lock/subsys/dhcp-fwd ] && restart || :
+	[ -f $lockfile ] && restart || :
 	;;
   *)
 	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
 	exit 1
 esac
-
-exit $?
