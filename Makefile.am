@@ -24,9 +24,16 @@ DIST_SUBDIRS		=  $(SUBDIRS) m4
 confdir			=  $(sysconfdir)
 cfg_filename		=  $(confdir)/dhcp-fwd.cfg
 
+if ENABLE_LOGGING
+logging_SRCS		=  src/logging.c
+else
+logging_SRCS		=
+endif
+
 sbin_PROGRAMS		=  dhcp-fwd
+EXTRA_dhcp_fwd_SOURCES	=  src/logging.c
 dhcp_fwd_SOURCES	=  src/config.c src/recvfromflags.c src/main.c		\
-			   src/parser.c src/output.c
+			   src/parser.c src/output.c $(logging_SRCS)
 
 AM_CPPFLAGS		=  -DCFG_FILENAME='"$(cfg_filename)"'
 
@@ -36,7 +43,7 @@ noinst_HEADERS		=  src/compat.h src/config.h src/dhcp.h src/inet.h	\
 			   src/parser.h src/output.h src/logging.h
 
 EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
-		 	   contrib/dhcp-fwd.init
+		 	   contrib/dhcp-fwd.init contrib/dhcp-fwd.conf
 
 install-contrib:
 			$(mkinstalldirs) $(DESTDIR)/etc/init.d
