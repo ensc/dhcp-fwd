@@ -1,4 +1,4 @@
-Version 0.2.3
+Version 0.2.4
 -------------
 	- Minor enhancements in the build-system (generalized sed-subst
 	  rule)
@@ -18,6 +18,11 @@ Version 0.2.3
 	  good idea; if you encounter problems with the used limits please
 	  contact me)
 	- improved logging
+	- compiles with egcs-1.1.2 and glibc-2.1.3 now
+	- added whitebox-testsuite for some error-prone functions
+	- made ulimits configurable
+	- splint succeeds now with '-strict' settings
+	- minor fixes and extensions in the configfile parser
 	
 Version 0.2
 -----------
