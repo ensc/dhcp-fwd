@@ -31,16 +31,23 @@ DIST_SUBDIRS		=  $(SUBDIRS) m4
 confdir			=  $(sysconfdir)
 cfg_filename		=  $(confdir)/dhcp-fwd.cfg
 
-if ENABLE_LOGGING
 logging_SRCS		=  src/logging.c
+
+if ENABLE_LOGGING
+pos_logging_SRCS	=  $(logging_SRCS)
+neg_logging_SRCS	=
 else
-logging_SRCS		=
+pos_logging_SRCS	=
+neg_logging_SRCS	=  $(logging_SRCS)
 endif
 
+pos_SRCS		=  $(pos_logging_SRCS)
+neg_SRCS		=  $(neg_logging_SRCS)
+
 sbin_PROGRAMS		=  dhcp-fwd
-EXTRA_dhcp_fwd_SOURCES	=  src/logging.c
+EXTRA_dhcp_fwd_SOURCES	=  $(logging_SRCS)
 dhcp_fwd_SOURCES	=  src/parser.c src/main.c src/cfg.c src/recvfromflags.c 		\
-			    src/output.c $(logging_SRCS)
+			   src/output.c $(pos_SRCS)
 
 AM_CPPFLAGS		=  -DCFG_FILENAME='"$(cfg_filename)"'
 
@@ -68,7 +75,7 @@ $(PACKAGE).lcd:		Makefile.am splint.conf $(noinst_HEADERS)
 
 splint:
 			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -f splint.conf 	\
-				$(dhcp_fwd_SOURCES) $(EXTRA_dhcp_fwd_SOURCES)
+				$(dhcp_fwd_SOURCES) $(neg_SRCS)
 
 install-contrib:
 			$(mkinstalldirs) $(DESTDIR)/etc/init.d
