@@ -4,17 +4,18 @@
 %define homedir		%_var/lib/%username
 %define minitdir	%_sysconfdir/minit
 %define minitsvcdir	%minitdir/services/dhcp-fwd
+%define service		dhcp-fwd
 
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	1
+Release:	0
 Epoch:		0
 License:	GPL
 Group:		System Environment/Daemons
 URL:		http://www.tu-chemnitz.de/~ensc/dhcp-fwd
-Source0:	http://www.tu-chemnitz.de/~ensc/dhcp-fwd/files/%{name}-%{version}.tar.bz2
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+Source0:	http://www.tu-chemnitz.de/~ensc/dhcp-fwd/files/%name-%version.tar.bz2
+BuildRoot:	%_tmppath/%name-%version-%release-root
 Requires:		init(dhcp-forwarder)
 Requires(pre):		/usr/sbin/useradd /usr/sbin/groupadd
 Requires(postun):	/usr/sbin/userdel /usr/sbin/groupdel
@@ -28,8 +29,7 @@ BuildRequires:	dietlibc
 Summary:		SysV initscripts for dhcp-forwarder
 Group:			System Environment/Base
 Provides:		init(dhcp-forwarder)
-Requires:		%{name} = %{epoch}:%{version}-%{release}
-Requires(postun):	%{name}
+Requires(postun):	%name = %epoch:%version-%release
 Requires(preun):	initscripts
 Requires(postun):	initscripts
 Requires(post):		/sbin/chkconfig
@@ -40,7 +40,7 @@ Requires(preun):	/sbin/chkconfig
 Summary:		minit initscripts for dhcp-forwarder
 Group:			System Environment/Base
 Provides:		init(dhcp-forwarder)
-Requires:		%{name} = %{epoch}:%{version}-%{release}
+Requires:		%name = %epoch:%version-%release
 Requires(pre):		minit-setup
 Requires(postun):	minit-setup
 
@@ -85,7 +85,10 @@ with the minit initconcept.
 
 
 %build
-%configure --enable-release %{?_without_dietlibc:--disable-dietlibc}
+%configure \
+	--enable-release \
+        --with-initrddir=%_initrddir \
+	%{?_without_dietlibc:--disable-dietlibc}
 %__make %{?_smp_mflags}
 
 
@@ -95,21 +98,8 @@ with the minit initconcept.
 %install
 rm -rf $RPM_BUILD_ROOT
 
-%__make DESTDIR=$RPM_BUILD_ROOT install
-
-## The SysV part...
-%__install -d       $RPM_BUILD_ROOT{%_sysconfdir/sysconfig,%_initrddir}
+%__make DESTDIR=$RPM_BUILD_ROOT install install-contrib
 %__install -d -m700 $RPM_BUILD_ROOT%homedir
-%__install -p -m755 contrib/dhcp-fwd.init      $RPM_BUILD_ROOT%_initrddir/dhcp-fwd
-%__install -p -m644 contrib/dhcp-fwd.sysconfig $RPM_BUILD_ROOT%_sysconfdir/sysconfig/dhcp-fwd
-%__install -p -m644 contrib/dhcp-fwd.conf      $RPM_BUILD_ROOT%_sysconfdir/
-
-
-## The minit part...
-%__install -d -m755 $RPM_BUILD_ROOT%minitsvcdir
-%__install -p -m755 contrib/dhcp-fwd-run $RPM_BUILD_ROOT%minitsvcdir/run
-touch $RPM_BUILD_ROOT%minitsvcdir/respawn
-chmod 0644 $RPM_BUILD_ROOT%minitsvcdir/respawn
 
 
 ##---------------------------------------------
@@ -156,7 +146,6 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING ChangeLog NEWS README THANKS
 %_mandir/*/*
-%config(noreplace) %_sysconfdir/sysconfig/*
 %config(noreplace) %_sysconfdir/dhcp-fwd.conf
 %_sbindir/*
 
@@ -169,21 +158,26 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
 %files sysv
 %defattr(-,root,root,-)
 %config %_initrddir/*
+%config(noreplace) %_sysconfdir/sysconfig/*
 
 
 %files minit
 %defattr(-,root,root,-)
 %dir %minitsvcdir
-%config %minitsvcdir/run
+%minitsvcdir/run
 %minitsvcdir/respawn
-
+%config(noreplace) %minitsvcdir/params
 
 
 %changelog
-* Thu Aug  7 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:@VERSION@-1
+* Thu Aug  7 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:0.5.1-0
 - added minit support
 - removed superfluous %%doc attribute of %%_mandir entries
 - removed superfluous curlies
+- use 'install-contrib' and cleaned up %%install section
+- moved /etc/sysconfig/* file into -sysv subpackage; it is not used by
+  -minit anymore
+- minor cleanups
 
 * Wed Jul 30 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:0.5-0.fdr.1
 - updated to version 0.5
@@ -195,7 +189,7 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
   the %%post/%%preun scriptlets directly
 - do not call '--install-contrib' anymore; it creates too much
   clutter to make sure that the initscripts will be installed into
-  %%{_initrddir} but not in /etc/init.d. Instead of, install the
+  %%_initrddir but not in /etc/init.d. Instead of, install the
   scripts manually.
 
 * Fri May  2 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:0.4-0.fdr.1
@@ -216,7 +210,7 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
 - Enhanced %postun script
 
 * Mon Jun 17 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2-2
-- Described purpose of the %%{homedir} and its handling
+- Described purpose of the %%homedir and its handling
 
 * Fri Jun 14 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2-1
 - Added manpage
