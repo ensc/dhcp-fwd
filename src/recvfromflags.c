@@ -38,7 +38,7 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
   iov[0].iov_base    = ptr;
   iov[0].iov_len     = nbytes;
   msg.msg_iov        = iov;
-  msg.msg_iovlen     = 0;
+  msg.msg_iovlen     = 1;
 
   n = recvmsg(fd, &msg, *flagsp);
     /*@-compdef@*/
