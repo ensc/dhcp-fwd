@@ -27,12 +27,19 @@ dnl
 AC_INIT(dhcp-forwarder, 0.1, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE([gnits dist-bzip2])
+AM_INIT_AUTOMAKE([gnits dist-bzip2 subdir-objects])
 
 AM_MAINTAINER_MODE
 
+
+# Default settings
+
+enable_logging_default=no
+
+
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_AWK
 
@@ -43,8 +50,48 @@ ENSC_DIET
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
 LF_CHECK_CC_FLAG(${RELEASE_CFLAGS})
-LF_CHECK_CC_FLAG([-std=c99 -pedantic -Wall -Wno-unused-function])
+LF_CHECK_CC_FLAG([-Wall -Wno-unused-function])
+
+if test x"${ensc_cv_use_dietlibc}" = x; then
+	dnl dietlibc <= 0.17 does not compile with -std=c99... :(
+	LF_CHECK_CC_FLAG([-std=c99 -pedantic])
+elif which $CC gcc &>/dev/null; then
+	dnl Fix cross-compiler detection of dietlibc since it is
+	dnl broken when using names like i386-redhat-linux-gcc
+	if test x"$CC" != xgcc; then
+		i1=`ls -i $(which $CC) | { read a b; echo $a; }`
+		i2=`ls -i $(which gcc) | { read a b; echo $a; }`
 	
+		AC_MSG_CHECKING([whether to use gcc instead of $CC])
+		if test $i1 = $i2; then
+			CC=gcc
+			AC_MSG_RESULT(yes)
+		else
+			AC_MSG_RESULT(no)
+		fi
+	fi
+fi
+
+AC_MSG_CHECKING(whether to enable logging)
+AC_ARG_ENABLE(logging,
+	      [AC_HELP_STRING([--enable-logging],
+			      [Enables logging of received
+			       packages. Will increase code-size and
+			       adds potential attack-points (disabled
+			       by default)])],
+	      [case "${enableval}" in
+		 yes|no)  enable_logging="${enableval}";;
+		 *)       AC_MSG_ERROR([bad value ${enableval} for '--enable-logging']);;
+	       esac],
+              [enable_logging=${enable_logging_default}])
+AC_MSG_RESULT(${enable_logging})
+
+if test x"${enable_logging}" = xyes; then
+	AC_DEFINE(ENABLE_LOGGING, 1, [Enables logging if set])
+	AM_CONDITIONAL(ENABLE_LOGGING, true)
+else
+	AM_CONDITIONAL(ENABLE_LOGGING, false)
+fi
 
 # Checks for libraries.
 
