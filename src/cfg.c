@@ -287,7 +287,8 @@ showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 			 "  -v              show version\n"
 			 "  -h              show help\n"
 			 "  -c <filename>   read configuration from <filename>\n"
-			 "  -d              debug-mode; do not fork separate process\n\n"
+			 "  -n              do not fork separate process\n"
+			 "  -d              debug-mode; same as '-n'\n\n"
 			 "Report bugs to Enrico Scholz <"
 			 PACKAGE_BUGREPORT
 			 ">\n");
@@ -339,17 +340,21 @@ initializeSystem(int argc, char *argv[],
   int				pidfile_fd;
   bool				do_fork  = true;
 
-  while (i<argc) {
-      /*@-boundsread@*/
-    if      (strcmp(argv[i], "-v")==0) { showVersion();     exit(0); }
-    else if (strcmp(argv[i], "-h")==0) { showHelp(argv[0]); exit(0); }
-    else if (strcmp(argv[i], "-d")==0)             {      do_fork  = false;   }
-    else if (strcmp(argv[i], "-c")==0 && i+1<argc) { ++i; cfg_name = argv[i]; }
-      /*@=boundsread@*/
-    else scEXITFATAL("Bad cmd-line option; use '-h' to get help");
+  while (true) {
+    int c = getopt(argc, argv, "vhdnc:");
+    if (c==-1) break;
 
-    ++i;
+    switch (c) {
+      case 'v'	:  showVersion();     exit(0);
+      case 'h'	:  showHelp(argv[0]); exit(0);
+      case 'd'	:
+      case 'n'	:  do_fork = false;   break;
+      case 'c'	:  cfg_name = optarg; break;
+      default	:  scEXITFATAL("Use '-h' to get help about possible options");
+    }
   }
+
+  if (argv[optind]!=0) scEXITFATAL("No extra-args allowed; use '-h' to get help.");
 
     /*@-boundswrite@*/
   getConfig(cfg_name, &cfg);
