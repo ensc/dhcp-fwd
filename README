@@ -113,7 +113,7 @@ configuration for the real-world scenario described in its header:
 
  --------------              ----------              -------------
 |  DHCP Server |            |          |            |             |
-| 192.168.8.67 |------<eth1>| dhcp-fwd |<eth2>------|   Clients   |
+| 192.168.8.66 |------<eth1>| dhcp-fwd |<eth2>------|   Clients   |
 |              |            |          |            |             |
  --------------              ----------              -------------
 
@@ -125,7 +125,7 @@ following environment:
 
  --------------              ----------              -------------
 |  DHCP Server |            |          |            |             |
-| 192.168.8.67 |------<eth1>| Firewall |<eth2>------|   Clients   |
+| 192.168.8.66 |------<eth1>| Firewall |<eth2>------|   Clients   |
 |              |            |          |            |             |
  --------------              ----------             |   ~~~~~~    |
 						    |  |dhcp- |   |
