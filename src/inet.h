@@ -31,8 +31,10 @@
 
 #include "compat.h"
 
-static const uint16_t		DHCP_PORT_SERVER = 67;
-static const uint16_t		DHCP_PORT_CLIENT = 68;
+enum {
+  DHCP_PORT_SERVER = 67,
+  DHCP_PORT_CLIENT = 68
+};
 
 struct DHCPllPacket
 {
