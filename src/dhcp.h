@@ -136,7 +136,7 @@ DHCP_zeroOption(struct DHCPSingleOption *opt)
 
     
   for (i=0; i<len; ++i) {
-    static_cast(uint8_t *)(opt)[i] = cdPAD;
+    reinterpret_cast(uint8_t *)(opt)[i] = cdPAD;
   }
 }
 
