@@ -206,6 +206,29 @@ getConfig(char const		*filename,
   fillInterfaceInfo(&cfg->interfaces);
 }
 
+inline static void
+showVersion()
+{
+  write(1, PACKAGE_STRING, strlen(PACKAGE_STRING));
+  write(1, "\n", 1);
+}
+
+inline static void
+showHelp(char const *cmd)
+{
+  showVersion();
+  write(1, "\nusage: ", 8	);
+  write(1, cmd, strlen(cmd));
+  write(1, " [-v] [-h] [-c <filename>] [-d]\n\n", 33);
+  write(1, "  -v              show version\n", 31);
+  write(1, "  -h              show help\n",    28);
+  write(1, "  -c <filename>   read configuration from <filename>\n", 53);
+  write(1, "  -d              debug-mode; do not fork separate process\n\n", 60);
+  write(1, "Report bugs to Enrico Scholz <", 30);
+  write(1, PACKAGE_BUGREPORT, sizeof(PACKAGE_BUGREPORT)-1);
+  write(1, ">\n", 2);
+}
+
 int
 initializeSystem(int argc, char *argv[],
 		 struct InterfaceInfoList *	ifs,
@@ -222,7 +245,9 @@ initializeSystem(int argc, char *argv[],
   while (i<argc) {
     if      (strcmp(argv[i], "-c")==0) { cfg_name = argv[i+1]; i+=2; }
     else if (strcmp(argv[i], "-d")==0) { do_fork  = false;     ++i;  }
-    else EXITFATAL("Bad cmd-line option");
+    else if (strcmp(argv[i], "-v")==0) { showVersion(); exit(0); }
+    else if (strcmp(argv[i], "-h")==0) { showHelp(argv[0]); exit(0); }
+    else EXITFATAL("Bad cmd-line option; use '-h' to get help");
   }
   
   getConfig(cfg_name, &cfg);
@@ -242,7 +267,8 @@ initializeSystem(int argc, char *argv[],
   else         pid = 0;
 
   switch (pid) {
-    case -1	:
+    case -1	:  break;
+      
     case 0	:
       if (cfg.chroot_path[0]!=0) {
 	Echdir (cfg.chroot_path);
@@ -251,8 +277,11 @@ initializeSystem(int argc, char *argv[],
   
       Esetgid(cfg.uid);
       Esetuid(cfg.gid);
+      break;
+      
     default	:
       writeUInt(pidfile_fd, pid);
+      write(pidfile_fd, "\n", 1);
       break;
   }
   
