@@ -1,5 +1,5 @@
 .\" $Id$
-.\" Copyright (C) 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+.\" Copyright (C) 2002,2003,2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 .\"  
 .\" Permission is granted to make and distribute verbatim copies of
 .\" this manual provided the copyright notice and this permission notice
@@ -20,7 +20,7 @@
 .\" except that this permission notice may be stated in a translation
 .\" approved by the Free Software Foundation
 .\"  
-.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.6"
+.TH dhcp-fwd 1 "June 17 2004" "@PACKAGE@ 0.6"
 .\"
 .\" ====================
 .\"
