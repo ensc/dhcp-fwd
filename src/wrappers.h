@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <stdio.h>
 #include <alloca.h>
+#include <sys/resource.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -181,6 +182,13 @@ Esetsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
   FatalErrnoError(setsockopt(s, level, optname, optval, optlen)==-1,
 		  1, "setsockopt()");
+}
+
+/*@unused@*/
+inline static void
+Esetrlimit(int resource, /*@in@*/struct rlimit const *rlim)
+{
+  FatalErrnoError(setrlimit(resource, rlim)==-1, 1, "setrlimit()");
 }
 
 /*@unused@*/
