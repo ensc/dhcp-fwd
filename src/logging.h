@@ -23,7 +23,20 @@
 #  include <config.h>
 #endif
 
+#include <netinet/in.h>
+
 #define LOG(MSG)	((void)write(2, MSG, sizeof(MSG)))
 #define LOGSTR(MSG)	((void)write(2, MSG, strlen(MSG)))
 
+#ifdef ENABLE_LOGGING
+void logDHCPPackage(char const *buffer, size_t len,
+		    struct in_pktinfo const	*pkinfo,
+		    void const			*addr);
+#endif
+
 #endif	//  DHCP_FORWARDER_LOGGING_H
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:
