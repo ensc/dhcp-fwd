@@ -326,19 +326,35 @@ freeLimitList(struct UlimitInfoList *limits)
   limits->len=0;
 }
 
-  /*@-superuser@*/
-int
-initializeSystem(int argc, char *argv[],
-		 struct InterfaceInfoList *	ifs,
-		 struct ServerInfoList *	servers,
-		 struct FdInfoList *		fds)
+inline static pid_t
+initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
 {
-  struct ConfigInfo		cfg;
-  /*@dependent@*/char const *	cfg_name = CFG_FILENAME;
-  int				i = 1;
-  pid_t				pid;
-  int				pidfile_fd;
-  bool				do_fork  = true;
+  assert(cfg!=0);
+  
+  if (cfg->do_fork) Esetsid();
+
+  Eclose(1);
+      
+  if (cfg->chroot_path[0]!='\0') {
+    Echdir (cfg->chroot_path);
+    Echroot(cfg->chroot_path);
+  }
+  
+  Esetgroups(1, &cfg->gid);
+  Esetgid(cfg->gid);
+  Esetuid(cfg->uid);
+
+  limitResources(&cfg->ulimits);
+
+  if (cfg->do_fork) return 0;
+  else              return getpid();
+}
+
+inline static void
+parseCommandline(int argc, char *argv[],
+		 /*@out@*/struct ConfigInfo *	cfg)
+{
+  assert(cfg!=0);
 
   while (true) {
     int c = getopt(argc, argv, "vhdnc:");
@@ -348,16 +364,33 @@ initializeSystem(int argc, char *argv[],
       case 'v'	:  showVersion();     exit(0);
       case 'h'	:  showHelp(argv[0]); exit(0);
       case 'd'	:
-      case 'n'	:  do_fork = false;   break;
-      case 'c'	:  cfg_name = optarg; break;
+      case 'n'	:  cfg->do_fork       = false;  break;
+      case 'c'	:  cfg->conffile_name = optarg; break;
       default	:  scEXITFATAL("Use '-h' to get help about possible options");
     }
   }
-
+  
   if (argv[optind]!=0) scEXITFATAL("No extra-args allowed; use '-h' to get help.");
+}
+
+  /*@-superuser@*/
+int
+initializeSystem(int argc, char *argv[],
+		 struct InterfaceInfoList *	ifs,
+		 struct ServerInfoList *	servers,
+		 struct FdInfoList *		fds)
+{
+  struct ConfigInfo		cfg;
+  pid_t				pid, pidfile_pid;
+  int				pidfile_fd;
+
+  cfg.conffile_name = CFG_FILENAME;
+  cfg.do_fork       = true;
+
+  parseCommandline(argc, argv, &cfg);
 
     /*@-boundswrite@*/
-  getConfig(cfg_name, &cfg);
+  getConfig(cfg.conffile_name, &cfg);
   initFDs(fds, &cfg);
     /*@=boundswrite@*/
 
@@ -369,38 +402,28 @@ initializeSystem(int argc, char *argv[],
 
   Eclose(0);
 
-  if (do_fork) pid = fork();
-  else         pid = 0;
+  if (cfg.do_fork) pid = fork();
+  else             pid = 0;
+
+  pidfile_pid = 0;
 
   switch (pid) {
-    case -1	:
-      perror("fork()");
-      break;
-      
     case 0	:
-      Eclose(1);
-      
-      if (cfg.chroot_path[0]!='\0') {
-	Echdir (cfg.chroot_path);
-	Echroot(cfg.chroot_path);
-      }
-  
-      Esetgroups(1, &cfg.gid);
-      Esetgid(cfg.gid);
-      Esetuid(cfg.uid);
-
-      limitResources(&cfg.ulimits);
+      pidfile_pid = initializeDaemon(&cfg);
       break;
       
-    default	:
-      writeUInt(pidfile_fd, pid);
-      (void)write(pidfile_fd, "\n", 1);
-      break;
+    case -1	:  perror("fork()");  break;
+    default	:  pidfile_pid = pid; break;
   }
-  
+
+  if (pidfile_pid!=0) {
+    writeUInt(pidfile_fd, pidfile_pid);
+    (void)write(pidfile_fd, "\n", 1);
+  }
+	  
   freeLimitList(&cfg.ulimits);
 
-    /* It is too late to handle an error here. So just ignore the error... */
+    /* It is too late to handle an error here. So just ignore it... */
   (void)close(pidfile_fd);
   return pid;
 }
