@@ -35,7 +35,7 @@
 #include <sys/select.h>
 #include <sys/param.h>
 #include <errno.h>
-#include <netpacket/packet.h>
+#include "compat/if_packet.h"
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
 
