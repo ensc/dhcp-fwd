@@ -29,6 +29,7 @@
 #include <limits.h>
 
 #include "util.h"
+#include "compat.h"
 
 struct InterfaceInfo {
     char	name[IFNAMSIZ];	//< name of the interface
@@ -97,3 +98,8 @@ extern int		initializeSystem(int argc, char *argv[],
 					 struct FdInfoList *		fds);
 
 #endif	// DHCP_FORWARDER_CONFIG_H
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:

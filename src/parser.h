@@ -28,3 +28,8 @@ void		parse(/*@in@*/char const		*filename,
 
 
 #endif	//  DHCP_FORWARDER_PARSER_H
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:

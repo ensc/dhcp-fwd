@@ -53,3 +53,8 @@ checkCompileTimeAssertions()
 }
 
 #endif	/* DHCP_FORWARDER_ASSERTIONS_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:

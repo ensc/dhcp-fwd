@@ -36,3 +36,8 @@ writeUInt(int fd, unsigned int val)
 
   write(fd, ptr+1, buffer+sizeof(buffer) - ptr - 1);
 }
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:

@@ -26,3 +26,8 @@
 void		writeUInt(int fd, unsigned int val);
 
 #endif	//  DHCP_FORWARDER_OUTPUT_H
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:

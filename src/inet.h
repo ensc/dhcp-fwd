@@ -45,3 +45,8 @@ struct DHCPllPacket
 } __attribute__((__packed__));
 
 #endif	/* DHCP_FORWARDER_INET_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:
