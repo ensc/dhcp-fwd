@@ -331,7 +331,7 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
 {
   assert(cfg!=0);
   
-  if (cfg->do_fork) Esetsid();
+  if (cfg->do_fork) (void)Esetsid();
 
   Eclose(1);
       
@@ -357,7 +357,7 @@ parseCommandline(int argc, char *argv[],
   assert(cfg!=0);
 
   while (true) {
-    int c = getopt(argc, argv, "vhdnc:");
+    int c = getopt(argc, argv, "vhdnc:-");
     if (c==-1) break;
 
     switch (c) {
@@ -367,6 +367,12 @@ parseCommandline(int argc, char *argv[],
       case 'n'	:  cfg->do_fork       = false;  break;
       case 'c'	:  cfg->conffile_name = optarg; break;
       default	:  scEXITFATAL("Use '-h' to get help about possible options");
+      case '-'	:
+	if (strcmp(argv[optind], "--version")==0) { showVersion();     exit(0); }
+	if (strcmp(argv[optind], "--help")==0)    { showHelp(argv[0]); exit(0); }
+	  /*@fallthrough@*/
+      default	:
+	scEXITFATAL("Use '-h' to get help about possible options");
     }
   }
   
