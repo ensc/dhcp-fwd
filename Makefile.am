@@ -39,13 +39,15 @@ endif
 
 sbin_PROGRAMS		=  dhcp-fwd
 EXTRA_dhcp_fwd_SOURCES	=  src/logging.c
-dhcp_fwd_SOURCES	=  src/config.c src/recvfromflags.c src/main.c		\
-			   src/parser.c src/output.c $(logging_SRCS)
+dhcp_fwd_SOURCES	=  src/parser.c src/main.c src/cfg.c src/recvfromflags.c 		\
+			    src/output.c $(logging_SRCS)
 
 AM_CPPFLAGS		=  -DCFG_FILENAME='"$(cfg_filename)"'
 
-noinst_HEADERS		=  src/compat.h src/config.h src/dhcp.h src/inet.h	\
-			   src/recvfromflags.h src/splint_compat.h		\
+splint_HDRS		=  src/splint.h src/splint_compat.h
+
+noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
+			   src/dhcp.h src/inet.h src/recvfromflags.h		\
 			   src/util.h src/wrappers.h src/assertions.h		\
 			   src/parser.h src/output.h src/logging.h
 
@@ -58,9 +60,14 @@ EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 %.1:			%.man
 			$(MAKE) substvar VARS='sysconfdir sbindir PACKAGE VERSION' INFILE='$<' OUTFILE='$@'
 
+$(PACKAGE).lcd:		Makefile.am splint.conf $(noinst_HEADERS)
+			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -dump $@.tmp -f splint.conf $(noinst_HEADERS)
+			-rm -f $@
+			mv $@.tmp $@
 
 splint:
-			splint -f splint.conf $(basename ${dhcp_fwd_SOURCES} ${EXTRA_dhcp_fwd_SOURCES})
+			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -f splint.conf 	\
+				$(dhcp_fwd_SOURCES) $(EXTRA_dhcp_fwd_SOURCES)
 
 install-contrib:
 			$(mkinstalldirs) $(DESTDIR)/etc/init.d
