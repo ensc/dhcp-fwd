@@ -117,6 +117,10 @@ struct ConfigInfo {
     
     struct InterfaceInfoList		interfaces;
     struct ServerInfoList		servers;
+
+      // Commandline options
+    char const *			conffile_name;
+    bool				do_fork;
 };
 
   /*@-superuser@*/
