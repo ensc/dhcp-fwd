@@ -72,8 +72,6 @@ and enabled permanently with
 
 BUGS
 ====
-- no documentation; only contrib/dhcp-fwd.conf contains some information
-
 - bad behavior when serverside-interface has a smaller MTU than the
   MTU on the server itself. An example is
 
