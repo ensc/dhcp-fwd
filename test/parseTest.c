@@ -57,7 +57,7 @@ int main(int argc, char const *argv[])
   parse(argv[1], &cfg);
 
   showUInt("uid", cfg.uid);
-  showUInt("uid", cfg.gid);
+  showUInt("gid", cfg.gid);
   showString("chroot_path", cfg.chroot_path);
   showString("logfile_name", cfg.logfile_name);
   showString("pidfile_name", cfg.pidfile_name);

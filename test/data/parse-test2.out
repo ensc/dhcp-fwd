@@ -1,5 +1,5 @@
 uid=1
-uid=1
+gid=1
 chroot_path='/var/tmp'
 logfile_name='/var/tmp/dhcp-fwd.log'
 pidfile_name='/var/run/dhcp-fwd.pid'
