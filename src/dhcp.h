@@ -36,8 +36,15 @@ struct DHCPHeader  {
     uint16_t	secs;
     
     struct __attribute__((__packed__)) {
-	int	bcast:1;
-	int	mbz:15;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	unsigned int	mbz1:7;
+	unsigned int	bcast:1;
+	unsigned int	mbz2:8;
+#else
+	unsigned int	bcast:1;
+	unsigned int	mbz1:7;
+	unsigned int	mbz2:8;
+#endif	
     }		flags;
 
     in_addr_t	ciaddr;
@@ -61,13 +68,17 @@ struct DHCPSingleOption {
     __extension__ uint8_t	data __flexarr;
 } __attribute__((__packed__));
 
-static uint8_t const		MAX_HOPS	= 16;
+enum {
+  MAX_HOPS	= 16
+};
 
+enum {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  static uint32_t const		DHCP_COOKIE	= 0x63538263;
+  DHCP_COOKIE	= 0x63538263
 #else
-  static uint32_t const		DHCP_COOKIE	= 0x63825363;
+  DHCP_COOKIE	= 0x63825363
 #endif
+};
 
 enum {
   opBOOTREQUEST	= 1u,
