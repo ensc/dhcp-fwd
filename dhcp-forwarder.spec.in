@@ -1,5 +1,7 @@
 ## $Id$		--*- rpm-spec -*--
 
+%define		homedir		%{_var}/lib/dhcpfwd
+
 Summary:	An DHCP relay agent
 Name:		dhcp-forwarder
 Version:	0.1
@@ -7,7 +9,7 @@ Release:	0.1
 License:	GPL
 Group:		System Environment/Daemons
 URL:		http://www.tu-chemnitz.de/~ensc/dhcpfwd
-Source0:	 %{name}-%{version}.tar.bz2
+Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
 BuildRequires:	dietlibc
 
@@ -18,22 +20,51 @@ BuildRequires:	dietlibc
 %setup -q
 
 %build
-%configure
+## When not setting CC, ./configure will choose a name like
+## i386-redhat-linux-gcc which breaks the cross-compile detection of
+## 'diet' :(
+%configure --enable-release
 make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=${RPM_BUILD_ROOT}
+
+make DESTDIR=${RPM_BUILD_ROOT} install install-contrib
+
+install -d ${RPM_BUILD_ROOT}%{_sysconfdir}
+install -m 644 contrib/dhcp-fwd.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/
+install -m700 -d ${RPM_BUILD_ROOT}%{homedir}
 
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+
+%pre
+/usr/sbin/adduser -r -s /sbin/nologin -d %{homedir} -M		\
+	 	  -c 'DHCP Forwarder user' dhcpfwd &>/dev/null || true
+
+%post
+/sbin/chkconfig --add dhcp-fwd
+
+%preun
+if test "$1" = "0"; then
+	/sbin/chkconfig --del dhcp-fwd
+fi
+
+%postun
+if test "$1" = "0"; then
+	/usr/sbin/userdel dhcpfwd &>/dev/null || true
+fi
+
+
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README THANKS
+%config /etc/init.d/*
+%config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
-
+%{homedir}
 
 
 %changelog
