@@ -85,8 +85,9 @@ lookupFD(/*@in@*/struct in_addr const addr)
 
   for (i=0; i<fds.len; ++i) {
     struct FdInfo const * const		fd = fds.dta + i;
-    
-    if (fd->iface->if_ip==addr.s_addr) return fd;
+
+      /* We must check for the real IP here since IP_PKTINFO returns it... */
+    if (fd->iface->if_real_ip==addr.s_addr) return fd;
   }
 
   return 0;
