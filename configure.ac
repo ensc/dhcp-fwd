@@ -134,11 +134,13 @@ AC_CHECK_FUNCS([gettimeofday inet_ntoa localtime_r memset select socket strerror
 AH_TOP([
 #ifndef H_DHCP_FORWARDER_TOP_CONFIG_H
 #define H_DHCP_FORWARDER_TOP_CONFIG_H
+/*@@--namechecks@*/
 ])
 
 AH_BOTTOM([
+/*@=namechecks@*/
 #endif	/* H_DHCP_FORWARDER_TOP_CONFIG_H */
 ])
 
-AC_CONFIG_FILES([Makefile m4/Makefile dhcp-forwarder.spec])
+AC_CONFIG_FILES([Makefile m4/Makefile test/Makefile dhcp-forwarder.spec])
 AC_OUTPUT
