@@ -176,10 +176,8 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     ifinfo->if_idx = (unsigned int)(iface.ifr_ifindex);
       /*@=usedef@*/
 
-    if (ifinfo->if_ip==INADDR_NONE) {
-      if (ioctl(fd, SIOCGIFADDR,   &iface)==-1) goto err;
-      ifinfo->if_ip  = sockaddrToInet4(&iface.ifr_addr);
-    }
+    if (ioctl(fd, SIOCGIFADDR,   &iface)==-1) goto err;
+    ifinfo->if_real_ip = sockaddrToInet4(&iface.ifr_addr);
 
     if (ioctl(fd, SIOCGIFMTU,    &iface)==-1) goto err;
     ifinfo->if_mtu = static_cast(size_t)(iface.ifr_mtu);
@@ -187,6 +185,9 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     if (ioctl(fd, SIOCGIFHWADDR, &iface)==-1) goto err;
     sockaddrToHwAddr(&iface.ifr_hwaddr,
 		     ifinfo->if_mac, &ifinfo->if_maclen);
+
+    if (ifinfo->if_ip==INADDR_NONE)
+      ifinfo->if_ip = ifinfo->if_real_ip;
   }
   
   Eclose(fd);
@@ -289,11 +290,10 @@ limitResources()
       int		res;
       struct rlimit	limit;
   } syslimit[] = {
-    { RLIMIT_FSIZE,   { 64, 64 } },	// for the PID-file...
+      //{ RLIMIT_FSIZE,   { 64, 64 } },	// for the PID-file...
     { RLIMIT_DATA,    { 0x10000, 0x10000 } },
     { RLIMIT_STACK,   { 0x10000, 0x10000 } },
     { RLIMIT_AS,      { 0, 0 } },
-    { RLIMIT_NPROC,   { 1, 1 } },
     { RLIMIT_NOFILE,  { 0, 0 } },
     { RLIMIT_MEMLOCK, { 0, 0 } },
     { RLIMIT_LOCKS,   { 0, 0 } } };
@@ -343,13 +343,13 @@ initializeSystem(int argc, char *argv[],
 
   Eclose(0);
 
-  limitResources();
-
   if (do_fork) pid = fork();
   else         pid = 0;
 
   switch (pid) {
-    case -1	:  break;
+    case -1	:
+      perror("fork()");
+      break;
       
     case 0	:
       if (cfg.chroot_path[0]!='\0') {
@@ -359,6 +359,8 @@ initializeSystem(int argc, char *argv[],
   
       Esetgid(cfg.uid);
       Esetuid(cfg.gid);
+
+      limitResources();
       break;
       
     default	:
