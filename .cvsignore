@@ -1,3 +1,4 @@
+*.lcd
 ._*-up-to-date
 .deps
 .gdb_history
@@ -7,6 +8,7 @@ aclocal.m4
 autom4te-2.53.cache
 autoscan.log
 compile
+compile-test
 config.cache
 config.h
 config.log
@@ -14,7 +16,6 @@ config.status
 configure.scan
 depcomp
 dhcp-forwarder-*.tar.*
-*.lcd
 dhcp-forwarder.spec
 dhcp-fwd
 install-sh
