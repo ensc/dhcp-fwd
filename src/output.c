@@ -43,10 +43,13 @@ openMsgfile(/*@in@*//*@null@*/char const *filename)
   if (filename==0 || filename[0]=='\0')        { msg_fd =  2; }
   else if (strcmp(filename, "/dev/null")==0)   { msg_fd = -1; }
   else {
-    msg_fd = Eopen(filename, O_CREAT|O_WRONLY|O_APPEND);
-    msg_fd = Edup2(msg_fd, 2);
-
+    int		new_fd;
+    
+    new_fd = Eopen(filename, O_CREAT|O_WRONLY|O_APPEND);
+    msg_fd = Edup2(new_fd, 2);
     assert(msg_fd==2);
+    
+    Eclose(new_fd);
   }
 }
 
@@ -56,7 +59,7 @@ writeMsgTimestamp()
 {
   struct timeval		tv;
   time_t			aux;
-  size_t			fill_cnt = 0;
+  size_t			fill_cnt = 1;
 
   if (msg_fd==-1) return;
   
@@ -79,11 +82,12 @@ writeMsgTimestamp()
     }
   }
 
-  aux = tv.tv_usec;
-  assert(aux>=0);
+  aux  = tv.tv_usec;
+  aux |= 1; // Prevent 'aux==0' which will cause an endless-loop below
+  assert(aux>0);
   
   while (aux<100000) { ++fill_cnt; aux *= 10; }
-  (void)write(msg_fd, "00000", fill_cnt);
+  (void)write(msg_fd, ".000000", fill_cnt);
   writeUInt(msg_fd, static_cast(unsigned int)(tv.tv_usec));
 }
 
