@@ -30,12 +30,14 @@
 #include <alloca.h>
 #include <sys/resource.h>
 #include <grp.h>
+#include <fcntl.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
 #include "util.h"
 #include "recvfromflags.h"
+#include "compat.h"
 
   /*@-internalglobs@*//*@-modfilesys@*/
 /*@unused@*//*@noreturnwhentrue@*/
@@ -175,6 +177,44 @@ Ealloca(size_t size)
 }
 
 /*@unused@*/
+inline static int
+Edup(int fd)
+    /*@globals internalState, fileSystem@*/
+    /*@modifies internalState, fileSystem@*/
+{
+  int		res = dup(fd);
+
+  FatalErrnoError(res==-1, 1, "dup()");
+
+  return res;
+}
+
+/*@unused@*/
+inline static int
+Edup2(int oldfd, int newfd)
+    /*@globals internalState, fileSystem@*/
+    /*@modifies internalState, fileSystem@*/
+{
+  int		res = dup2(oldfd, newfd);
+
+  FatalErrnoError(res==-1, 1, "dup2()");
+
+  return res;
+}
+
+/*@unused@*/
+inline static int
+Eopen(char const *pathname, int flags)
+    /*@globals internalState@*/
+    /*@modifies internalState@*/
+{
+  int		res = open(pathname, flags);
+  FatalErrnoError(res==-1, 1, "open()");
+
+  return res;
+}
+
+/*@unused@*/
 inline static int 
 Esocket(int domain, int type, int protocol)
     /*@globals internalState@*/
@@ -224,7 +264,11 @@ Esetrlimit(int resource, /*@in@*/struct rlimit const *rlim)
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno@*/
 {
+#if (defined(__GLIBC__) && __GLIBC__>=2) && defined(__cplusplus) && defined(_GNU_SOURCE)
+  FatalErrnoError(setrlimit(static_cast(__rlimit_resource)(resource), rlim)==-1, 1, "setrlimit()");
+#else  
   FatalErrnoError(setrlimit(resource, rlim)==-1, 1, "setrlimit()");
+#endif  
 }
 
 /*@unused@*/
