@@ -143,7 +143,7 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
     /*@requires maxSet(len)==1 /\ maxSet(mac)>=ETH_ALEN @*/
     /*@ensures  maxRead(mac)==(*len)@*/
 {
-  assert(addr!=0);
+  assert(addr!=0 && len!=0);
 
   switch (addr->sa_family) {
     case ARPHRD_EETHER	:
@@ -186,9 +186,12 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     if (ioctl(fd, SIOCGIFMTU,    &iface)==-1) goto err;
     ifinfo->if_mtu = static_cast(size_t)(iface.ifr_mtu);
 
-    if (ioctl(fd, SIOCGIFHWADDR, &iface)==-1) goto err;
-    sockaddrToHwAddr(&iface.ifr_hwaddr,
-		     ifinfo->if_mac, &ifinfo->if_maclen);
+    if (!ifinfo->need_mac) ifinfo->if_maclen = 0;
+    else {
+      if (ioctl(fd, SIOCGIFHWADDR, &iface)==-1) goto err;
+      sockaddrToHwAddr(&iface.ifr_hwaddr,
+		       ifinfo->if_mac, &ifinfo->if_maclen);
+    }
 
     if (ifinfo->if_ip==INADDR_NONE)
       ifinfo->if_ip = ifinfo->if_real_ip;

@@ -75,7 +75,7 @@ initCharacterClassification(/*@out@*/unsigned int *chrs)
 
   /*@+charintliteral@*/
   for (c='0'; c<='9'; ++c) chrs[c] |= (chrDIGIT | chrNUMBER | chrIP |
-			 	          chrSYS | chrUSERNAME);
+				       chrSYS | chrUSERNAME);
   for (c='A'; c<='Z'; ++c) chrs[c] |= chrUPPERALPHA | chrSYS | chrUSERNAME;
   for (c='a'; c<='z'; ++c) chrs[c] |= chrLOWALPHA   | chrSYS | chrUSERNAME;
   chrs['\r'] |= chrNL;
@@ -832,6 +832,7 @@ parse(/*@in@*/char const		fname[],
 	iface->has_clients = has_clients;
 	iface->has_servers = has_servers;
 	iface->allow_bcast = allow_bcast;
+	iface->need_mac    = has_clients;
 
 	state = 0xFFFE;
 	break;
@@ -926,12 +927,15 @@ parse(/*@in@*/char const		fname[],
       case 0x321	:
       {
 	struct ServerInfo	*server = newServer(&cfg->servers);
+	struct InterfaceInfo	*iface;
 
 	  // Reachable from state 0x320 only
 	assertDefined(ifname);
 
+	iface              = searchInterface(&cfg->interfaces, ifname);
+	iface->need_mac    = true;
 	server->type       = svBCAST;
-	server->info.iface = searchInterface(&cfg->interfaces, ifname);
+	server->info.iface = iface;
 	
 	state = 0xFFFE;
 	break;

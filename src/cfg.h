@@ -41,6 +41,8 @@ struct InterfaceInfo {
     bool	has_servers;	//< tells if DHCP servers are on this interface
     bool	allow_bcast;	//< honor bcast-flag and send to bcast address?
 
+    bool	need_mac;	//< tells if MAC will be required
+
     unsigned int	if_idx;		//< interface index
     in_addr_t		if_real_ip;	//< ip got by recvmsg()
     in_addr_t		if_ip;		//< ip to be set in 'giaddr' field
