@@ -20,7 +20,7 @@
 .\" except that this permission notice may be stated in a translation
 .\" approved by the Free Software Foundation
 .\"  
-.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.4"
+.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.6"
 .\"
 .\" ====================
 .\"
@@ -199,18 +199,21 @@ the system. To setup \fBthis\fR address, usual SNAT rulesets in a local
 packetfilter are recommended.
 .\"
 .TP
-.B server \fItype address
-Defines the DHCP server to be used. A server may be either an unicast
-IP-address or a broadcast address. In the first case, use
-.B ip
-as the
-.I type
-parameter and a dotted IP-address as
-.I address\fR;
-in the second one use
-.B bcast
-and the interface name as parameters.
-.PP
+.B server \fItype info
+Defines the DHCP server to be used. The following types are supported:
+.RS
+.TP
+.B server ip \fIaddress\fR [\fIinterface\fR]
+\fIaddress\fR is a dotted IP-address and the optional \fIinterface\fR
+the name of an interface. Please note that mixing declarations without
+an \fIinterface\fR parameter and such ones with this parameter will
+fail.
+.TP
+.B server bcast \fIinterface
+the DHCP server with be assumed at interface \fIinterface\fR and
+contacted with broadcast messages.
+.RE
+
 For an example see the contrib/dhcp-fwd.conf file in the
 source-tarball.
 .\"
