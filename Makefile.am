@@ -52,7 +52,7 @@ install-contrib:
 uninstall-contrib:
 			rm -f $(DESTDIR)/etc/init.d/dhcp-fwd
 
-
 include $(top_srcdir)/m4/validate.am
 include $(top_srcdir)/m4/changelog.am
 include $(top_srcdir)/m4/diet.am
+include $(top_srcdir)/m4/gpgsig.am
