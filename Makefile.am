@@ -57,7 +57,8 @@ noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
 			   src/dhcp.h src/inet.h src/recvfromflags.h		\
 			   src/util.h src/wrappers.h src/assertions.h		\
 			   src/parser.h src/output.h src/logging.h		\
-			   src/ulimit_codes.h
+			   src/ulimit_codes.h					\
+			   compat/if_packet.h
 
 CLEANFILES		=  doc/dhcp-fwd.1
 
