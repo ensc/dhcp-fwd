@@ -28,11 +28,16 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-typedef struct sockaddr	SA;
-
 extern ssize_t
-recvfrom_flags(int fd, void *ptr, size_t nbytes, int *flagsp,
-	       SA *sa, socklen_t *salenptr, struct in_pktinfo *pktp);
+recvfrom_flags(int fd, void *ptr, size_t nbytes,
+	       int *flagsp,
+	       struct sockaddr *sa, socklen_t *salenptr,
+	       struct in_pktinfo *pktp);
 
 
 #endif	/* DHCP_FORWARDER_SPLINT_RECVFROMFLAGS_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:
