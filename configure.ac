@@ -23,7 +23,7 @@ dnl distribution terms that you use for the rest of that program.
 dnl  
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.6, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.6.1, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -110,6 +110,8 @@ ENSC_HEADER_IF_PACKET
 
 # Checks for typedefs, structures, and compiler characteristics.
 ENSC_DIET_CHECK_IN_ADDR_T
+ENSC_DIET_TYPE_CHECK(DIET_HAS_STRUCT_ETHER_HEADER, [struct ether_header],
+		     [#include <netinet/ether.h>])
 
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -Werror -Wno-unused -Wno-uninitialized"
@@ -130,7 +132,8 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_STRFTIME
 AC_PROG_GCC_TRADITIONAL
-AC_CHECK_FUNCS([gettimeofday inet_ntoa localtime_r memset select socket strerror strtol])
+
+ENSC_DIET_CHECK_ETHER
 
 
 AH_TOP([
