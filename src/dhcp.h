@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <assert.h>
 
 #include "compat.h"
 #include "util.h"
