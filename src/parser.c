@@ -210,7 +210,6 @@ newInterface(struct InterfaceInfoList *ifs)
   assert(ifs->dta!=0);
   
   result        = &ifs->dta[ifs->len - 1];
-  result->if_ip = INADDR_NONE;
 
   memset(result->name, 0, sizeof result->name);
   memset(result->aid,  0, sizeof result->aid);
