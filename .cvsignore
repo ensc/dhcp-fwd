@@ -14,6 +14,7 @@ config.status
 configure.scan
 depcomp
 dhcp-forwarder-*.tar.*
+*.lcd
 dhcp-forwarder.spec
 dhcp-fwd
 install-sh
