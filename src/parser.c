@@ -32,30 +32,53 @@
 #include "util.h"
 #include "wrappers.h"
 #include "compat.h"
+#include "output.h"
 
-static int	look_ahead = -1;
-static int	fd;
+static int		look_ahead = -1;
+static int		fd;
+static unsigned int	line_nr, col_nr;
+static char const	*filename = 0;
 
-inline static int
-getNext()
+#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg))
+
+inline static void
+exitFatal(char const msg[], register size_t len)
 {
-  char		c;
-  int		cnt;
-  
+  write(2, filename, strlen(filename));
+  write(2, ":", 1);
+  writeUInt(2, line_nr);
+  write(2, ":", 1);
+  writeUInt(2, col_nr);
+  write(2, ": ", 2);
+  write(2, msg, len);
+  write(2, "\n", 1);
+
+  exit(3);
+}
+
+inline static void
+setNext()
+{
+  char			c;
+  register int		cnt;
+
+  ++col_nr;
   cnt = TEMP_FAILURE_RETRY(read(fd, &c, 1));
-  if (cnt==-1) {
-    write(2, "read() failed\n", 14);
-    exit(3);
+  if (cnt==-1) EXITFATAL("read() failed");
+
+  if (cnt>0 && c=='\n') {
+    ++line_nr;
+    col_nr = 0;
   }
-  look_ahead = -1;
-  
-  return cnt==0 ? -1 : c;
+
+  if (cnt==0) look_ahead = -1;
+  else        look_ahead =  c;
 }
 
 inline static int
 getLookAhead()
 {
-  if (look_ahead==-1) look_ahead = getNext();
+  if (look_ahead==-1) setNext();
 
   return look_ahead;
 }
@@ -63,18 +86,10 @@ getLookAhead()
 inline static void
 match(char c)
 {
-  int		got = getLookAhead();
+  register int		got = getLookAhead();
   
-  if (got==-1) {
-    write(2, "unexpected EOF while parsing\n", 29);
-    exit(3);
-  }
-
-  if (reinterpret_cast(char)(got)!=c) {
-    write(2, "unexpected symbol\n", 14);
-    assert(false);
-    exit(3);
-  }
+  if (got==-1)                        EXITFATAL("unexpected EOF while parsing");
+  if (reinterpret_cast(char)(got)!=c) EXITFATAL("unexpected symbol");
 
   look_ahead = -1;
 }
@@ -107,15 +122,12 @@ newServer(struct ServerInfoList *servers)
 inline static struct InterfaceInfo *
 searchInterface(struct InterfaceInfoList *ifs, char const *name)
 {
-  struct InterfaceInfo	*iface;
+  register struct InterfaceInfo		*iface;
   
   for (iface=ifs->dta; iface < ifs->dta + ifs->len; ++iface)
     if (strcmp(name, iface->name)==0) break;
 
-  if (iface==ifs->dta + ifs->len) {
-    write(2, "unknown interface\n", 18);
-    exit(3);
-  }
+  if (iface==ifs->dta + ifs->len) EXITFATAL("unknown interface");
 
   return iface;
 }
@@ -123,7 +135,8 @@ searchInterface(struct InterfaceInfoList *ifs, char const *name)
 inline static void
 matchEOL()
 {
-  int state	= 0xFF00;
+  register int		state = 0xFF00;
+  
   while (state!=0xFFFF) {
     int		c = getLookAhead();
     
@@ -162,15 +175,14 @@ matchEOL()
   return;
 
   err:
-  write(2, "unexpected character\n", 21);
-  exit(3);    
+  EXITFATAL("unexpected character");
 }
 
 inline static void
 readBlanks()
 {
-  int		c   = 0;
-  size_t	cnt = 0;
+  register int		c   = 0;
+  register size_t	cnt = 0;
   
   while (c!=-1) {
     c = getLookAhead();
@@ -182,16 +194,13 @@ readBlanks()
     }
   }
 
-  if (cnt==0) {
-    write(2, "Expected blank, got character\n", 30);
-    exit(3);
-  }
+  if (cnt==0) EXITFATAL("Expected blank, got character");
 }
 
 inline static void
 readName(char buffer[], size_t len)
 {
-  char		*ptr = buffer;
+  register char		*ptr = buffer;
   
   while (ptr-buffer+1 < len) {
     char	c = getLookAhead();
@@ -210,22 +219,19 @@ readName(char buffer[], size_t len)
 }
 
 inline static void
-readIfname(char *iface)
+readIfname(char iface[])
 {
   readName(iface, IFNAMSIZ);
   
-  if (iface[0]==0) {
-    write(2, "Invalid interface name\n", 23);
-    exit(3);
-  }
+  if (iface[0]==0) EXITFATAL("Invalid interface name");
 }
 
 inline static void
 readIp(struct in_addr *ip)
 {
-  int		state = 0;
-  char		buffer[1024];
-  char 		*ptr = buffer;
+  register int		state = 0;
+  char			buffer[1024];
+  register char		*ptr = buffer;
 
   while (state!=0xFFFF) {
     int		c = getLookAhead();
@@ -236,23 +242,17 @@ readIp(struct in_addr *ip)
       case '\n'	:
       case '\r'	:  state = 0xFFFF;       break;
       default	:
-	if (ptr+1 < buffer+sizeof(buffer)) {
-	  *ptr++ = c;
-	  match(c);
-	}
-	else {
-	  write(2, "Invalid IP\n", 11);
-	  exit(3);
-	}
+	if (ptr+1 >= buffer+sizeof(buffer)) EXITFATAL("IP too long");
+
+	*ptr++ = c;
+	match(c);
+	
 	break;
     }
   }
 
   *ptr = 0;
-  if (inet_aton(buffer, ip)==0) {
-    write(2, "Invalid ip\n", 11);
-    exit(3);
-  }
+  if (inet_aton(buffer, ip)==0) EXITFATAL("Invalid IP");
 }
 
 inline static void
@@ -293,7 +293,7 @@ readBool(bool *val)
 
       case 0x2000	:
 	switch (c) {
-	  case 'e'	:  matchStr("yes");
+	  case 'e'	:  matchStr("es");
 	  case -1	:
 	  case ' '	:
 	  case '\t'	:
@@ -310,12 +310,11 @@ readBool(bool *val)
   return;
 
   err:
-  write(2, "unexpected character\n", 21);
-  exit(3);    
+  EXITFATAL("unexpected character");
 }
 
 void
-parse(char const		filename[],
+parse(char const		fname[],
       struct ConfigInfo		*cfg)
 {
   int			state = 0x0;
@@ -325,9 +324,13 @@ parse(char const		filename[],
   long			nr = 0;
   struct in_addr	ip;
   bool			has_clients;
+  bool			has_servers;
   bool			allow_bcast;
-  bool			is_active;
 
+  filename = fname;
+  line_nr  = 1;
+  col_nr   = 1;
+  
   fd = open(filename, O_RDONLY);
   if (fd==-1) {
     perror("open()");
@@ -467,8 +470,8 @@ parse(char const		filename[],
 	match('f');             readBlanks();
 	readIfname(ifname);     readBlanks();
 	readBool(&has_clients); readBlanks();
-	readBool(&allow_bcast); readBlanks();
-	readBool(&is_active);
+	readBool(&has_servers); readBlanks();
+	readBool(&allow_bcast);
 	state = 0x110;
 	break;
 	
@@ -479,8 +482,8 @@ parse(char const		filename[],
 	strcpy(iface->name, ifname);
 	iface->aid[0]      = 0;
 	iface->has_clients = has_clients;
+	iface->has_servers = has_servers;
 	iface->allow_bcast = allow_bcast;
-	iface->is_active   = is_active;
 
 	state = 0xFFFE;
 	break;
@@ -564,8 +567,7 @@ parse(char const		filename[],
   return;
 
   err:
-  write(2, "Bad character\n", 14);
-  exit(3);
+  EXITFATAL("Bad character");
 }
 
   // Local Variables:

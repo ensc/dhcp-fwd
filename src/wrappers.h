@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
+#include <stdio.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -107,7 +108,7 @@ Esetgid(gid_t gid)
 inline static void *
 Erealloc(void *ptr, size_t new_size)
 {
-  void		*res = realloc(ptr, new_size);
+  register void		*res = realloc(ptr, new_size);
 
   FatalErrnoError(res==0 && new_size!=0, 1, "realloc()");
 
@@ -118,7 +119,7 @@ Erealloc(void *ptr, size_t new_size)
 inline static void *
 Emalloc(size_t size)
 {
-  void		*res = malloc(size);
+  register void		*res = malloc(size);
   FatalErrnoError(res==0 && size!=0, 1, "malloc()");
 
   return res;
@@ -128,7 +129,7 @@ Emalloc(size_t size)
 inline static int 
 Esocket(int domain, int type, int protocol)
 {
-  int	res = socket(domain, type, protocol);
+  register int		res = socket(domain, type, protocol);
   FatalErrnoError(res==-1, 1, "socket()");
 
   return res;
@@ -167,7 +168,7 @@ Wselect(int n,
 	/*@null@*/fd_set *exceptfds,
 	/*@null@*/struct timeval *timeout)
 {
-  int		res;
+  register int			res;
   
   retry:
   res = select(n, readfds, writefds, exceptfds, timeout);
@@ -183,7 +184,7 @@ inline static size_t
 Wrecv(int s,
       /*@out@*/void *buf, size_t len, int flags)
 {
-  ssize_t		res;
+  register ssize_t		res;
 
   retry:
   res = recv(s, buf, len, flags);
@@ -201,8 +202,8 @@ WrecvfromInet4(int s,
 	       /*@out@*/void *buf, size_t len, int flags,
 	       struct sockaddr_in *from)
 {
-  ssize_t		res;
-  socklen_t		size = sizeof(*from);
+  register ssize_t		res;
+  socklen_t			size = sizeof(*from);
 
   retry:
   res = recvfrom(s, buf, len, flags,
@@ -227,8 +228,8 @@ WrecvfromFlagsInet4(int				s,
 		    struct sockaddr_in		*from,
 		    struct in_pktinfo		*pktp)
 {
-  ssize_t		res;
-  socklen_t		size = sizeof(*from);
+  register ssize_t		res;
+  socklen_t			size = sizeof(*from);
 
   retry:
   res = recvfrom_flags(s, buf, len, flags,
@@ -247,10 +248,12 @@ WrecvfromFlagsInet4(int				s,
 
 /*@unused@*/
 inline static void
-Wsendto(int s, const void *msg, size_t len, int flags, const struct sockaddr *to,
-	socklen_t tolen)
+Wsendto(int s,
+	const void *msg, size_t len,
+	int flags,
+	const struct sockaddr *to, socklen_t tolen)
 {
-  ssize_t		res;
+  register ssize_t		res;
 
   retry:
   res = sendto(s, msg, len, flags, to, tolen);
@@ -264,7 +267,7 @@ Wsendto(int s, const void *msg, size_t len, int flags, const struct sockaddr *to
 inline static void
 Wsendmsg(int s, struct msghdr const *msg, int flags)
 {
-  ssize_t		res;
+  register ssize_t		res;
 
   retry:
   res = sendmsg(s, msg, flags);

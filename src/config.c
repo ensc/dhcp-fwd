@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 
 #include <stdio.h>
 
+#include "output.h"
 #include "parser.h"
 #include "wrappers.h"
 #include "inet.h"
@@ -51,11 +53,6 @@ sockaddrToInet4(/*@dependent@*/struct sockaddr const *addr)
   return (reinterpret_cast(struct sockaddr_in const *)(addr))->sin_addr.s_addr;
 }
 
-static void
-assertInitialized()
-{
-}
-
 void
 initClientFD(struct FdInfo *fd,
 	     struct InterfaceInfo const *iface)
@@ -64,7 +61,6 @@ initClientFD(struct FdInfo *fd,
   int const		ON = 1;
 
   assert(fd!=0 && iface!=0);
-  assertInitialized();
   
   fd->iface = iface;
   fd->fd    = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -82,10 +78,9 @@ initClientFD(struct FdInfo *fd,
 }
 
 void
-initAnswerFD(int *fd)
+initRawFD(int *fd)
 {
   assert(fd!=0);
-  assertInitialized();
 
   *fd = Esocket(AF_PACKET, SOCK_RAW, 0xFFFF);
 }
@@ -96,7 +91,6 @@ initSenderFD(int *fd)
   struct sockaddr_in	s;
 
   assert(fd!=0);
-  assertInitialized();
 
   *fd = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -163,7 +157,28 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
   exit(2);
 }
 
-void
+static void
+initFDs(/*@out@*/struct FdInfoList 		*fds,
+	/*@in@*/struct ConfigInfo const	* const	cfg)
+{
+  register int					i;
+  register size_t				idx;
+  struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
+  
+  initSenderFD(&fds->sender_fd);
+  initRawFD(&fds->raw_fd);
+  
+  fds->len = ifs->len;
+  fds->dta = Emalloc(fds->len * (sizeof(fds->dta[0])));
+
+  
+  for (idx=0, i=0; i<ifs->len; ++i) {
+    initClientFD(fds->dta + idx, ifs->dta+i);
+    ++idx;
+  }
+}
+
+static void
 getConfig(char const		*filename,
 	  struct ConfigInfo	*cfg)
 {
@@ -185,6 +200,64 @@ getConfig(char const		*filename,
   parse(filename, cfg);
   fillInterfaceInfo(&cfg->interfaces);
 }
+
+int
+initializeSystem(int argc, char *argv[],
+		 struct InterfaceInfoList *	ifs,
+		 struct ServerInfoList *	servers,
+		 struct FdInfoList *		fds)
+{
+  struct ConfigInfo		cfg;
+  char const *			cfg_name = CFG_FILENAME;
+  register bool			do_fork  = true;
+  register size_t		i = 1;
+  register pid_t		pid;
+  register int			pidfile_fd;
+
+  while (i<argc) {
+    if      (strcmp(argv[i], "-c")==0) { cfg_name = argv[i+1]; i+=2; }
+    else if (strcmp(argv[i], "-d")==0) { do_fork  = false;     ++i;  }
+    else {
+      write(2, "Bad cmd-line option\n", 20);
+      exit(4);
+    }
+  }
+  
+  getConfig(cfg_name, &cfg);
+
+  initFDs(fds, &cfg);
+
+  pidfile_fd = open(cfg.pidfile_name, O_WRONLY | O_CREAT);
+  if (pidfile_fd==-1) {
+    perror("open()");
+    exit(1);
+  }
+  
+  *ifs     = cfg.interfaces;
+  *servers = cfg.servers;
+  
+  if (do_fork) pid = fork();
+  else         pid = 0;
+
+  switch (pid) {
+    case -1	:
+    case 0	:
+      if (cfg.chroot_path[0]!=0) {
+	Echdir (cfg.chroot_path);
+	Echroot(cfg.chroot_path);
+      }
+  
+      Esetgid(cfg.uid);
+      Esetuid(cfg.gid);
+    default	:
+      writeUInt(pidfile_fd, pid);
+      break;
+  }
+  
+  close(pidfile_fd);
+  return pid;
+}
+
 
   // Local Variables:
   // compile-command: "make -k -C .."

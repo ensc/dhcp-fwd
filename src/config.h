@@ -33,9 +33,9 @@
 struct InterfaceInfo {
     char	name[IFNAMSIZ];	//< name of the interface
     char	aid[IFNAMSIZ];	//< agent id
-    bool	has_clients;	//< tells if DHCP clients are on this interfaces
+    bool	has_clients;	//< tells if DHCP clients are on this interface
+    bool	has_servers;	//< tells if DHCP servers are on this interface
     bool	allow_bcast;	//< honor bcast-flag and send to bcast address?
-    bool	is_active;	//< set if the interface shall relay dhcp-msgs
 
     unsigned int	if_idx;		//< interface index
     in_addr_t		if_ip;		//< associated ip
@@ -74,7 +74,7 @@ struct FdInfoList {
     size_t				len;
 
     int					sender_fd;
-    int					answer_fd;
+    int					raw_fd;
 };
 
 struct ConfigInfo {
@@ -91,17 +91,9 @@ struct ConfigInfo {
     struct ServerInfoList		servers;
 };
 
-extern void		getConfig(/*@in@*/char const *		 filename,
-				  struct ConfigInfo		 *cfg);
-
-extern void		initClientFD(/*@out@*/struct FdInfo *fd,
-				     /*@dependent@*/struct InterfaceInfo const *iface);
-
-extern void		initSenderFD(/*@out@*/int *fd);
-extern void		initAnswerFD(/*@out@*/int *fd);
-
-#define DHCP_ALLOCA_LIST(list, count, type)				\
-  list.dta = static_cast(type *)(alloca(sizeof(type) * count));		\
-  list.len = 0
+extern int		initializeSystem(int argc, char *argv[],
+					 struct InterfaceInfoList *	ifs,
+					 struct ServerInfoList *	servers,
+					 struct FdInfoList *		fds);
 
 #endif	// DHCP_FORWARDER_CONFIG_H
