@@ -35,9 +35,11 @@
 #include <sys/select.h>
 #include <sys/param.h>
 #include <errno.h>
-#include "compat/if_packet.h"
+#include <alloca.h>
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
+
+#include "compat/if_packet.h"
 
 #include "cfg.h"
 #include "wrappers.h"
@@ -319,7 +321,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
     opt = DHCP_nextSingleOption(opt);
   } while (end_opt==0);
 
-  assert(end_opt>=option_ptr);
+  assert(static_cast(void*)(end_opt)>=option_ptr);
   assert(end_opt>=relay_opt || relay_opt==0);
 
     /* Determine used space until end-tag and add space for the end-tag itself
@@ -657,14 +659,15 @@ execRelay()
     /*@globals fds, servers, internalState@*/
     /*@modifies internalState@*/
 {
-  size_t const			max_mtu   = determineMaxMTU();
-  size_t const			len_total = max_mtu + IFNAMSIZ + 4;
-  char				*buffer   = static_cast(char *)(Ealloca(len_total));
     /*@-sizeoftype@*/
   size_t const			szDHCPHDR = sizeof(struct DHCPHeader);
     /*@=sizeoftype@*/
+  size_t const			max_mtu   = determineMaxMTU();
+  size_t const			len_total = max_mtu + IFNAMSIZ + 4;
+  char				*buffer   = static_cast(char *)(alloca(len_total));
 
-  assert(buffer!=0);
+  FatalErrnoError(buffer!=0, 1, "alloca()");
+
   assert(fds.dta!=0 || fds.len==0);
 
   while (true) {
