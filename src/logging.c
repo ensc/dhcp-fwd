@@ -31,20 +31,78 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-
+#include "output.h"
 #include "logging.h"
 #include "dhcp.h"
 
-void
-logDHCPPackage(char const *data, size_t	len,
-	       struct in_pktinfo const		*pkinfo,
-	       void const			*addr)
+#define WRITE(FD, MSG)	(void)write(FD, MSG, sizeof(MSG)-1)
+
+inline static char *
+Xinet_ntop(sa_family_t af, /*@in@*/void const *src,
+	   /*@returned@*//*@out@*/char *dst, size_t cnt)
+    /*@requires cnt>=8 /\ maxSet(dst) >= cnt@*/
 {
-  /*@temp@*/char		buffer[256];	/* see max. calculation below */
+  if (inet_ntop(af, src, dst, cnt)==0) {
+    strcpy(dst, "< ???? >");
+  }
+
+  return dst;
+}
+
+typedef /*@out@*/ char *	char_outptr;
+
+inline static void
+Xsnprintf(/*@out@*/char_outptr * const buffer, size_t * const len,
+	  /*@in@*/char const * const format, ...)
+    /*@requires notnull *buffer@*/
+    /*@requires maxRead(*buffer) >= 0@*/
+    /*@modifies *buffer, *len@*/
+{
+  va_list	ap;
+  int		l;
+  
+  va_start(ap, format);
+  l = vsnprintf(*buffer, *len, format, ap);
+  if (l==-1 || l>*len) {
+    WRITE(2, "\n\nBuffer not large enough for snprintf(\"");
+    (void)write(2, format, strlen(format)-1);
+    WRITE(2, "\");\nthere are ");
+    (void)writeUInt(2, *len);
+    WRITE(2, " chars available but ");
+    writeUInt(2, static_cast(unsigned int)(l));
+    WRITE(2, " required\n\n");
+  }
+  else {
+    *len    -= 1;
+    *buffer += l;
+  }
+}
+
+inline static void
+Xstrncat(/*@unique@*/char * __restrict const buffer,
+	 /*@in@*/char const * const what, size_t *len)
+{
+  size_t const		what_len = strlen(what);
+  
+  if (what_len<*len) {
+    strcat(buffer, what);
+    *len -= what_len;
+  }
+}
+
+
+void
+logDHCPPackage(/*@in@*/char const *data, size_t	len,
+	       /*@in@*/struct in_pktinfo const		*pkinfo,
+	       /*@in@*/void const			*addr)
+{
+  /*@temp@*/char		buffer[256];
+  char 				*buffer_ptr;
   char				addr_buffer[128];	/* adjust if needed */
   /*@dependent@*/char const	*msg = 0;
   struct tm			tm;
   struct timeval		tv;
+  size_t			avail;
   int				error = errno;
   struct sockaddr const		*saddr = reinterpret_cast(struct sockaddr const *)(addr);
   struct DHCPHeader const	*header = reinterpret_cast(struct DHCPHeader const *)(data);
@@ -54,9 +112,9 @@ logDHCPPackage(char const *data, size_t	len,
   (void)localtime_r(&tv.tv_sec, &tm);
   
   if (strftime(buffer, sizeof buffer, "%T", &tm)==-1) goto err;		/*   8 chars */
-  if (snprintf(buffer+strlen(buffer), 10,
-	       ".%06li: ", tv.tv_usec)==-1) goto err;			/*  +9 chars
-									 => 17 chars */
+  avail      = sizeof(buffer)-strlen(buffer);
+  buffer_ptr = buffer + strlen(buffer);
+  Xsnprintf(&buffer_ptr, &avail, ".%06li: ", tv.tv_usec);
   
   (void)write(2, buffer, strlen(buffer));
 
@@ -71,44 +129,49 @@ logDHCPPackage(char const *data, size_t	len,
       default		:  ptr = saddr->sa_data; break;
     }
 
-      /* max. 48 chars */
-    if (inet_ntop(saddr->sa_family, ptr, addr_buffer, sizeof addr_buffer)==0) {
-      strcpy(addr_buffer, "< ???? >");
-    }
+    (void)Xinet_ntop(saddr->sa_family, ptr, addr_buffer, sizeof addr_buffer);
 
-      /* max 14 + 48 + 10 = 72 chars */
-    snprintf(buffer, 48+10+1, "from %s (if #%i): ", addr_buffer, pkinfo->ipi_ifindex);
+    buffer_ptr = buffer;
+    avail      = sizeof(buffer);
+    
+#if 1
+    Xsnprintf(&buffer_ptr, &avail, "from %s (", addr_buffer) ;
+    
+    (void)Xinet_ntop(saddr->sa_family, &pkinfo->ipi_addr, addr_buffer, sizeof addr_buffer);
+    Xsnprintf(&buffer_ptr, &avail, "%i, %s, ", pkinfo->ipi_ifindex, addr_buffer);
+
+    (void)Xinet_ntop(saddr->sa_family, &pkinfo->ipi_spec_dst, addr_buffer, sizeof addr_buffer);
+    Xsnprintf(&buffer_ptr, &avail, "%s)): ", addr_buffer);
+#else
+    Xsnprintf(&buffer_ptr, &avail, "from %s (if #%i): ", addr_buffer, pkinfo->ipi_ifindex);
+#endif
     
     if (len<sizeof(struct DHCPHeader)) {
-	/* + max 24 + 10 = 34 chars  ==> max 106 chars */
-      snprintf(buffer + strlen(buffer), 34+1, "Broken package with len %lu", len);
+      Xsnprintf(&buffer_ptr, &avail, "Broken package with len %lu", len);
     }
     else {
       struct in_addr		ip;
       bool			is_faulty = false;
 
-	/* + 9 chars ==> max 115 chars */
-      snprintf(buffer+strlen(buffer), 9+1, "%08x ", header->xid);
-      switch (header->op) {	/* + <=24 chars  ==> max 139 chars */
+      Xsnprintf(&buffer_ptr, &avail, "%08x ", header->xid);
+      switch (header->op) {
 	case opBOOTREQUEST:
-	  strcat(buffer, "BOOTREQUEST from ");	/* + 17 chars */
+	  Xstrncat(buffer, "BOOTREQUEST from ", &avail);
 	  ip.s_addr = header->ciaddr;
 	  break;
 	case opBOOTREPLY:
-	  strcat(buffer, "BOOTREPLY to ");	/* + 17 chars */
+	  Xstrncat(buffer, "BOOTREPLY to ", &avail);
 	  ip.s_addr = header->yiaddr;
 	  break;
 	default:
-	    /* + max 14 + 10 = 24 chars */
-	  snprintf(buffer+strlen(buffer), 24+1, "<UNKNOWN> (%u), ", header->op);
+	  Xsnprintf(&buffer_ptr, &avail, "<UNKNOWN> (%u), ", header->op);
 	  is_faulty = true;
 	  break;
       }
 
-	/* + <=15 chars ==> max 154 chars */
       if (!is_faulty) {
 	assertDefined(&ip);
-	strncat(buffer, inet_ntoa(ip), 15);
+	Xstrncat(buffer, inet_ntoa(ip), &avail);
       }
     }
 
