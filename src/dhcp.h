@@ -94,7 +94,7 @@ enum {
 
 /*@unused@*/
 inline static size_t
-DHCP_getOptionLength(struct DHCPSingleOption const *opt)
+DHCP_getOptionLength(/*@sef@*//*@in@*/struct DHCPSingleOption const *opt)
 {
   switch (opt->code) {
     case cdPAD	:
@@ -120,7 +120,7 @@ DHCP_zeroOption(struct DHCPSingleOption *opt)
 
 /*@unused@*/
 inline static struct DHCPSingleOption *
-DHCP_nextSingleOption(/*@returned@*/struct DHCPSingleOption *opt)
+DHCP_nextSingleOption(/*@sef@*//*@in@*//*@returned@*/struct DHCPSingleOption *opt)
 {
   size_t cnt = DHCP_getOptionLength(opt);
 
@@ -130,7 +130,7 @@ DHCP_nextSingleOption(/*@returned@*/struct DHCPSingleOption *opt)
 
 /*@unused@*/
 inline static struct DHCPSingleOption const *
-DHCP_nextSingleOptionConst(/*@returned@*/struct DHCPSingleOption const *opt)
+DHCP_nextSingleOptionConst(/*@sef@*//*@in@*//*@returned@*/struct DHCPSingleOption const *opt)
 {
   return DHCP_nextSingleOption(const_cast(struct DHCPSingleOption *)(opt));
 }
