@@ -1,0 +1,41 @@
+## $Id$		--*- rpm-spec -*--
+
+Summary:	An DHCP relay agent
+Name:		dhcp-forwarder
+Version:	0.1
+Release:	0.1
+License:	GPL
+Group:		System Environment/Daemons
+URL:		http://www.tu-chemnitz.de/~ensc/dhcpfwd
+Source0:	 %{name}-%{version}.tar.bz2
+BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
+BuildRequires:	dietlibc
+
+%description
+
+
+%prep
+%setup -q
+
+%build
+%configure
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=${RPM_BUILD_ROOT}
+
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING ChangeLog INSTALL NEWS README THANKS
+%{_sbindir}/*
+
+
+
+%changelog
+* Sat Jun  1 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 
+- Initial build.
