@@ -16,30 +16,36 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
-SUBDIRS			=
-DIST_SUBDIRS		=  $(SUBDIRS) m4
-
 ACLOCAL_AMFLAGS		=  -I m4
 
-DIET			=  @DIET@
-CC			=  $(DIET) @CC@
+SUBDIRS			=  .
+DIST_SUBDIRS		=  $(SUBDIRS) m4
 
 confdir			=  $(sysconfdir)
 cfg_filename		=  $(confdir)/dhcp-fwd.cfg
 
-
 sbin_PROGRAMS		=  dhcp-fwd
 dhcp_fwd_SOURCES	=  src/config.c src/recvfromflags.c src/main.c		\
-			   src/parser.c
+			   src/parser.c src/output.c
 
 AM_CPPFLAGS		=  -DCFG_FILENAME='"$(cfg_filename)"'
 
 noinst_HEADERS		=  src/compat.h src/config.h src/dhcp.h src/inet.h	\
 			   src/recvfromflags.h src/splint_compat.h		\
 			   src/util.h src/wrappers.h src/assertions.h		\
-			   src/parser.h
+			   src/parser.h src/output.h src/logging.h
 
-EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am
+EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
+		 	   contrib/dhcp-fwd.init
+
+install-contrib:
+			$(mkinstalldirs) $(DESTDIR)/etc/init.d
+			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init $(DESTDIR)/etc/init.d/dhcp-fwd
+
+uninstall-contrib:
+			rm -f $(DESTDIR)/etc/init.d/dhcp-fwd
+
 
 include $(top_srcdir)/m4/validate.am
 include $(top_srcdir)/m4/changelog.am
+include $(top_srcdir)/m4/diet.am
