@@ -1,19 +1,21 @@
-## $Id$		--*- rpm-spec -*--
+## $Id$	--*- rpm-spec -*--
 
-%define		homedir		%{_var}/lib/dhcp-fwd
+%define	username	dhcp-fwd
+%define homedir		%{_var}/lib/%{username}
 
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	1
+Release:	2
+Epoch:		0
 License:	GPL
 Group:		System Environment/Daemons
-Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 URL:		http://www.tu-chemnitz.de/~ensc/dhcp-fwd
 Source0:	http://www.tu-chemnitz.de/~ensc/dhcp-fwd/files/%{name}-%{version}.tar.bz2
-PreReq:		/sbin/chkconfig /usr/sbin/userdel /usr/sbin/adduser
-PreReq:		/sbin/service
-BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+Requires(pre):		/usr/sbin/useradd /usr/sbin/groupadd
+Requires(postun):	/usr/sbin/userdel /usr/sbin/groupdel
+Requires(post,preun):	/sbin/chkconfig
 
 %if %{?_without_dietlibc:0}%{!?_without_dietlibc:1}
 BuildRequires:	dietlibc
@@ -23,11 +25,11 @@ BuildRequires:	dietlibc
 %description
 dhcp-fwd forwards DHCP messages between subnets with different sublayer
 broadcast domains. It is similar to the DHCP relay agent dhcrelay of
-ISC's DHCP, but has the following features which are important for me:
+ISC's DHCP, but has the following important features:
 
-* Runs as non-root in a chroot-jail
-* Uses "normal" AF_INET sockets which allows to uses packetfilters to
-  filter incoming messages.
+* Runs as non-root in a chroot-environment
+* Uses AF_INET sockets which makes it possible to filter incoming
+  messages with packetfilters
 * The DHCP agent IDs can be defined freely
 * Has a small memory footprint when using dietlibc
 
@@ -38,17 +40,20 @@ ISC's DHCP, but has the following features which are important for me:
 
 %build
 %configure --enable-release %{?_without_dietlibc:--disable-dietlibc}
-%{__make}
+%{__make} %{?_smp_mflags}
+%{__make} check
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
-make DESTDIR=${RPM_BUILD_ROOT} install-strip install-contrib
+%{__make} DESTDIR=${RPM_BUILD_ROOT} install
 
-install -d ${RPM_BUILD_ROOT}%{_sysconfdir}
-install -m644 -p contrib/dhcp-fwd.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/
-install -m700 -d ${RPM_BUILD_ROOT}%{homedir}
+%{__install} -d ${RPM_BUILD_ROOT}{%{_sysconfdir}/sysconfig,%{_initrddir}}
+%{__install} -p -m755 contrib/dhcp-fwd.init      ${RPM_BUILD_ROOT}%{_initrddir}/dhcp-fwd
+%{__install} -p -m644 contrib/dhcp-fwd.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/dhcp-fwd
+%{__install} -p -m644 contrib/dhcp-fwd.conf      ${RPM_BUILD_ROOT}%{_sysconfdir}/
+%{__install} -d -m700 ${RPM_BUILD_ROOT}%{homedir}
 
 
 %clean
@@ -56,31 +61,34 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %pre
-/usr/sbin/adduser -r -s /sbin/nologin -d %{homedir} -M		\
-	 	  -c 'DHCP Forwarder user' dhcp-fwd &>/dev/null || true
+/usr/sbin/groupadd -r %{username} &>/dev/null || :
+/usr/sbin/useradd -r -s /sbin/nologin -M -c 'DHCP Forwarder user'	\
+	 	  -d %{homedir} -g %{username} %{username} &>/dev/null || :
 
 %post
 /sbin/chkconfig --add dhcp-fwd
 
 %preun
 if test "$1" = "0"; then
+	%{_initrddir}/dhcp-fwd stop >/dev/null
 	/sbin/chkconfig --del dhcp-fwd
 fi
 
 %postun
 if test "$1" = "0"; then
-	/usr/sbin/userdel dhcp-fwd &>/dev/null || true
+	/usr/sbin/userdel  %{username} &>/dev/null || :
+	/usr/sbin/groupdel %{username} &>/dev/null || :
 elif test "$1" -ge 1; then
-	/sbin/service dhcp-fwd condrestart >/dev/null
+	%{_initrddir}/dhcp-fwd condrestart >/dev/null
 fi
 
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README THANKS
+%doc AUTHORS COPYING ChangeLog NEWS README THANKS
 %doc %{_mandir}/*/*
-%config /etc/init.d/*
-%config(noreplace) /etc/sysconfig/*
+%config %{_initrddir}/*
+%config(noreplace) %{_sysconfdir}/sysconfig/*
 %config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
 
@@ -91,6 +99,20 @@ fi
 
 
 %changelog
+* Tue May 27 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:0.4-0.fdr.2
+- create and remove group explicitely
+- s/adduser/useradd/
+- removed dependency on initscripts by calling the service-script in
+  the %%post/%%preun scriptlets directly
+- do not call '--install-contrib' anymore; it creates too much
+  clutter to make sure that the initscripts will be installed into
+  %%{_initrddir} but not in /etc/init.d. Instead of, install the
+  scripts manually.
+
+* Fri May  2 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:0.4-0.fdr.1
+- cleanups
+- applied fedora.us naming scheme
+
 * Wed Aug 28 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.3.1-1
 - Added /etc/sysconfig/dhcp-fwd file
 
