@@ -34,6 +34,7 @@
 #include <sys/param.h>
 #include <errno.h>
 #include <netpacket/packet.h>
+#include <net/if_arp.h>
 
 
 #include "config.h"
@@ -48,11 +49,6 @@
 static struct ServerInfoList	servers;
 static struct FdInfoList	fds;
 
-  //static void		execRelay() __attribute__ ((__noreturn__));
-static bool			isValidHeader(struct DHCPHeader *header) __attribute__((pure));
-static struct FdInfo const *	lookupFD(/*@in@*/struct in_addr const addr) __attribute__((const));
-static size_t			determineMaxMTU() __attribute__((const));
-  
 inline static void
 fillFDSet(/*@out@*/fd_set			*fd_set,
 	  /*@out@*/int				*max)
@@ -83,7 +79,7 @@ lookupFD(/*@in@*/struct in_addr const addr)
 inline static size_t
 determineMaxMTU()
 {
-  size_t		result = 0;
+  size_t		result = 1500;
   struct FdInfo	const	*fd;
   
   for (fd=fds.dta; fd<fds.dta+fds.len; ++fd)
@@ -100,7 +96,14 @@ isValidHeader(struct DHCPHeader *header)
  
   if      (mbz!=0)                 { reason = "Invalid flags field\n"; }
   else if (header->hops>=MAX_HOPS) { reason = "Looping detected\n"; }
-  else switch (header->op) {
+  else switch (header->htype) {
+    case ARPHRD_ETHER	:
+      if (header->hlen!=ETH_ALEN) {  reason = "Invalid hlen for ethernet\n"; }
+      break;
+    default		:
+      break;	// Not active handled by us; will be forwarded as-is
+  }
+  if (reason==0) switch (header->op) {
     case opBOOTREPLY	:
     case opBOOTREQUEST	:  break;
     default		:  reason = "Unknown operation\n"; break;
@@ -255,14 +258,6 @@ fixCheckSumUDP(struct udphdr * const			udp,
     0,
     ip->protocol, udp->len };
 
-#if 0  
-  pseudo_hdr.src   = ip->ip_src.s_addr;
-  pseudo_hdr.dst   = ip->ip_dst.s_addr;
-  pseudo_hdr.mbz   = 0;
-  pseudo_hdr.proto = ip->ip_p;
-  pseudo_hdr.len   = udp->len;
-#endif
-  
   udp->check = 0;
   sum = calculateCheckSum(&pseudo_hdr, sizeof pseudo_hdr, 0);
   sum = calculateCheckSum(udp,         sizeof(*udp),      sum);
@@ -335,14 +330,15 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
   struct DHCPllPacket		frame;
   struct InterfaceInfo const	*iface = fd->iface;
 
-  printf("sendToClient()\n");
-
   assert(header->op   == opBOOTREPLY);
 
   memset(&frame, 0, sizeof frame);
   frame.eth.ether_type = htons(ETHERTYPE_IP);
 
-  if (header->hlen==sizeof(frame.eth.ether_dhost))
+    /* Check whether header contains an ethernet MAC or something else (e.g. a
+     * PPP tag). In the first case send to this MAC, in the latter one, send a
+     * ethernet-broadcast message */
+  if (header->htype==ARPHRD_ETHER)
     memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
   else
     memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
@@ -368,8 +364,6 @@ sendServerBcast(struct ServerInfo const	* const		server,
   struct DHCPllPacket		frame;
   struct InterfaceInfo const	*iface = server->info.iface;
 
-  printf("sendServerBroadcast('%s')\n", server->info.iface->name);
-  
   memset(&frame, 0, sizeof frame);
   memset(frame.eth.ether_dhost, 255, sizeof frame.eth.ether_dhost);
 
@@ -389,8 +383,6 @@ sendServerUnicast(struct ServerInfo const * const	server,
 		  size_t const				size)
 {
   struct sockaddr_in	sock;
-
-  printf("sendServerUnicast('%s')\n", inet_ntoa(server->info.ip));
 
   memset(&sock, 0, sizeof sock);
   sock.sin_family = AF_INET;
@@ -427,6 +419,7 @@ sendToServer(char const * const				buffer,
 
 inline static void
 handlePacket(/*@in@*/struct FdInfo const * const		fd,
+	     /*@in@*/struct InterfaceInfo const * const		iface_orig,
 	     /*@dependent@*/char * const			buffer,
 	     size_t						size)
 {
@@ -435,7 +428,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
   size_t			options_len = size - sizeof(*header);
   
 
-    /** Discard broken header (e.g. too much hops or bad values) */
+    /* Discard broken header (e.g. too much hops or bad values) */
   if (!isValidHeader(header)) return;
   ++header->hops;
 
@@ -462,27 +455,25 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 
   switch (header->op) {
     case opBOOTREPLY	:
-      if (fd->iface->has_clients) sendToClient(fd, header, buffer, size);
-      else printf("BOOTREPLY request for interface without clients\n");
+      if      (!iface_orig->has_servers) LOG("BOOTREPLY request from interface without servers\n");
+      else if (!fd->iface->has_clients)  LOG("BOOTREPLY request for interface without clients\n");
+      else sendToClient(fd, header, buffer, size);
       break;
     case opBOOTREQUEST	:
-      if (fd->iface->has_clients) sendToServer(buffer, size);
-      else printf("BOOTREQUEST request from interface without clients\n");
+      if (!iface_orig->has_clients)      LOG("BOOTREQUEST request from interface without clients\n");
+      else sendToServer(buffer, size);
       break;
+      
 	/* isValidHeader() checked the correctness of header->op already and it
 	 * should be impossible to reach this code... */
     default		:  assert(false); 
   }
 }
 
-
-
-
 /*@noreturn@*/
 inline static void
 execRelay()
 {
-  fd_set			fd_set;
   size_t const			max_mtu   = determineMaxMTU();
   size_t const			total_len = max_mtu + IFNAMSIZ + 4;
   char				*buffer   = 0;
@@ -490,6 +481,7 @@ execRelay()
   buffer = static_cast(char *)(alloca(total_len));
 
   while (true) {
+    fd_set			fd_set;
     int				max;
     size_t			i;
     
@@ -505,13 +497,13 @@ execRelay()
       
       if (!FD_ISSET(fd_info->fd, &fd_set)) continue;
 
+	/* Is this really correct? Can we receive fragmented IP datagrams being
+	 * assembled larger than the MTU of the attached interfaces? */
       size = WrecvfromFlagsInet4(fd_info->fd, buffer, total_len, &flags,
 				 &addr, &pkinfo);
 
-#if 0      
-      printf("spec_dst=%s, ", inet_ntoa(pkinfo.ipi_spec_dst));
-      printf("addr=%s, ifindex=%i\n",
-	     inet_ntoa(pkinfo.ipi_addr), pkinfo.ipi_ifindex);
+#ifdef ENABLE_LOGGING      
+      logDHCPPackage(buffer, size, &pkinfo, &addr);
 #endif
       
       if (static_cast(ssize_t)(size)==-1) {
@@ -523,6 +515,13 @@ execRelay()
 	LOG("Malformed package\n");
       }
       else {
+	struct InterfaceInfo const	*iface_orig = fd_info->iface;
+	
+	  /* Broadcast messages are designated for the interface, so lookup the
+	   * "real" dest-interface for unicast-messages only.
+	   *
+	   * \todo: Can we setup the routing that datagrams from the server are
+	   *        received by the giaddr-interface? */
 	if (pkinfo.ipi_addr.s_addr!=INADDR_BROADCAST)
 	  fd_info = lookupFD(pkinfo.ipi_addr);
 
@@ -531,7 +530,7 @@ execRelay()
 	  LOG("Unexpected large packet\n");
 	}
 	else 
-	  handlePacket(fd_info, buffer, size);
+	  handlePacket(fd_info, iface_orig, buffer, size);
       }
     }
   }
@@ -555,3 +554,4 @@ main(int argc, char *argv[])
   // compile-command: "make -C .. -k"
   // fill-column: 80
   // End:
+
