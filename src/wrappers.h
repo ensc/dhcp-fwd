@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <alloca.h>
 #include <sys/resource.h>
+#include <grp.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -120,6 +121,15 @@ Esetgid(gid_t gid)
   /*@modifies internalState, fileSystem, errno@*/
 {
   FatalErrnoError(setgid(gid)==-1, 1, "setgid()");
+}
+
+/*@unused@*/
+inline static void
+Esetgroups(size_t size, const gid_t *list)
+    /*@globals internalState@*/
+    /*@modifies internalState@*/
+{
+  FatalErrnoError(setgroups(size, list)==-1, 1, "setgroups()");
 }
 
 /*@unused@*/

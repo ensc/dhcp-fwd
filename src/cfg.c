@@ -390,8 +390,9 @@ initializeSystem(int argc, char *argv[],
 	Echroot(cfg.chroot_path);
       }
   
-      Esetgid(cfg.uid);
-      Esetuid(cfg.gid);
+      Esetgroups(1, &cfg.gid);
+      Esetgid(cfg.gid);
+      Esetuid(cfg.uid);
 
       limitResources(&cfg.ulimits);
       break;
