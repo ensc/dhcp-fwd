@@ -88,15 +88,11 @@ initClientFD(struct FdInfo *fd,
   fd->iface = iface;
   fd->fd    = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-    /*@-boundsread@*/
   Esetsockopt(fd->fd, SOL_IP,     IP_PKTINFO,      &ON, sizeof ON);
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BROADCAST,    &ON, sizeof ON);
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name, strlen(iface->name)+1);
-    /*@=boundsread@*/
 
-    /*@-boundswrite@*/
   memset(&s, 0, sizeof(s));
-    /*@=boundswrite@*/
   
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
@@ -129,9 +125,7 @@ initSenderFD(/*@out@*/int *fd)
 
   *fd = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-    /*@-boundswrite@*/
   memset(&s, 0, sizeof(s));
-    /*@=boundswrite@*/
   
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
@@ -158,13 +152,8 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
     default		:  scEXITFATAL("Unsupported hardware-type"); 
   }
 
-    /*@-boundsread@*/
   assert(*len <= ETH_ALEN);
-    /*@=boundsread@*/
-
-    /*@-boundswrite@*/
   memcpy(mac, addr->sa_data, *len);
-    /*@=boundswrite@*/
 }
 
 inline static void
@@ -187,10 +176,9 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
 
     memcpy(iface.ifr_name, ifinfo->name, IFNAMSIZ);
     if (ioctl(fd, SIOCGIFINDEX,  &iface)==-1) goto err;
-      /*@-usedef@*/
+
     if (iface.ifr_ifindex<0)                  goto err;
     ifinfo->if_idx = (unsigned int)(iface.ifr_ifindex);
-      /*@=usedef@*/
 
     if (ioctl(fd, SIOCGIFADDR,   &iface)==-1) goto err;
     ifinfo->if_real_ip = sockaddrToInet4(&iface.ifr_addr);
@@ -370,6 +358,8 @@ initializeSystem(int argc, char *argv[],
     perror("open()");
     exit(1);
   }
+
+  openMsgfile(cfg.logfile_name);
   
   *ifs     = cfg.interfaces;
   *servers = cfg.servers;
@@ -385,6 +375,8 @@ initializeSystem(int argc, char *argv[],
       break;
       
     case 0	:
+      Eclose(1);
+      
       if (cfg.chroot_path[0]!='\0') {
 	Echdir (cfg.chroot_path);
 	Echroot(cfg.chroot_path);
