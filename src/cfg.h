@@ -45,6 +45,8 @@ struct InterfaceInfo {
     size_t		if_mtu;		//< MTU
     uint8_t		if_mac[16];	//< MAC
     size_t		if_maclen;	//< length of MAC
+
+    int			sender_fd;	//< the sender-filedescriptor
 };
 
 struct InterfaceInfoList {
@@ -59,10 +61,14 @@ typedef enum { svUNICAST, svBCAST }	ServerInfoType;	//< type of server
 
 struct ServerInfo {
     ServerInfoType			type;
+      /*@observer@*/
+    struct InterfaceInfo *		iface;
+    
     union {
-	/*@observer@*/
-	struct InterfaceInfo const	*iface;
-	struct in_addr			ip;
+	struct {
+	    struct in_addr		ip;
+	    int				fd;
+	}				unicast;
     }					info;
 };
 
@@ -84,7 +90,6 @@ struct FdInfoList {
     struct FdInfo			*dta;
     size_t				len;
 
-    int					sender_fd;
     int					raw_fd;
 };
 
