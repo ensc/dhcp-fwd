@@ -23,7 +23,7 @@ dnl distribution terms that you use for the rest of that program.
 dnl  
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.4, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.4.3, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -91,10 +91,10 @@ AC_ARG_ENABLE(logging,
 AC_MSG_RESULT(${enable_logging})
 
 if test x"${enable_logging}" = xyes; then
-	AC_DEFINE(ENABLE_LOGGING, 1, [Enables logging if set])
-	AM_CONDITIONAL(ENABLE_LOGGING, true)
+	AC_DEFINE(WITH_LOGGING, 1, [Enables logging if set])
+	AM_CONDITIONAL(WITH_LOGGING, true)
 else
-	AM_CONDITIONAL(ENABLE_LOGGING, false)
+	AM_CONDITIONAL(WITH_LOGGING, false)
 fi
 
 # Checks for libraries.
@@ -134,7 +134,7 @@ AC_CHECK_FUNCS([gettimeofday inet_ntoa localtime_r memset select socket strerror
 AH_TOP([
 #ifndef H_DHCP_FORWARDER_TOP_CONFIG_H
 #define H_DHCP_FORWARDER_TOP_CONFIG_H
-/*@@--namechecks@*/
+/*@-namechecks@*/
 ])
 
 AH_BOTTOM([
