@@ -44,6 +44,23 @@
 
 #define EXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
+struct LimitStruct {
+    int			res;
+    struct rlimit	limit;
+} const syslimit[] = {
+    //{ RLIMIT_FSIZE,   { 64, 64 } },	// for the PID-file...
+  { RLIMIT_DATA,    { 0x10000, 0x10000 } },
+  { RLIMIT_STACK,   { 0x10000, 0x10000 } },
+  { RLIMIT_AS,      { 0, 0 } },
+  { RLIMIT_NOFILE,  { 0, 0 } },
+  { RLIMIT_MEMLOCK, { 0, 0 } },
+#ifdef RLIMIT_LOCKS    
+  { RLIMIT_LOCKS,   { 0, 0 } }
+#else
+#  warning RLIMIT_LOCKS limit not set
+#endif
+};
+
 /*@noreturn@*/ static void
 exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
   /*:requires maxRead(msg)+1 >= len@*/ ;
@@ -286,22 +303,6 @@ inline static void
 limitResources()
 {
   size_t			i;
-  struct LimitStruct {
-      int		res;
-      struct rlimit	limit;
-  } syslimit[] = {
-      //{ RLIMIT_FSIZE,   { 64, 64 } },	// for the PID-file...
-    { RLIMIT_DATA,    { 0x10000, 0x10000 } },
-    { RLIMIT_STACK,   { 0x10000, 0x10000 } },
-    { RLIMIT_AS,      { 0, 0 } },
-    { RLIMIT_NOFILE,  { 0, 0 } },
-    { RLIMIT_MEMLOCK, { 0, 0 } },
-#ifdef RLIMIT_LOCKS    
-    { RLIMIT_LOCKS,   { 0, 0 } }
-#else
-#  warning Do not set RLIMIT_LOCKS limit
-#endif
-  };
 
   for (i=0; i<sizeof(syslimit)/sizeof(syslimit[0]); ++i)
     Esetrlimit(syslimit[i].res, &syslimit[i].limit);
