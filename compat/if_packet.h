@@ -19,12 +19,15 @@
 #ifndef H_DHCP_FORWARDER_COMPAT_IF_PACKET_H
 #define H_DHCP_FORWARDER_COMPAT_IF_PACKET_H
 
-#ifdef HAVE_NETPACKET_PACKET_H
+#include <sys/socket.h>
+#include <features.h>    /* for the glibc version number */
+#if __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
 #  include <netpacket/packet.h>
-#elif defined(HAVE_LINUX_IF_PACKET_H)
-#  include <linux/if_packet.h>
+#  include <net/ethernet.h>     /* the L2 protocols */
 #else
-#  error Can not find <netpacket/packet.h> or <linux/if_packet.h>
+#  include <asm/types.h>
+#  include <linux/if_packet.h>
+#  include <linux/if_ether.h>   /* The L2 protocols */
 #endif
 
 #endif	//  H_DHCP_FORWARDER_COMPAT_IF_PACKET_H
