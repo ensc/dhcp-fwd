@@ -24,7 +24,7 @@
 #endif
 
 void		parse(/*@in@*/char const		*filename,
-		      /*@out@*/struct ConfigInfo	*cfg);
+		      /*@in@*/struct ConfigInfo		*cfg);
 
 
 #endif	//  DHCP_FORWARDER_PARSER_H
