@@ -1,3 +1,15 @@
+Version 0.3.2
+-------------
+	- remove agent-id in BOOTREPLYs instead of padding it; WinNT seems
+	  to misinterpret it
+	- non-ethernet interfaces on server-side are allowed now; thanks to
+	  Michal Pokrywka for reporting this
+	- minor enhancements in the initscript
+	- controlling-terminal will be now closed after forking; thanks to
+	  Michal Pokrywka for reporting the problem and giving the proper
+	  solution
+	- minor code cleanups
+
 Version 0.3
 -----------
 	- Minor enhancements in the build-system (generalized sed-subst

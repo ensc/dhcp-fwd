@@ -23,7 +23,7 @@ dnl distribution terms that you use for the rest of that program.
 dnl  
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.3, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.3.2, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -104,6 +104,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h limits.h netinet/in.h stdint.h])
 AC_CHECK_HEADERS([stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h])
 AC_CHECK_HEADERS([unistd.h stdbool.h])
+ENSC_HEADER_IF_PACKET
 
 # Checks for typedefs, structures, and compiler characteristics.
 ENSC_DIET_CHECK_IN_ADDR_T
