@@ -35,8 +35,11 @@ typedef uint32_t	in_addr_t;
 #  define const_cast(X)		((X) _cAsT_
 
 typedef int			bool;
+enum {false = 0, true = 1 };
+#if 0
 /*@unused@*/static bool const	true  = reinterpret_cast(bool)(1);
 /*@unused@*/static bool const	false = reinterpret_cast(bool)(0);
+#endif
 
 #else	/* __cplusplus */
 #  define reinterpret_cast(X)	reinterpret_cast<X>
