@@ -24,7 +24,7 @@ dnl
 
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.2, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.2.1, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -42,6 +42,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_AWK
+AC_PROG_LN_S
 
 ENSC_STANDARD_TOOLS
 ENSC_RELEASE(IS_RELEASE)
@@ -98,18 +99,25 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h limits.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
+AC_TYPE_UID_T
+AC_TYPE_PID_T
+AC_STRUCT_TM
+
 
 # Checks for library functions.
 AC_FUNC_ALLOCA
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_STRFTIME
 AC_PROG_GCC_TRADITIONAL
-AC_CHECK_FUNCS([bzero inet_ntoa memset select socket])
+AC_CHECK_FUNCS([gettimeofday inet_ntoa localtime_r memset select socket strerror strtol])
 
 AC_CONFIG_FILES([Makefile m4/Makefile dhcp-forwarder.spec])
 AC_OUTPUT
