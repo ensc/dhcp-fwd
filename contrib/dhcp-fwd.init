@@ -19,12 +19,16 @@ then
 	exit 0
 fi
 
+DHCPFWD_CFGFILE=/etc/dhcp-fwd.conf
+DHCPFWD_OPTIONS=
+test -f /etc/sysconfig/dhcp-fwd && . /etc/sysconfig/dhcp-fwd
+
 RETVAL=0
 prog="dhcp-fwd"
 
 start () {
 	echo -n $"Starting $prog: "
-	daemon dhcp-fwd -c /etc/dhcp-fwd.conf
+	daemon dhcp-fwd -c ${DHCPFWD_CFGFILE} ${DHCPFWD_OPTIONS}
 	RETVAL=$?
 	echo
 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/dhcp-fwd

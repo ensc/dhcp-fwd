@@ -80,6 +80,7 @@ fi
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README THANKS
 %doc %{_mandir}/*/*
 %config /etc/init.d/*
+%config(noreplace) /etc/sysconfig/*
 %config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
 
@@ -90,6 +91,9 @@ fi
 
 
 %changelog
+* Wed Aug 28 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.3.1-1
+- Added /etc/sysconfig/dhcp-fwd file
+
 * Fri Jul 12 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2.5-2
 - Renamed username from dhcpfwd to dhcp-fwd
 - Adjusted URL

@@ -63,6 +63,7 @@ CLEANFILES		=  doc/dhcp-fwd.1
 
 EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 		 	   contrib/dhcp-fwd.init contrib/dhcp-fwd.conf		\
+			   contrib/dhcp-fwd.sysconfig				\
 			   doc/dhcp-fwd.man
 
 %.1:			%.man
@@ -78,8 +79,9 @@ splint:
 				$(dhcp_fwd_SOURCES) $(neg_SRCS)
 
 install-contrib:
-			$(mkinstalldirs) $(DESTDIR)/etc/init.d
-			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init $(DESTDIR)/etc/init.d/dhcp-fwd
+			$(mkinstalldirs) $(DESTDIR)/etc/init.d $(DESTDIR)/etc/sysconfig
+			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init      $(DESTDIR)/etc/init.d/dhcp-fwd
+			$(INSTALL_DATA)   contrib/dhcp-fwd.sysconfig $(DESTDIR)/etc/sysconfig/dhcp-fwd
 
 uninstall-contrib:
 			rm -f $(DESTDIR)/etc/init.d/dhcp-fwd
