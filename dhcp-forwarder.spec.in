@@ -1,5 +1,10 @@
 ## $Id$	--*- rpm-spec -*--
 
+## This package understands the following switches:
+## --without dietlibc   ...   disable usage of dietlibc
+## --without minit      ...   disable creation of 'minit' subpackage
+
+
 %define	username	dhcp-fwd
 %define homedir		%_var/lib/%username
 %define minitdir	%_sysconfdir/minit
@@ -101,6 +106,8 @@ rm -rf $RPM_BUILD_ROOT
 %__make DESTDIR=$RPM_BUILD_ROOT install install-contrib
 %__install -d -m700 $RPM_BUILD_ROOT%homedir
 
+%{?_without_minit:rm -rf $RPM_BUILD_ROOT%minitsvcdir}
+
 
 ##---------------------------------------------
 
@@ -161,6 +168,8 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
 %config(noreplace) %_sysconfdir/sysconfig/*
 
 
+%if 0%{!?_without_minit:1}
+
 %files minit
 %defattr(-,root,root,-)
 %dir %minitsvcdir
@@ -168,8 +177,13 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
 %minitsvcdir/respawn
 %config(noreplace) %minitsvcdir/params
 
+%endif
+
 
 %changelog
+* Thu Jun 17 2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> - 0:0.6.1-0
+- conditionalized build of -minit subpackage
+
 * Thu Aug  7 2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0:0.5.1-0
 - added minit support
 - removed superfluous %%doc attribute of %%_mandir entries
