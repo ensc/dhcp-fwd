@@ -24,7 +24,7 @@ dnl
 
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.2.1, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.2.2, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -105,6 +105,8 @@ AC_CHECK_HEADERS([stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/tim
 AC_CHECK_HEADERS([unistd.h stdbool.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+ENSC_DIET_CHECK_IN_ADDR_T
+
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
