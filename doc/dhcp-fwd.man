@@ -134,6 +134,11 @@ For the meaning of this values see setrlimit(2).
 \fIlimit\fR may be plain unsigned number, a number followed by 'k'
 (*1000), 'K' (*1024), 'm' (*1000k), 'M' (*1024K) or '-1' to
 remove the limit for this resource.
+.TP
+.B logfile \fIfilename
+Specifies the file where messages will be stored. This file is located
+relatively to the directory where dhcp-fwd was started and \fBnot\fR
+to the directory given at the \fIchroot\fR option.
 .\"
 .\" ----
 .\"
