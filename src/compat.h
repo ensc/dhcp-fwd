@@ -71,7 +71,7 @@
 #  endif
 #endif
 
-#ifndef __GLIBC__
+#if defined(__dietlibc__) && !defined(DIET_HAS_IN_ADDR_T)
 typedef uint32_t	in_addr_t;
 #endif
 
