@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <pwd.h>
 
 #include <parser.h>
 #include <cfg.h>
@@ -50,11 +51,21 @@ int main(int argc, char const *argv[])
 {
   struct ConfigInfo		cfg;
   size_t			i;
+  struct passwd *		pw;
 
   if (argc!=2) exit(1);
 
   memset(&cfg, 0, sizeof cfg);
   parse(argv[1], &cfg);
+
+  // HACK: workaround different uids/gids for 'bin'
+  if ((pw=getpwnam("bin")) &&
+      pw->pw_uid!=1 && pw->pw_uid==cfg.uid)
+    cfg.uid = 1;
+
+  if (pw!=0 &&
+      pw->pw_gid!=1 && pw->pw_gid==cfg.gid)
+    cfg.gid = 1;
 
   showUInt("uid", cfg.uid);
   showUInt("gid", cfg.gid);
@@ -136,7 +147,7 @@ int main(int argc, char const *argv[])
 
 	if (svr->iface) {
 	  write(1, ", &", 3);
-	  write(1, svr->iface, strlen(svr->iface));
+	  write(1, svr->iface->name, strlen(svr->iface->name));
 	}
 	break;
       case svBCAST	:
