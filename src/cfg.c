@@ -113,20 +113,22 @@ initRawFD(/*@out@*/int *fd)
   *fd = Esocket(AF_PACKET, SOCK_RAW, 0xFFFF);
 }
 
-inline static void
-initSenderFD(/*@out@*/int *fd, char const *iface_name)
+inline static int
+initSenderFD(struct InterfaceInfo const *iface)
     /*@globals internalState, fileSystem@*/
     /*@modifies internalState, fileSystem, *fd@*/
-    /*@requires maxRead(fd)==0 /\ maxSet(fd)==0@*/
 {
   struct sockaddr_in	s;
+  int			fd;
+  int const		ON = 1;
 
-  assert(fd!=0);
+  fd = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-  *fd = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-  if (iface_name)
-    Esetsockopt(*fd, SOL_SOCKET, SO_BINDTODEVICE, iface_name, strlen(iface_name)+1);
+    // used for sending only...
+  Esetsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &ON, sizeof ON);
+  if (iface)
+    Esetsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,
+		iface->name, strlen(iface->name)+1);
 
   memset(&s, 0, sizeof(s));
   
@@ -135,7 +137,8 @@ initSenderFD(/*@out@*/int *fd, char const *iface_name)
   s.sin_port        = htons(DHCP_PORT_CLIENT);
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  Ebind(*fd, &s);
+  Ebind(fd, &s);
+  return fd;
 }
 
 inline static void
@@ -225,7 +228,7 @@ getSenderIfaceName(struct InterfaceInfoList const * const ifs,
     }
   }
 
-  if (ptr) return ptr->name;
+  if (res) return res->name;
   else     return 0;
 }
 
@@ -238,9 +241,35 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
 {
   size_t					i, idx;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
+  struct ServerInfo *				servers;
+  int						bind_all_fd = -1;
 
-  initSenderFD(&fds->sender_fd,
-	       getSenderIfaceName(ifs, !cfg->do_bindall));
+  for (servers = cfg->servers.dta;
+       servers < cfg->servers.dta + cfg->servers.len;
+       ++servers) {
+    switch (servers->type) {
+      case svUNICAST	:
+	if (bind_all_fd!=-1 && servers->iface!=0)
+	  scEXITFATAL("There are mixed 'server ip ...' declarations; please use either only such ones with or such ones without an interface");
+	else if (bind_all_fd!=-1)
+	  servers->info.unicast.fd = bind_all_fd;
+	else if (servers->iface!=0 && servers->iface->sender_fd!=-1)
+	  servers->info.unicast.fd = servers->iface->sender_fd;
+	else {
+	  servers->info.unicast.fd = initSenderFD(servers->iface);
+
+	  if (servers->iface==0)
+	    bind_all_fd               = servers->info.unicast.fd;
+	  else
+	    servers->iface->sender_fd = servers->info.unicast.fd;
+	}
+
+	break;
+      default		:
+	break;
+    }
+  }
+
   initRawFD(&fds->raw_fd);
   
   fds->len = ifs->len;
