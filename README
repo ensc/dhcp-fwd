@@ -24,7 +24,7 @@ FEATURES
   | # ps hu `pidof dhcp-fwd`
   | dhcp-fwd  3227  0.0  0.1    64   64 ?        S    15:58   0:00 ./dhcp-fwd -c etc/dhcp-fwd.cfg
 
-  This numbers are the result of:
+  These numbers are the result of:
   | $ ./configure --enable-release --enable-dietlibc --disable-logging
   | $ make DIET='diet -Os' && strip dhcp-fwd  ## dietlibc-0.20, gcc-3.2
 
@@ -130,9 +130,9 @@ following environment:
                                                     |   ~~~~~~    |
                                                      -------------
 
-The clients have the a netmask of 192.168.0.0/255.255.248.0; the
-dhcp-fwd itself has one interface with an IP of 192.168.0.6. Then I am
-using the following core-configuration:
+The clients have a netmask of 192.168.0.0/255.255.248.0; the dhcp-fwd
+itself has one interface with an IP of 192.168.0.6. Then I am using
+the following core-configuration:
 
 | if              eth0    true true true
 | name            eth0    ws-c
