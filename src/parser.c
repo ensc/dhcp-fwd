@@ -574,6 +574,7 @@ parse(char const		fname[],
     }
   }
 
+  Eclose(fd);
   return;
 
   err:
