@@ -21,7 +21,7 @@
 #endif
 
 #include "splint.h"
-#include "config.h"
+#include "cfg.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
