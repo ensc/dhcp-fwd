@@ -16,8 +16,8 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_DHCP_H
-#define DHCP_FORWARDER_DHCP_H
+#ifndef DHCP_FORWARDER_SRC_DHCP_H
+#define DHCP_FORWARDER_SRC_DHCP_H
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -38,18 +38,8 @@ struct DHCPHeader  {
 
     uint32_t	xid;
     uint16_t	secs;
-    
-    struct __attribute__((__packed__)) {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	unsigned int	mbz1:7;
-	unsigned int	bcast:1;
-	unsigned int	mbz2:8;
-#else
-	unsigned int	bcast:1;
-	unsigned int	mbz1:7;
-	unsigned int	mbz2:8;
-#endif	
-    }		flags;
+
+    uint16_t	flags;
 
     in_addr_t	ciaddr;
     in_addr_t	yiaddr;
@@ -78,9 +68,13 @@ enum {
 
 enum {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  DHCP_COOKIE	= 0x63538263
+  optDHCP_COOKIE = 0x63538263,
+  
+  flgDHCP_BCAST	 = 0x8000
 #else
-  DHCP_COOKIE	= 0x63825363
+  DHCP_COOKIE  	 = 0x63825363,
+  
+  flgDHCP_BCAST	 = 0x0080
 #endif
 };
 
@@ -100,6 +94,7 @@ enum {
   agREMOTEID	= 2u
 };
 
+
 inline static size_t
 DHCP_getOptionLength(struct DHCPSingleOption const *opt)
 {
@@ -107,6 +102,20 @@ DHCP_getOptionLength(struct DHCPSingleOption const *opt)
     case cdPAD	:
     case cdEND	:  return 1;
     default	:  return opt->len + 2;
+  }
+}
+
+inline static void
+DHCP_zeroOption(struct DHCPSingleOption *opt)
+{
+  size_t	len = DHCP_getOptionLength(opt);
+  size_t	i;
+
+    
+  for (i=0; i<len; ++i) {
+    /*@+charint@*/
+    reinterpret_cast(char *)(opt)[i] = cdPAD;
+    /*@=charint@*/
   }
 }
 
@@ -122,13 +131,10 @@ DHCP_nextSingleOption(/*@returned@*/struct DHCPSingleOption *opt)
 inline static struct DHCPSingleOption const *
 DHCP_nextSingleOptionConst(/*@returned@*/struct DHCPSingleOption const *opt)
 {
-  size_t cnt = DHCP_getOptionLength(opt);
-
-  return (reinterpret_cast(struct DHCPSingleOption const *)
-	  (reinterpret_cast(char const *)(opt) + cnt));
+  return DHCP_nextSingleOptionConst(const_cast(struct DHCPSingleOption *)(opt));
 }
 
-#endif	/* DHCP_FORWARDER_DHCP_H */
+#endif	/* DHCP_FORWARDER_SRC_DHCP_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"
