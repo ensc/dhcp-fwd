@@ -24,7 +24,11 @@
 #endif
 
 #include <stdint.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 #include "compat.h"
+#include "util.h"
 
 struct DHCPHeader  {
     uint8_t	op;
@@ -125,3 +129,8 @@ DHCP_nextSingleOptionConst(/*@returned@*/struct DHCPSingleOption const *opt)
 }
 
 #endif	/* DHCP_FORWARDER_DHCP_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:
