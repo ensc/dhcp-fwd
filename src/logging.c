@@ -54,7 +54,7 @@ logDHCPPackage(char const *data, size_t	len,
   (void)localtime_r(&tv.tv_sec, &tm);
   
   if (strftime(buffer, sizeof buffer, "%T", &tm)==-1) goto err;			/*   8 chars */
-  if (sprintf(buffer+strlen(buffer), ".%06lu: ", tv.tv_usec)==-1) goto err;	/*  +7 chars
+  if (sprintf(buffer+strlen(buffer), ".%06li: ", tv.tv_usec)==-1) goto err;	/*  +7 chars
 										    => 15 chars */
   
   (void)write(2, buffer, strlen(buffer));
