@@ -26,7 +26,7 @@ start () {
 	daemon dhcp-fwd -c ${DHCPFWD_CFGFILE} ${DHCPFWD_OPTIONS}
 	retval=$?
 	echo
-	[ $retval -eq 0 ] && touch $lockfile
+	test $retval -eq 0 && touch $lockfile
 	return $retval
 }
 
@@ -35,7 +35,7 @@ stop () {
 	killproc dhcp-fwd
 	retval=$?
 	echo
-	[ $retval -eq 0 ] && rm -f $lockfile
+	test $retval -eq 0 && rm -f $lockfile
 	return $retval
 }
 
@@ -52,7 +52,9 @@ case "$1" in
 	status dhcp-fwd
 	;;
   condrestart)
-	[ -f $lockfile ] && restart || :
+	if test -f $lockfile; then
+	    restart
+	fi
 	;;
   *)
 	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
