@@ -83,7 +83,7 @@ initCharacterClassification(/*@out@*/unsigned int *chrs)
   
   chrs['\t'] |= chrBLANK;
   chrs[' ']  |= chrBLANK;
-  chrs['.']  |= chrIP | chrFILENAME | chrUSERNAME;
+  chrs['.']  |= chrSYS | chrUSERNAME | chrIP;
   chrs['_']  |= chrSYS | chrUSERNAME;
   chrs['-']  |= chrSYS | chrUSERNAME;
   chrs[':']  |= chrSYS;
