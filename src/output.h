@@ -19,6 +19,27 @@
 #ifndef DHCP_FORWARDER_OUTPUT_H
 #define DHCP_FORWARDER_OUTPUT_H
 
+void		openMsgfile(/*@in@*//*@null@*/char const *filename)
+  /*@globals fileSystem, internalState@*/
+  /*@modifies fileSystem, internalState@*/ ;
+
+void		writeMsg(char const *msg, size_t len)
+  /*@globals internalState, errno@*/
+  /*@modifies internalState, errno@*/ ;
+
+void		writeMsgStr(char const *msg, size_t len)
+  /*@globals internalState, errno@*/
+  /*@modifies internalState, errno@*/ ;
+
+void		writeMsgUInt(unsigned int val)
+  /*@globals internalState, errno@*/
+  /*@modifies internalState, errno@*/ ;
+
+void		writeMsgTimestamp()
+  /*@globals internalState, errno@*/
+  /*@modifies internalState, errno@*/ ;
+
+
 void		writeUInt(int fd, unsigned int val)
   /*@globals internalState, errno@*/
   /*@modifies internalState, errno@*/ ;

@@ -24,9 +24,68 @@
 
 #include <unistd.h>
 #include <assert.h>
+#include <string.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "output.h"
 #include "util.h"
+#include "wrappers.h"
+
+static int		msg_fd = -1;
+
+void
+openMsgfile(/*@in@*//*@null@*/char const *filename)
+    /*@globals msg_fd@*/
+    /*@modifies msg_fd@*/
+{
+  if (filename==0 || filename[0]=='\0')        { msg_fd =  2; }
+  else if (strcmp(filename, "/dev/null")==0)   { msg_fd = -1; }
+  else {
+    msg_fd = Eopen(filename, O_CREAT|O_WRONLY|O_APPEND);
+    msg_fd = Edup2(msg_fd, 2);
+
+    assert(msg_fd==2);
+  }
+}
+
+void
+writeMsgTimestamp()
+    /*@globals msg_fd@*/
+{
+  struct timeval		tv;
+  time_t			aux;
+  size_t			fill_cnt = 0;
+
+  if (msg_fd==-1) return;
+  
+  (void)gettimeofday(&tv, 0);
+  
+  {
+#ifdef ENABLE_LOGGING
+    char			buffer[16];
+    struct tm			tmval;
+    
+    (void)localtime_r(&tv.tv_sec, &tmval);
+    if (strftime(buffer, sizeof buffer, "%T", &tmval)>0) {
+      (void)write(msg_fd, buffer, strlen(buffer));
+    }
+    else
+#endif
+    {
+      writeUInt(msg_fd, static_cast(unsigned int)(tv.tv_sec));
+      (void)write(msg_fd, ".", 1);
+    }
+  }
+
+  aux = tv.tv_usec;
+  assert(aux>=0);
+  
+  while (aux<100000) { ++fill_cnt; aux *= 10; }
+  (void)write(msg_fd, "00000", fill_cnt);
+  writeUInt(msg_fd, static_cast(unsigned int)(tv.tv_usec));
+}
 
 void
 writeUInt(int fd, unsigned int val)
@@ -49,6 +108,37 @@ writeUInt(int fd, unsigned int val)
   (void)write(fd, ptr, &buffer[sizeof(buffer)] - ptr);
     /*@=strictops@*/
 }
+
+void
+writeMsgUInt(unsigned int val)
+    /*@globals msg_fd@*/
+{
+  if (msg_fd==-1) return;
+
+  writeUInt(msg_fd, val);
+}
+
+void
+writeMsgStr(char const *msg, size_t len)
+    /*@globals msg_fd@*/
+{
+  if (msg_fd==-1) return;
+
+  (void)write(msg_fd, msg, len);
+}
+
+void
+writeMsg(char const *msg, size_t len)
+    /*@globals msg_fd@*/
+{
+  if (msg_fd==-1) return;
+
+  writeMsgTimestamp();
+  (void)write(msg_fd, ": ", 2);
+  (void)write(msg_fd, msg, len);
+  (void)write(msg_fd, "\n", 1);
+}
+
 
   // Local Variables:
   // compile-command: "make -C .. -k"
