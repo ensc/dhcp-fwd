@@ -16,11 +16,15 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_COMPAT_H
-#define DHCP_FORWARDER_COMPAT_H
+#ifndef DHCP_FORWARDER_SRC_COMPAT_H
+#define DHCP_FORWARDER_SRC_COMPAT_H
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
+#endif
+
+#if defined(HAVE_STDBOOL_H) && !defined(__cplusplus)
+#  include <stdbool.h>
 #endif
 
 #include <features.h>
@@ -58,6 +62,13 @@
 #  define IP_DF			0x4000
 #endif
 
+#ifndef S_SPLINT_S
+#  if !defined(__bool_true_false_are_defined) && !defined(__cplusplus)
+  typedef int			bool;
+  enum {false = 0, true = 1 };
+#  endif
+#endif
+
 #ifndef __GLIBC__
 typedef uint32_t	in_addr_t;
 #endif
@@ -80,7 +91,7 @@ struct ether_header
        __result; }))
 #endif
 
-#endif	/* DHCP_FORWARDER_COMPAT_H */
+#endif	/* DHCP_FORWARDER_SRC_COMPAT_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"
