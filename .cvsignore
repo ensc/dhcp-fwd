@@ -1,6 +1,7 @@
 ._usr_local-up-to-date
 .deps
 .gdb_history
+.www-timestamp
 ChangeLog
 aclocal.m4
 autom4te-2.53.cache
@@ -17,4 +18,5 @@ dhcp-fwd
 install-sh
 missing
 mkinstalldirs
+sftp.cmds
 stamp-h1
