@@ -62,7 +62,7 @@ static unsigned int	*CHARACTERS;
 
 inline static void
 initCharacterClassification(/*@out@*/unsigned int *chrs)
-    /*@requires maxSet(*chrs)==256@*/
+    /*@requires maxSet(*chrs)==257@*/
     /*@globals CHARACTERS@*/
     /*@modifies CHARACTERS, *chrs@*/
 {
@@ -924,6 +924,8 @@ parse(/*@in@*/char const		fname[],
 	struct ServerInfo	*server = newServer(&cfg->servers);
 	struct InterfaceInfo	*iface  = 0;
 
+	  // Reachable from state 0x311 only
+	assertDefined(ifname);
 	if (ifname[0]!='\0')
 	  iface = searchInterface(&cfg->interfaces, ifname);
 

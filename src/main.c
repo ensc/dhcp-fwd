@@ -283,7 +283,7 @@ inline static size_t
 removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
 		  struct DHCPSingleOption const 		*end_opt,
 		  size_t					len)
-    /*@requires end_opt > opt@*/
+    /*@requires (opt+1) <= end_opt@*/
     /*@modifies *opt@*/
 {
   size_t	opt_len = DHCP_getOptionLength(opt);
@@ -544,7 +544,7 @@ inline static void
 sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
 		  /*@in@*/char const * const			buffer,
 		  size_t const					size)
-    /*@globals internalState, fds@*/
+    /*@globals internalState@*/
     /*@modifies internalState@*/
 {
   struct sockaddr_in	sock;

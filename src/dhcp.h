@@ -140,7 +140,9 @@ DHCP_removeOption(struct DHCPSingleOption *opt,
     // end-start  -->  character count between opt and end_opt without end_opt
     // -len       -->  size of the option to be removed
     // +1         -->  the end_opt
-  memmove(start, start+len, end-start - len + 1);
+    /*@-strictops@*/
+  memmove(start, start+len, end-(start+len) + 1);
+    /*@=strictops@*/
 }
 
 /*@unused@*/

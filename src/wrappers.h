@@ -88,6 +88,8 @@ Egetpwnam(char const *name)
 /*@unused@*/
 inline static pid_t
 Esetsid()
+    /*@globals  internalState,fileSystem,errno@*/
+    /*@modifies internalState,fileSystem,errno@*/
 {
   pid_t		res = setsid();
   FatalErrnoError(res==-1, 1, "setsid()");

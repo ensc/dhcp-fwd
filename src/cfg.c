@@ -116,7 +116,7 @@ initRawFD(/*@out@*/int *fd)
 inline static int
 initSenderFD(struct InterfaceInfo const *iface)
     /*@globals internalState, fileSystem@*/
-    /*@modifies internalState, fileSystem, *fd@*/
+    /*@modifies internalState, fileSystem@*/
 {
   struct sockaddr_in	s;
   int			fd;
@@ -211,16 +211,17 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
   scEXITFATAL("Can not get interface information");
 }
 
-static char const *
+static char const /*@null@*//*@observer@*/ *
 getSenderIfaceName(struct InterfaceInfoList const * const ifs,
 		   bool                    		  do_it)
 {
   struct InterfaceInfo const *	res = 0;
-  struct InterfaceInfo const *	ptr = ifs->len==0 ? 0 : ifs->dta + ifs->len;
+  struct InterfaceInfo const *	ptr = (ifs->len==0 || ifs->dta==0) ? 0 : ifs->dta + ifs->len;
   
   if (!do_it) return 0;
 
   while (ptr>ifs->dta) {
+    assert(ptr!=0);
     --ptr;
     if (ptr->has_servers) {
       if (res) return 0;	// there are more than one sender...
@@ -236,7 +237,7 @@ inline static void
 initFDs(/*@out@*/struct FdInfoList 		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
     /*@globals internalState, fileSystem@*/
-    /*@modifies internalState, fileSystem, *fds@*/
+    /*@modifies internalState, fileSystem, *fds, cfg->servers@*/
     /*@requires maxRead(fds)>=0 /\ maxSet(fds)>=0 /\ maxSet(fds->sender_fd)>=0@*/
 {
   size_t					i, idx;
@@ -244,9 +245,12 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   struct ServerInfo *				servers;
   int						bind_all_fd = -1;
 
+  assert(cfg->servers.dta==0 || cfg->servers.len!=0);
+  
   for (servers = cfg->servers.dta;
-       servers < cfg->servers.dta + cfg->servers.len;
+       /*@-nullptrarith@*/servers < cfg->servers.dta + cfg->servers.len/*@=nullptrarith@*/;
        ++servers) {
+    assert(servers!=0);
     switch (servers->type) {
       case svUNICAST	:
 	if (bind_all_fd!=-1 && servers->iface!=0)
@@ -289,17 +293,20 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
 
 inline static void
 getConfig(/*@in@*/char const				*filename,
-	  /*@out@*//*@dependent@*/struct ConfigInfo	*cfg)
+	  /*@partial@*//*@dependent@*/struct ConfigInfo	*cfg)
     /*@globals internalState, fileSystem@*/
     /*@modifies *cfg, internalState, fileSystem@*/
     /*@requires maxRead(cfg)>=0
              /\ PATH_MAX >= 1
+	     /\ maxRead(cfg->conffile_name)>=1
              /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
 	     /\ (maxSet(cfg->logfile_name)+1) == PATH_MAX
 	     /\ (maxSet(cfg->pidfile_name)+1) == PATH_MAX@*/
     /*@ensures  maxRead(cfg->chroot_path)>=0
              /\ maxRead(cfg->logfile_name)>=0
-	     /\ maxRead(cfg->pidfile_name)>=0@*/
+	     /\ maxRead(cfg->pidfile_name)>=0
+	     /\ maxRead(cfg->servers.dta)>=0
+	     /\ maxRead(cfg->interfaces.dta)>=0@*/
 {
   cfg->interfaces.dta = 0;
   cfg->interfaces.len = 0;
@@ -382,6 +389,8 @@ freeLimitList(struct UlimitInfoList *limits)
 
 inline static pid_t
 initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
+    /*@globals  fileSystem, internalState@*/
+    /*@modifies fileSystem, internalState@*/
 {
   assert(cfg!=0);
   
@@ -391,7 +400,9 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
       
   if (cfg->chroot_path[0]!='\0') {
     Echdir (cfg->chroot_path);
+      /*@-superuser@*/
     Echroot(cfg->chroot_path);
+      /*@=superuser@*/
   }
   
   Esetgroups(1, &cfg->gid);
@@ -407,6 +418,7 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
 inline static void
 parseCommandline(int argc, char *argv[],
 		 /*@out@*/struct ConfigInfo *	cfg)
+    /*@modifies cfg@*/
 {
   assert(cfg!=0);
 
@@ -449,10 +461,8 @@ initializeSystem(int argc, char *argv[],
 
   parseCommandline(argc, argv, &cfg);
 
-    /*@-boundswrite@*/
   getConfig(cfg.conffile_name, &cfg);
   initFDs(fds, &cfg);
-    /*@=boundswrite@*/
 
   pidfile_fd = Eopen(cfg.pidfile_name, O_WRONLY|O_CREAT, 0444);
   openMsgfile(cfg.logfile_name);
@@ -469,7 +479,9 @@ initializeSystem(int argc, char *argv[],
 
   switch (pid) {
     case 0	:
+	/*@-usereleased@*/
       pidfile_pid = initializeDaemon(&cfg);
+	/*@=usereleased@*/
       break;
       
     case -1	:  perror("fork()");  break;
