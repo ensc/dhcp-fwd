@@ -160,7 +160,7 @@ setNext()
     look_ahead = static_cast(int)(c);
   }
   else if (cnt==0) look_ahead = tkEOF;
-  else assert(false);
+  else { assert(false); }
 }
 
 inline static int
