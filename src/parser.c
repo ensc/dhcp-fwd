@@ -114,13 +114,19 @@ inline static /*@exposed@*/ struct InterfaceInfo *
 newInterface(struct InterfaceInfoList *ifs)
 {
   size_t		new_len;
+  struct InterfaceInfo	*result;
   
   ++ifs->len;
   
   new_len  = ifs->len * (sizeof(struct InterfaceInfo));
   ifs->dta = static_cast(struct InterfaceInfo*)(Erealloc(ifs->dta, new_len));
+
+  assert(ifs->dta!=0);
   
-  return ifs->dta + ifs->len - 1;
+  result        = ifs->dta + ifs->len - 1;
+  result->if_ip = INADDR_NONE;
+
+  return result;
 }
 
 inline static /*@exposed@*/struct ServerInfo *
@@ -230,7 +236,7 @@ readName(/*@out@*/char buffer[], size_t len)
 
     if ( (c>='a' && c<='z') || (c>='A' && c<='Z') ||
 	 (c>='0' && c<='9') ||
-	 c=='-' || c=='_' || c=='/' || c=='.')
+	 c=='-' || c=='_' || c=='/' || c=='.' )
     {
       *ptr++ = static_cast(char)(c);
       match(c);
@@ -515,6 +521,14 @@ parse(char const			fname[],
 
 	  /* if <name> ... case */
       case 0x100	:
+	switch (c) {
+	  case 'f'	:  state = 0x0105; break;
+	  case 'p'	:  state = 0x0120; break;
+	  default	:  goto err;
+	}
+	break;
+
+      case 0x0105	:
 	match('f');             readBlanks();
 	readIfname(ifname);     readBlanks();
 	readBool(&has_clients); readBlanks();
@@ -540,6 +554,28 @@ parse(char const			fname[],
 	iface->has_servers = has_servers;
 	iface->allow_bcast = allow_bcast;
 
+	state = 0xFFFE;
+	break;
+      }
+
+      case 0x0120	:
+	match('p');	      readBlanks();
+	readIfname(ifname);   readBlanks();
+	readIp(&ip);
+
+	state = 0x0125;
+	break;
+
+      case 0x0125	:
+      {
+	struct InterfaceInfo *	iface;
+
+	  // Reachable from state 0x0120 only
+	assertDefined(ifname);
+	assertDefined(&ip);
+	iface = searchInterface(&cfg->interfaces, ifname);	
+
+	iface->if_ip = ip.s_addr;
 	state = 0xFFFE;
 	break;
       }
