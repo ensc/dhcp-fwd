@@ -1,4 +1,4 @@
-Version 0.2.4
+Version 0.2.5
 -------------
 	- Minor enhancements in the build-system (generalized sed-subst
 	  rule)
@@ -23,6 +23,8 @@ Version 0.2.4
 	- made ulimits configurable
 	- splint succeeds now with '-strict' settings
 	- minor fixes and extensions in the configfile parser
+	- SECFIX: drop supplemental groups also
+	- awaked the logfile-functionality to life
 	
 Version 0.2
 -----------

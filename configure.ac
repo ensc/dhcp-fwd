@@ -23,7 +23,7 @@ dnl distribution terms that you use for the rest of that program.
 dnl  
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.2.4, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.2.5, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -52,7 +52,7 @@ ENSC_DIET
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
 LF_CHECK_CC_FLAG(${RELEASE_CFLAGS})
-LF_CHECK_CC_FLAG([-Wall -Wno-unused-function])
+LF_CHECK_CC_FLAG([-Wall -W -Wno-unused-function])
 
 if test x"${ensc_use_dietlibc}" != xyes; then
 	dnl dietlibc <= 0.17 does not compile with -std=c99... :(

@@ -105,7 +105,6 @@ Xstrncat(/*@unique@*/char * const buffer,
   }
 }
 
-
 void
 logDHCPPackage(char const *data, size_t	len,
 	       struct in_pktinfo const		*pkinfo,
