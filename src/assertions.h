@@ -26,10 +26,21 @@
 #include "dhcp.h"
 #include "inet.h"
 
+#ifndef NDEBUG
+extern void	iphdr_not_20();
+extern void	ether_header_not_14();
+extern void 	udphdr_not_8();
+extern void	dhcpheader_not_236();
+extern void	dhcpoptions_not_4();
+extern void 	dhcpsingleoption_not_2();
+extern void	dhcpllpacket_not_42();
+#endif
+
 inline static void
 checkCompileTimeAssertions()
 {
-#ifdef __OPTIMIZE__
+#ifndef NDEBUG
+#  ifdef __OPTIMIZE__
   if (sizeof(struct iphdr)!=20)           iphdr_not_20();
   if (sizeof(struct ether_header)!=14)    ether_header_not_14();
   if (sizeof(struct udphdr)!=8)           udphdr_not_8();
@@ -37,7 +48,8 @@ checkCompileTimeAssertions()
   if (sizeof(struct DHCPOptions)!=4)      dhcpoptions_not_4();
   if (sizeof(struct DHCPSingleOption)!=2) dhcpsingleoption_not_2();
   if (sizeof(struct DHCPllPacket)!=42)    dhcpllpacket_not_42();
-#endif
+#  endif	/* __OPTIMIZE__ */
+#endif		/* NDEBUG */
 }
 
 #endif	/* DHCP_FORWARDER_ASSERTIONS_H */
