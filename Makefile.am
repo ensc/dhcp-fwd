@@ -56,8 +56,11 @@ EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 			   doc/dhcp-fwd.man
 
 %.1:			%.man
-			$(MAKE) substrule VARS='sysconfdir sbindir PACKAGE VERSION' INFILE='$<' OUTFILE='$@'
+			$(MAKE) substvar VARS='sysconfdir sbindir PACKAGE VERSION' INFILE='$<' OUTFILE='$@'
 
+
+splint:
+			splint -f splint.conf $(basename ${dhcp_fwd_SOURCES} ${EXTRA_dhcp_fwd_SOURCES})
 
 install-contrib:
 			$(mkinstalldirs) $(DESTDIR)/etc/init.d
@@ -84,6 +87,7 @@ sftp.cmds:		$(WWW_FILES_ROOT) $(WWW_FILES_FILES)
 			done >>$@.tmp
 			mv -f $@.tmp $@
 
+.PHONY:			splint
 
 include $(top_srcdir)/m4/validate.am
 include $(top_srcdir)/m4/changelog.am
