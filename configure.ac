@@ -37,30 +37,14 @@ AC_PROG_INSTALL
 AC_PROG_AWK
 
 ENSC_STANDARD_TOOLS
+ENSC_RELEASE(IS_RELEASE)
+ENSC_DIET
 
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
+LF_CHECK_CC_FLAG(${RELEASE_CFLAGS})
 LF_CHECK_CC_FLAG([-std=c99 -pedantic -Wall -Wno-unused-function])
-
-AC_MSG_CHECKING([whether to use dietlibc])
-AC_ARG_ENABLE(dietlibc,
-	      [AC_HELP_STRING([--enable-dietlibc],
-			      [use dietlibc (yes)])],
-              [ case x"$with_val" in
-			xyes)	ac_cv_use_dietlibc="yes";;
-			x|xno)	ac_cv_use_dietlibc="no";;
-			*)	AC_MSG_ERROR([Invalid value "$with_val" for '--enable-dietlibc'])
-		esac ],
-		ac_cv_use_dietlibc=yes)
-AC_MSG_RESULT(${ac_cv_use_dietlibc})
-
-if test x"${ac_cv_use_dietlibc}" = xyes; then
-	DIET='diet'
-else
-	DIET=
-fi
-AC_SUBST(DIET)
-		
+	
 
 # Checks for libraries.
 
