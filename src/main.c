@@ -666,7 +666,7 @@ execRelay()
   size_t const			len_total = max_mtu + IFNAMSIZ + 4;
   char				*buffer   = static_cast(char *)(alloca(len_total));
 
-  FatalErrnoError(buffer!=0, 1, "alloca()");
+  FatalErrnoError(buffer==0, 1, "alloca()");
 
   assert(fds.dta!=0 || fds.len==0);
 
