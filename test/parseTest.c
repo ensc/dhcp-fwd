@@ -130,14 +130,19 @@ int main(int argc, char const *argv[])
     switch (svr->type) {
       case svUNICAST	:
 	write(1, "UNICAST, ", 9);
-	aux = inet_ntoa(svr->info.ip);
+	aux = inet_ntoa(svr->info.unicast.ip);
 	if (aux==0)  write(1, "<null>", 6);
 	else         write(1, aux, strlen(aux));
+
+	if (svr->iface) {
+	  write(1, ", &", 3);
+	  write(1, svr->iface, strlen(svr->iface));
+	}
 	break;
       case svBCAST	:
 	write(1, "BROADCAST, ", 11);
 	write(1, "&", 1);
-	write(1, svr->info.iface->name, strlen(svr->info.iface->name));
+	write(1, svr->iface->name, strlen(svr->iface->name));
 	break;
       default		:  write(1, "???", 3); abort();
     }
