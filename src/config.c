@@ -20,6 +20,7 @@
 #  include <config.h>
 #endif
 
+#include "splint.h"
 #include "config.h"
 
 #include <fcntl.h>
@@ -40,35 +41,38 @@
 #include "wrappers.h"
 #include "inet.h"
 
-#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg))
+#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
-static void
-exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn));
-  
+/*@noreturn@*/ static void
+exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
+  /*:requires maxRead(msg)+1 >= len@*/ ;
+
+
 inline static void
 exitFatal(char const msg[], register size_t len)
 {
-  write(2, msg, len);
-  write(2, "\n", 1);
+  (void)write(2, msg, len);
+  (void)write(2, "\n", 1);
 
   exit(2);
 }
 
 
 inline static in_addr_t
-sockaddrToInet4(/*@dependent@*/struct sockaddr const *addr)
+sockaddrToInet4(struct sockaddr const *addr)
 {
 
-  if (addr->sa_family!=AF_INET) EXITFATAL("Interface has not IPv4 address");
+  if (/*@-type@*/addr->sa_family!=AF_INET/*@=type@*/)
+    EXITFATAL("Interface has not IPv4 address");
 
   return (reinterpret_cast(struct sockaddr_in const *)(addr))->sin_addr.s_addr;
 }
 
 inline static void
 initClientFD(struct FdInfo *fd,
-	     struct InterfaceInfo const *iface)
+	     /*@in@*//*@observer@*/struct InterfaceInfo const *iface)
 {
-  struct		sockaddr_in	s;
+  struct sockaddr_in	s;
   int const		ON = 1;
 
   assert(fd!=0 && iface!=0);
@@ -76,12 +80,18 @@ initClientFD(struct FdInfo *fd,
   fd->iface = iface;
   fd->fd    = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-  Esetsockopt(fd->fd, SOL_IP,     IP_PKTINFO,      &ON, sizeof(ON));
-  Esetsockopt(fd->fd, SOL_SOCKET, SO_BROADCAST,    &ON, sizeof(ON));
+    /*@-boundsread@*/
+  Esetsockopt(fd->fd, SOL_IP,     IP_PKTINFO,      &ON, sizeof ON);
+  Esetsockopt(fd->fd, SOL_SOCKET, SO_BROADCAST,    &ON, sizeof ON);
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name, strlen(iface->name)+1);
-  
+    /*@=boundsread@*/
+
+    /*@-boundswrite@*/
   memset(&s, 0, sizeof(s));
-  s.sin_family      = AF_INET;
+    /*@=boundswrite@*/
+  
+    /*@-type@*/
+  s.sin_family      = AF_INET; /*@=type@*/
   s.sin_port        = htons(DHCP_PORT_SERVER);
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -89,7 +99,9 @@ initClientFD(struct FdInfo *fd,
 }
 
 inline static void
-initRawFD(int *fd)
+initRawFD(/*@out@*/int *fd)
+    /*@modifies *fd@*/
+    /*@requires maxSet(fd)==0@*/
 {
   assert(fd!=0);
 
@@ -97,7 +109,9 @@ initRawFD(int *fd)
 }
 
 inline static void
-initSenderFD(int *fd)
+initSenderFD(/*@out@*/int *fd)
+    /*@modifies *fd@*/
+    /*@requires maxRead(fd)==0 /\ maxSet(fd)==0@*/
 {
   struct sockaddr_in	s;
 
@@ -105,8 +119,12 @@ initSenderFD(int *fd)
 
   *fd = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
+    /*@-boundswrite@*/
   memset(&s, 0, sizeof(s));
-  s.sin_family      = AF_INET;
+    /*@=boundswrite@*/
+  
+    /*@-type@*/
+  s.sin_family      = AF_INET; /*@=type@*/
   s.sin_port        = htons(DHCP_PORT_CLIENT);
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -117,6 +135,8 @@ inline static void
 sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
 		 /*@out@*/uint8_t		mac[],
 		 /*@out@*/size_t		*len)
+    /*@requires maxSet(len)==1 /\ maxSet(mac)>=ETH_ALEN @*/
+    /*@ensures  maxRead(mac)==(*len)@*/
 {
   assert(addr!=0);
 
@@ -124,68 +144,93 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
     case ARPHRD_EETHER	:
     case ARPHRD_IEEE802	:
     case ARPHRD_ETHER	:  *len = ETH_ALEN; break;
-    default		:  EXITFATAL("Unsupported hardware-type");
+    default		:  EXITFATAL("Unsupported hardware-type"); 
   }
 
+    /*@-boundsread@*/
+  assert(*len <= ETH_ALEN);
+    /*@=boundsread@*/
+
+    /*@-boundswrite@*/
   memcpy(mac, addr->sa_data, *len);
+    /*@=boundswrite@*/
 }
 
 inline static void
 fillInterfaceInfo(struct InterfaceInfoList *ifs)
+    /*@requires maxRead(ifs->dta)==ifs->len /\ maxRead(ifs)==0@*/
+    /*@modifies ifs->dta, fileSystem@*/
 {
-  size_t		i;
   int			fd = Esocket(AF_INET, SOCK_DGRAM, 0);
-  
+  size_t		i;
+
   for (i=0; i<ifs->len; ++i) {
-    struct ifreq	iface;
-    
-    memcpy(iface.ifr_name, ifs->dta[i].name, IFNAMSIZ);
+    struct ifreq		iface;
+    struct InterfaceInfo	*ifinfo = ifs->dta + i;
+
+    memcpy(iface.ifr_name, ifinfo->name, IFNAMSIZ);
     if (ioctl(fd, SIOCGIFINDEX,  &iface)==-1) goto err;
-    ifs->dta[i].if_idx = iface.ifr_ifindex;
+      /*@-usedef@*/
+    if (iface.ifr_ifindex<0)                  goto err;
+    ifinfo->if_idx = (unsigned int)(iface.ifr_ifindex);
+      /*@=usedef@*/
 
     if (ioctl(fd, SIOCGIFADDR,   &iface)==-1) goto err;
-    ifs->dta[i].if_ip  = sockaddrToInet4(&iface.ifr_addr);
+    ifinfo->if_ip  = sockaddrToInet4(&iface.ifr_addr);
 
     if (ioctl(fd, SIOCGIFMTU,    &iface)==-1) goto err;
-    ifs->dta[i].if_mtu = static_cast(size_t)(iface.ifr_mtu);
+    ifinfo->if_mtu = static_cast(size_t)(iface.ifr_mtu);
 
     if (ioctl(fd, SIOCGIFHWADDR, &iface)==-1) goto err;
     sockaddrToHwAddr(&iface.ifr_hwaddr,
-		     ifs->dta[i].if_mac, &ifs->dta[i].if_maclen);
+		     ifinfo->if_mac, &ifinfo->if_maclen);
   }
+  
   Eclose(fd);
 
   return;
-  
   err:
   perror("ioctl()");
-  EXITFATAL("Can not set interface information");
+  EXITFATAL("Can not get interface information");
 }
 
 inline static void
 initFDs(/*@out@*/struct FdInfoList 		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
+    /*@modifies *fds@*/
+    /*@requires maxRead(fds)>=0 /\ maxSet(fds)>=0 /\ maxSet(fds->sender_fd)>=0@*/
 {
-  register size_t				i;
-  register size_t				idx;
+  size_t					i, idx;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
-  
+
+    /*@-boundsread@*//*@-boundswrite@*/
   initSenderFD(&fds->sender_fd);
   initRawFD(&fds->raw_fd);
+    /*@=boundsread@*//*@=boundswrite@*/
   
   fds->len = ifs->len;
-  fds->dta = reinterpret_cast(struct FdInfo*)(Emalloc(fds->len * (sizeof(fds->dta[0]))));
+  fds->dta = static_cast(struct FdInfo*)(Emalloc(fds->len *
+						 (sizeof(struct FdInfo))));
 
-  
-  for (idx=0, i=0; i<ifs->len; ++i) {
-    initClientFD(fds->dta + idx, ifs->dta+i);
-    ++idx;
+  for (idx=0, i=0; i<ifs->len; ++i, ++idx) {
+    /*dependent*/struct InterfaceInfo const * const	ifinfo = ifs->dta + i;
+    
+    initClientFD(fds->dta + idx, ifinfo);
   }
 }
 
 inline static void
-getConfig(char const		*filename,
-	  struct ConfigInfo	*cfg)
+getConfig(/*@in@*/char const		*filename,
+	  /*@out@*/struct ConfigInfo	*cfg)
+    /*@modifies *cfg, fileSystem@*/
+    /*@requires maxRead(cfg)>=0
+             /\ PATH_MAX >= 1
+             /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
+	     /\ (maxSet(cfg->logfile_name)+1) == PATH_MAX
+	     /\ (maxSet(cfg->pidfile_name)+1) == PATH_MAX@*/
+    /*@ensures  maxRead(cfg->chroot_path)>=0
+             /\ maxRead(cfg->logfile_name)>=0
+	     /\ maxRead(cfg->pidfile_name)>=0@*/
 {
   cfg->interfaces.dta = 0;
   cfg->interfaces.len = 0;
@@ -196,37 +241,41 @@ getConfig(char const		*filename,
   cfg->uid            = 99;
   cfg->gid            = 99;
 
-  cfg->chroot_path[0]  = 0;
-  cfg->logfile_name[0] = 0;
+  cfg->chroot_path[0]  = '\0';
+  cfg->logfile_name[0] = '\0';
   cfg->loglevel        = 0;
 
-  cfg->pidfile_name[0] = 0;
+  cfg->pidfile_name[0] = '\0';
   
   parse(filename, cfg);
+    /*@-boundsread@*/
   fillInterfaceInfo(&cfg->interfaces);
+    /*@=boundsread@*/
 }
 
 inline static void
 showVersion()
 {
-  write(1, PACKAGE_STRING, strlen(PACKAGE_STRING));
-  write(1, "\n", 1);
+  (void)write(1, PACKAGE_STRING, strlen(PACKAGE_STRING));
+  (void)write(1, "\n", 1);
 }
 
 inline static void
-showHelp(char const *cmd)
+showHelp(/*@in@*//*@nullterminated@*/char const *cmd)
 {
+  char const	msg[] = (" [-v] [-h] [-c <filename>] [-d]\n\n"
+			 "  -v              show version\n"
+			 "  -h              show help\n"
+			 "  -c <filename>   read configuration from <filename>\n"
+			 "  -d              debug-mode; do not fork separate process\n\n"
+			 "Report bugs to Enrico Scholz <"
+			 PACKAGE_BUGREPORT
+			 ">\n");
+
   showVersion();
-  write(1, "\nusage: ", 8	);
-  write(1, cmd, strlen(cmd));
-  write(1, " [-v] [-h] [-c <filename>] [-d]\n\n", 33);
-  write(1, "  -v              show version\n", 31);
-  write(1, "  -h              show help\n",    28);
-  write(1, "  -c <filename>   read configuration from <filename>\n", 53);
-  write(1, "  -d              debug-mode; do not fork separate process\n\n", 60);
-  write(1, "Report bugs to Enrico Scholz <", 30);
-  write(1, PACKAGE_BUGREPORT, sizeof(PACKAGE_BUGREPORT)-1);
-  write(1, ">\n", 2);
+  (void)write(1, "\nusage: ", 8	);
+  (void)write(1, cmd, strlen(cmd));
+  (void)write(1, msg, strlen(msg));
 }
 
 int
@@ -236,23 +285,28 @@ initializeSystem(int argc, char *argv[],
 		 struct FdInfoList *		fds)
 {
   struct ConfigInfo		cfg;
-  char const *			cfg_name = CFG_FILENAME;
-  register bool			do_fork  = true;
-  register int			i = 1;
-  register pid_t		pid;
-  register int			pidfile_fd;
+  /*@dependent@*/char const *	cfg_name = CFG_FILENAME;
+  int				i = 1;
+  pid_t				pid;
+  int				pidfile_fd;
+  bool				do_fork  = true;
 
   while (i<argc) {
-    if      (strcmp(argv[i], "-c")==0) { cfg_name = argv[i+1]; i+=2; }
-    else if (strcmp(argv[i], "-d")==0) { do_fork  = false;     ++i;  }
-    else if (strcmp(argv[i], "-v")==0) { showVersion(); exit(0); }
+      /*@-boundsread@*/
+    if      (strcmp(argv[i], "-v")==0) { showVersion();     exit(0); }
     else if (strcmp(argv[i], "-h")==0) { showHelp(argv[0]); exit(0); }
+    else if (strcmp(argv[i], "-d")==0)             {      do_fork  = false;   }
+    else if (strcmp(argv[i], "-c")==0 && i+1<argc) { ++i; cfg_name = argv[i]; }
+      /*@=boundsread@*/
     else EXITFATAL("Bad cmd-line option; use '-h' to get help");
-  }
-  
-  getConfig(cfg_name, &cfg);
 
+    ++i;
+  }
+
+    /*@-boundswrite@*/
+  getConfig(cfg_name, &cfg);
   initFDs(fds, &cfg);
+    /*@=boundswrite@*/
 
   pidfile_fd = open(cfg.pidfile_name, O_WRONLY | O_CREAT);
   if (pidfile_fd==-1) {
@@ -262,6 +316,8 @@ initializeSystem(int argc, char *argv[],
   
   *ifs     = cfg.interfaces;
   *servers = cfg.servers;
+
+  Eclose(0);
   
   if (do_fork) pid = fork();
   else         pid = 0;
@@ -270,7 +326,7 @@ initializeSystem(int argc, char *argv[],
     case -1	:  break;
       
     case 0	:
-      if (cfg.chroot_path[0]!=0) {
+      if (cfg.chroot_path[0]!='\0') {
 	Echdir (cfg.chroot_path);
 	Echroot(cfg.chroot_path);
       }
@@ -281,11 +337,12 @@ initializeSystem(int argc, char *argv[],
       
     default	:
       writeUInt(pidfile_fd, pid);
-      write(pidfile_fd, "\n", 1);
+      (void)write(pidfile_fd, "\n", 1);
       break;
   }
-  
-  close(pidfile_fd);
+
+    /* It is too late to handle an error here. So just ignore the error... */
+  (void)close(pidfile_fd);
   return pid;
 }
 
