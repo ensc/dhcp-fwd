@@ -20,8 +20,11 @@
 
 check_PROGRAMS		=  writeTest parseTest
 
-writeTest_SOURCES	=  writeTest.c ../src/output.c
-parseTest_SOURCES	=  parseTest.c ../src/output.c ../src/parser.c
+writeTest_SOURCES	=  writeTest.c
+writeTest_LDADD		=  ../src/output.o
+
+parseTest_SOURCES	=  parseTest.c
+parseTest_LDADD		=  ../src/output.o ../src/parser.o 
 
 AM_CPPFLAGS		=  -I $(top_srcdir)/src
 
@@ -34,7 +37,7 @@ TESTS			=  cmpout.writeTest				\
 
 CLEANFILES		=  cmpout.*
 
-EXTRA_DIST		=  cmpout-script
+EXTRA_DIST		=  cmpout-script $(test_DTA)
 
 cmpout.%:		cmpout-script
 			-rm -f $@
