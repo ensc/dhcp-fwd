@@ -69,12 +69,10 @@ enum {
 enum {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
   optDHCP_COOKIE = 0x63538263,
-  
-  flgDHCP_BCAST	 = 0x8000
+  flgDHCP_BCAST	 = 0x0080
 #else
   DHCP_COOKIE  	 = 0x63825363,
-  
-  flgDHCP_BCAST	 = 0x0080
+  flgDHCP_BCAST	 = 0x8000
 #endif
 };
 
@@ -134,7 +132,7 @@ DHCP_nextSingleOption(/*@returned@*/struct DHCPSingleOption *opt)
 inline static struct DHCPSingleOption const *
 DHCP_nextSingleOptionConst(/*@returned@*/struct DHCPSingleOption const *opt)
 {
-  return DHCP_nextSingleOptionConst(const_cast(struct DHCPSingleOption *)(opt));
+  return DHCP_nextSingleOption(const_cast(struct DHCPSingleOption *)(opt));
 }
 
 #endif	/* DHCP_FORWARDER_SRC_DHCP_H */
