@@ -31,7 +31,6 @@ AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
 
 AM_MAINTAINER_MODE
 
-
 # Default settings
 
 enable_logging_default=no
@@ -43,6 +42,8 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_AWK
 AC_PROG_LN_S
+
+AC_PATH_PROGS(SPLINT, splint)
 
 ENSC_STANDARD_TOOLS
 ENSC_RELEASE(IS_RELEASE)
@@ -120,6 +121,16 @@ AC_FUNC_MALLOC
 AC_FUNC_STRFTIME
 AC_PROG_GCC_TRADITIONAL
 AC_CHECK_FUNCS([gettimeofday inet_ntoa localtime_r memset select socket strerror strtol])
+
+
+AH_TOP([
+#ifndef H_DHCP_FORWARDER_TOP_CONFIG_H
+#define H_DHCP_FORWARDER_TOP_CONFIG_H
+])
+
+AH_BOTTOM([
+#endif	/* H_DHCP_FORWARDER_TOP_CONFIG_H */
+])
 
 AC_CONFIG_FILES([Makefile m4/Makefile dhcp-forwarder.spec])
 AC_OUTPUT
