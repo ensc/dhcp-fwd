@@ -53,9 +53,10 @@ logDHCPPackage(char const *data, size_t	len,
   (void)gettimeofday(&tv, 0);
   (void)localtime_r(&tv.tv_sec, &tm);
   
-  if (strftime(buffer, sizeof buffer, "%T", &tm)==-1) goto err;			/*   8 chars */
-  if (sprintf(buffer+strlen(buffer), ".%06li: ", tv.tv_usec)==-1) goto err;	/*  +7 chars
-										    => 15 chars */
+  if (strftime(buffer, sizeof buffer, "%T", &tm)==-1) goto err;		/*   8 chars */
+  if (snprintf(buffer+strlen(buffer), 10,
+	       ".%06li: ", tv.tv_usec)==-1) goto err;			/*  +9 chars
+									 => 17 chars */
   
   (void)write(2, buffer, strlen(buffer));
 
@@ -76,19 +77,19 @@ logDHCPPackage(char const *data, size_t	len,
     }
 
       /* max 14 + 48 + 10 = 72 chars */
-    sprintf(buffer, "from %s (if #%i): ", addr_buffer, pkinfo->ipi_ifindex);
+    snprintf(buffer, 48+10+1, "from %s (if #%i): ", addr_buffer, pkinfo->ipi_ifindex);
     
     if (len<sizeof(struct DHCPHeader)) {
-	/* + max 14 + 10 = 24 chars  ==> max 96 chars */
-      sprintf(buffer + strlen(buffer), "Broken package with len %lu", len);
+	/* + max 24 + 10 = 34 chars  ==> max 106 chars */
+      snprintf(buffer + strlen(buffer), 34+1, "Broken package with len %lu", len);
     }
     else {
       struct in_addr		ip;
       bool			is_faulty = false;
 
-	/* + 8 chars */
-      sprintf(buffer+strlen(buffer), "%08x ", header->xid);
-      switch (header->op) {	/* + max 22 chars */
+	/* + 9 chars ==> max 115 chars */
+      snprintf(buffer+strlen(buffer), 9+1, "%08x ", header->xid);
+      switch (header->op) {	/* + <=24 chars  ==> max 139 chars */
 	case opBOOTREQUEST:
 	  strcat(buffer, "BOOTREQUEST from ");	/* + 17 chars */
 	  ip.s_addr = header->ciaddr;
@@ -98,16 +99,16 @@ logDHCPPackage(char const *data, size_t	len,
 	  ip.s_addr = header->yiaddr;
 	  break;
 	default:
-	    /* + max 12 + 10 = 22 chars */
-	  sprintf(buffer+strlen(buffer), "<UNKNOWN> (%u), ", header->op);
+	    /* + max 14 + 10 = 24 chars */
+	  snprintf(buffer+strlen(buffer), 24+1, "<UNKNOWN> (%u), ", header->op);
 	  is_faulty = true;
 	  break;
       }
 
-	/* + max 15 chars ==> max 117 chars */
+	/* + <=15 chars ==> max 154 chars */
       if (!is_faulty) {
 	assertDefined(&ip);
-	strcat(buffer, inet_ntoa(ip));
+	strncat(buffer, inet_ntoa(ip), 15);
       }
     }
 
