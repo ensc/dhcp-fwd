@@ -24,10 +24,10 @@ dnl
 
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.1, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.1.3, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE([gnits dist-bzip2 subdir-objects])
+AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
 
 AM_MAINTAINER_MODE
 
@@ -53,7 +53,7 @@ AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 LF_CHECK_CC_FLAG(${RELEASE_CFLAGS})
 LF_CHECK_CC_FLAG([-Wall -Wno-unused-function])
 
-if test x"${ensc_cv_use_dietlibc}" = x; then
+if test x"${ensc_cv_use_dietlibc}" != xyes; then
 	dnl dietlibc <= 0.17 does not compile with -std=c99... :(
 	LF_CHECK_CC_FLAG([-std=c99 -pedantic])
 elif which $CC gcc &>/dev/null; then
