@@ -210,19 +210,8 @@ newInterface(struct InterfaceInfoList *ifs)
   assert(ifs->dta!=0);
   
   result        = &ifs->dta[ifs->len - 1];
-
-  memset(result->name, 0, sizeof result->name);
-  memset(result->aid,  0, sizeof result->aid);
-  result->has_clients = false;
-  result->has_servers = false;
-  result->allow_bcast = false;
-  result->need_mac    = false;
-  result->if_idx      = 0;
-  memset(&result->if_real_ip, 0, sizeof result->if_real_ip);
-  result->if_ip       = INADDR_NONE;
-  result->if_mtu      = 0;
-  memset(result->if_mac, 0, sizeof result->if_mac);
-  result->if_maclen   = 0;
+  memset(result, 0, sizeof result);
+  result->if_ip = INADDR_NONE;
   
   return result;
 }
