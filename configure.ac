@@ -27,7 +27,7 @@ dnl
 AC_INIT(dhcp-forwarder, 0.1, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE([gnits])
+AM_INIT_AUTOMAKE([gnits dist-bzip2])
 
 AM_MAINTAINER_MODE
 
@@ -35,6 +35,8 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
+
+ENSC_STANDARD_TOOLS
 
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
@@ -77,5 +79,5 @@ AC_FUNC_ALLOCA
 AC_PROG_GCC_TRADITIONAL
 AC_CHECK_FUNCS([bzero inet_ntoa memset select socket])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile m4/Makefile dhcp-forwarder.spec])
 AC_OUTPUT
