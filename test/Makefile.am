@@ -37,7 +37,7 @@ TESTS			=  cmpout.writeTest				\
 
 CLEANFILES		=  cmpout.*
 
-EXTRA_DIST		=  cmpout-script $(test_DTA)
+EXTRA_DIST		=  cmpout-script compile-test $(test_DTA)
 
 cmpout.%:		cmpout-script
 			-rm -f $@
