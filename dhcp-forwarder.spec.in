@@ -5,7 +5,7 @@
 Summary:	An DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	0.3
+Release:	1
 License:	GPL
 Group:		System Environment/Daemons
 Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
@@ -72,6 +72,7 @@ fi
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README THANKS
+%doc %{_mandir}/*/*
 %config /etc/init.d/*
 %config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
@@ -79,6 +80,9 @@ fi
 
 
 %changelog
+* Fri Jun 14 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2-1
+- Added manpage
+
 * Thu Jun 13 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.1-0.3
 - Added --without dietlibc option
 
