@@ -30,7 +30,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 
-#include "config.h"
+#include "cfg.h"
 #include "util.h"
 #include "wrappers.h"
 #include "compat.h"
@@ -469,21 +469,33 @@ parse(char const			fname[],
       }
 
       case 0x0403	:
+	  // Can be reached from state 0x0402 only
+	assertDefined(&nr);
+	
 	cfg->uid = nr;
 	state = 0xFFFE;
 	break;
 
       case 0x0413	:
+	  // Can be reached from state 0x0402 only
+	assertDefined(name);
+	
 	cfg->uid = Egetpwnam(name)->pw_uid;
 	state = 0xFFFE;
 	break;
 
       case 0x0503	:
+	  // Can be reached from state 0x0502 only
+	assertDefined(&nr);
+	
 	cfg->gid = nr;
 	state = 0xFFFE;
 	break;
 
       case 0x0513	:
+	  // Can be reached from state 0x0502 only
+	assertDefined(name);
+	
 	cfg->gid = Egetgrnam(name)->gr_gid;
 	state = 0xFFFE;
 	break;

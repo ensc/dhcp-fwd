@@ -38,7 +38,7 @@
 #include <netpacket/packet.h>
 #include <net/if_arp.h>
 
-#include "config.h"
+#include "cfg.h"
 #include "wrappers.h"
 #include "dhcp.h"
 #include "inet.h"
@@ -354,7 +354,7 @@ sendEtherFrame(struct InterfaceInfo const		*iface,
 {
   struct sockaddr_ll		sock;
   struct msghdr			msg;
-  struct iovec			iovec_data[2];
+  /*@temp@*/struct iovec	iovec_data[2];
 
     /* We support ethernet only and the config-part shall return ethernet-macs
      * only... */
@@ -395,6 +395,8 @@ sendEtherFrame(struct InterfaceInfo const		*iface,
   msg.msg_control    = 0;
   msg.msg_controllen = 0;
   msg.msg_flags      = 0;
+
+  assertDefined(msg.msg_iov);
 
   Wsendmsg(fds.raw_fd, &msg, 0);
 }
@@ -564,13 +566,16 @@ execRelay()
   size_t const			total_len = max_mtu + IFNAMSIZ + 4;
   char				*buffer   = static_cast(char *)(Ealloca(total_len));
 
+  assert(buffer!=0);
+
   while (true) {
     fd_set			fd_set;
     int				max;
     size_t			i;
     
     fillFDSet(&fd_set, &max);
-    if (Wselect(max+1, &fd_set, 0, 0, 0)==-1) continue;
+      
+    if /*@-type@*/(Wselect(max+1, &fd_set, 0, 0, 0)==-1)/*@=type@*/ continue;
 
     for (i=0; i<fds.len; ++i) {
       struct FdInfo const * const	fd_info = fds.dta + i;
@@ -628,11 +633,15 @@ main(int argc, char *argv[])
 
   checkCompileTimeAssertions();
 
+    /* We create a mem-leak here, but this is not important because the parent
+     * exits immediately and frees the resources and the child never exits */
+    /*@-compdestroy@*/ 
   switch (initializeSystem(argc, argv, &ifs, &servers, &fds)) {
     case -1	:  return 5;
     case 0	:  execRelay();
     default	:  return 0;
   }
+    /*@=compdestroy@*/  
 }
 
   // Local Variables:
