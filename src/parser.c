@@ -39,7 +39,7 @@ static int		fd;
 static unsigned int	line_nr, col_nr;
 static char const	*filename = 0;
 
-#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg))
+#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
 static void
 exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn));
