@@ -63,18 +63,18 @@ static struct ServerInfoList	servers;
 static struct FdInfoList	fds;
 
 inline static void
-fillFDSet(/*@out@*/fd_set			*fd_set,
+fillFDSet(/*@out@*/fd_set			*fdset,
 	  /*@out@*/int				*max)
 {
   size_t		i;
-  FD_ZERO(fd_set);
+  FD_ZERO(fdset);
   *max = -1;
 
   for (i=0; i<fds.len; ++i) {
     struct FdInfo const * const		fdinfo = fds.dta + i;
     
     *max = MAX(*max, fdinfo->fd);
-    FD_SET(fdinfo->fd, fd_set);
+    FD_SET(fdinfo->fd, fdset);
   }
 }
 
@@ -246,7 +246,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
   struct DHCPSingleOption	*end_opt   = 0;
   struct DHCPSingleOption	*relay_opt = 0;
   size_t			len;
-  
+
   do {
     switch (opt->code) {
       case cdRELAY_AGENT	:
@@ -269,7 +269,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
       if (relay_opt!=0) DHCP_zeroOption(relay_opt);
       break;
     case acADD_ID	:
-      if (relay_opt!=0) len = addAgentOption(iface, end_opt, len);
+      if (relay_opt==0) len = addAgentOption(iface, end_opt, len);
       break;
 #ifdef ENABLE_AGENT_REPLACE      
     case acREPLACE_ID	:
@@ -512,9 +512,10 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
   if (!isValidHeader(header)) return;
   ++header->hops;
 
-    /* Check if we are the first agent; if so, set 'giaddr' and the relay-agent
-     * field, else do not touch the packet */
-  if (header->giaddr==0) {
+    /* Check if we are the first agent or if we handle a packet indented for us;
+     * if so, set 'giaddr' and the relay-agent field, else do not touch the
+     * packet */
+  if (header->giaddr==0 || header->giaddr==fd->iface->if_ip) {
     header->giaddr = fd->iface->if_ip;
   
     if (!isValidOptions(options, options_len)) {
