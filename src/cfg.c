@@ -44,6 +44,7 @@
 
 #define EXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
+static
 struct LimitStruct {
     int			res;
     struct rlimit	limit;
