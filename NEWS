@@ -1,5 +1,5 @@
-Version 0.3.2
--------------
+Version 0.4
+-----------
 	- remove agent-id in BOOTREPLYs instead of padding it; WinNT seems
 	  to misinterpret it
 	- non-ethernet interfaces on server-side are allowed now; thanks to
@@ -9,6 +9,11 @@ Version 0.3.2
 	  Michal Pokrywka for reporting the problem and giving the proper
 	  solution
 	- minor code cleanups
+	- it _should_ compile with uClibc now
+	- FIX: fixed improper usage of alloca() which caused burning
+	  computers and crashing satellites when not enabling inlining
+	  (reported by Michal Pokrywka)
+	- fixed 'condrestart' command of the initscript
 
 Version 0.3
 -----------

@@ -1,5 +1,5 @@
-Release notes for dhcp-forwarder, version 0.1.3
-===============================================
+Release notes for dhcp-forwarder, version 0.4
+=============================================
 
 This program is used to forward DHCP and BOOTP messages between two
 networks with different broadcast domains.
