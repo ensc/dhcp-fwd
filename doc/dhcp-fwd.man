@@ -20,7 +20,7 @@
 .\" except that this permission notice may be stated in a translation
 .\" approved by the Free Software Foundation
 .\"  
-.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.2"
+.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.3"
 .\"
 .\" ====================
 .\"
@@ -102,9 +102,9 @@ must be an alphanumeric groupname or a numeric gid.
 .\"
 .TP
 .B chroot \fIpath
-The program goes into this directory and calls
+The program goes into this directory and calls there
 .B chroot()
-there after finishing its initialization.
+after finishing its initialization.
 .TP
 .B pidfile \fIfilename
 The file where the pid of the daemon will be written into.
@@ -143,6 +143,21 @@ option will be ignored.
 .B name \fIifname agent-id
 specifies the RFC 3046 agent-id for the given interface. When not used
 explicitly, the interfacename will be assumed as the agent-id.
+.\"
+.TP
+.B ip \fIifname ip
+assigns the
+.I ip
+to be used in the \fIgiaddr \fRfield. By default to IP of the
+interface will be assumed but when having multiple IPs for one
+interface this option may be usefully.
+
+.B Attention:
+.\"
+This IP will not be used in the IP-layer; this means
+that the UDP packet sent to the server will contain the IP assigned by
+the system. To setup \fBthis\fR address, usual SNAT rulesets in a local
+packetfilter are recommended.
 .\"
 .TP
 .B server \fItype address
