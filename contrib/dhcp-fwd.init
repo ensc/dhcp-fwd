@@ -1,9 +1,10 @@
-#! /bin/sh
+#!/bin/sh
 #
 # chkconfig: - 95 05
 # description: The dhcp-forward agent relays DHCP messages between two \
 #              networks
 # processname: dhcp-fwd
+# config:      /etc/dhcp-fwd.conf
 # pidfile:     /var/run/dhcp-fwd.pid
 
 # Source function library.
