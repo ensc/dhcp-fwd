@@ -19,10 +19,6 @@
 #ifndef DHCP_FORWARDER_SRC_DHCP_H
 #define DHCP_FORWARDER_SRC_DHCP_H
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
