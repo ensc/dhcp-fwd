@@ -28,14 +28,6 @@
 #  define reinterpret_cast(X)	((X) _cAsT_
 #  define static_cast(X)	((X) _cAsT_
 #  define const_cast(X)		((X) _cAsT_
-
-typedef int			bool;
-enum {false = 0, true = 1 };
-#if 0
-/*@unused@*/static bool const	true  = reinterpret_cast(bool)(1);
-/*@unused@*/static bool const	false = reinterpret_cast(bool)(0);
-#endif
-
 #else	/* __cplusplus */
 #  define reinterpret_cast(X)	reinterpret_cast<X>
 #  define static_cast(X)	static_cast<X>
