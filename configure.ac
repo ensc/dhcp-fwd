@@ -24,7 +24,7 @@ dnl
 
 
 # Process this file with 'autoreconf -i' to produce a configure script.
-AC_INIT(dhcp-forwarder, 0.2.3, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
+AC_INIT(dhcp-forwarder, 0.2.4, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
@@ -75,6 +75,8 @@ elif which $CC gcc &>/dev/null; then
 	fi
 fi
 
+ENSC_MODERN_COMPILER_CHECK
+
 AC_MSG_CHECKING(whether to enable logging)
 AC_ARG_ENABLE(logging,
 	      [AC_HELP_STRING([--enable-logging],
@@ -107,8 +109,12 @@ AC_CHECK_HEADERS([unistd.h stdbool.h])
 # Checks for typedefs, structures, and compiler characteristics.
 ENSC_DIET_CHECK_IN_ADDR_T
 
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Werror -Wno-unused -Wno-uninitialized"
 AC_C_CONST
 AC_C_INLINE
+CFLAGS="$old_CFLAGS"
+
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_TYPE_UID_T

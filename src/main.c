@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <assert.h>
 #include <sys/select.h>
 #include <sys/param.h>
@@ -52,10 +53,10 @@
 typedef enum {
   acIGNORE,		//< Do nothing...
   acREMOVE_ID,		//< Remove an already existing agent-id field
-  acADD_ID,		//< Add an agent-id field if such a field does not
+  acADD_ID		//< Add an agent-id field if such a field does not
 			//< already exists
 #ifdef ENABLE_AGENT_REPLACE  
-  acREPLACE_ID		//< Replace an already existing agent-id field
+  ,acREPLACE_ID		//< Replace an already existing agent-id field
 #endif  
 } OptionFillAction;
 
@@ -332,10 +333,13 @@ fixCheckSumUDP(struct udphdr * const			udp,
       uint8_t		mbz;
       uint8_t		proto;
       uint16_t		len;
-  } __attribute__((__packed__))	const pseudo_hdr = {
-    ip->saddr, ip->daddr,
-    0,
-    ip->protocol, udp->len };
+  } __attribute__((__packed__))	pseudo_hdr;
+
+  pseudo_hdr.src   = ip->saddr;
+  pseudo_hdr.dst   = ip->daddr;
+  pseudo_hdr.mbz   = 0;
+  pseudo_hdr.proto = ip->protocol;
+  pseudo_hdr.len   = udp->len;
 
   udp->check = 0;
   sum = calculateCheckSum(&pseudo_hdr, sizeof pseudo_hdr, 0);

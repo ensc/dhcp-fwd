@@ -9,8 +9,9 @@
 
 #include "splint.h"
 
-#include <sys/param.h>		/* ALIGN macro for CMSG_NXTHDR() macro */
 #include <string.h>
+#include <sys/param.h>		/* ALIGN macro for CMSG_NXTHDR() macro */
+#include <sys/uio.h>
 
 #include "util.h"
 #include "recvfromflags.h"

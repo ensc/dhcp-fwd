@@ -31,6 +31,7 @@
 
 #include <features.h>
 #include <inttypes.h>
+#include <unistd.h>
 
   /* Shamelessly stolen from glibc's <sys/cdefs.h> */
 #ifndef __flexarr

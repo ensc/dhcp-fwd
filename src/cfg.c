@@ -296,7 +296,12 @@ limitResources()
     { RLIMIT_AS,      { 0, 0 } },
     { RLIMIT_NOFILE,  { 0, 0 } },
     { RLIMIT_MEMLOCK, { 0, 0 } },
-    { RLIMIT_LOCKS,   { 0, 0 } } };
+#ifdef RLIMIT_LOCKS    
+    { RLIMIT_LOCKS,   { 0, 0 } }
+#else
+#  warning Do not set RLIMIT_LOCKS limit
+#endif
+  };
 
   for (i=0; i<sizeof(syslimit)/sizeof(syslimit[0]); ++i)
     Esetrlimit(syslimit[i].res, &syslimit[i].limit);
