@@ -30,81 +30,166 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 
+#include "parser.h"
 #include "cfg.h"
 #include "util.h"
 #include "wrappers.h"
 #include "compat.h"
 #include "output.h"
 
-#define EOFVAL			(-1)
+#define tkEOF			(256)
 
-static int			look_ahead = EOFVAL;
-static int			fd;
-static unsigned int		line_nr, col_nr;
-/*@null@*/static char const	*filename = 0;
+typedef unsigned int	TokenTable[257];
+static unsigned int	*CHARACTERS;
 
-#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
-#define WRITE(msg)	(void)write(2, msg, sizeof(msg)-1)
+#define chrDIGIT	0x01u
+#define chrLOWALPHA	0x02u
+#define chrUPPERALPHA	0x04u
+#define chrALPHA        (chrUPPERALPHA | chrLOWALPHA)
+#define chrBLANK	0x08u
+#define chrIP		0x10u
+#define chrNUMBER	0x20u
+#define chrUNIT		0x40u
+#define chrNL		0x80u
+#define chrEOF		0x100u
+#define chrUSERNAME	0x200u
+#define chrIFNAME	0x400u
+#define chrFILENAME	0x800u
+#define chrBASEMOD	0x1000u
 
-static void
-exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn));
-  
+#define ensc_DHCP_FORWARDER_ULIMIT_H_I_KNOW_WHAT_I_DO
+#include "ulimit_codes.h"
+
 inline static void
-exitFatal(char const msg[], register size_t len)
+initCharacterClassification(/*@out@*/unsigned int *chrs)
+    /*@requires maxSet(*chrs)==256@*/
+    /*@globals CHARACTERS@*/
+    /*@modifies CHARACTERS, *chrs@*/
 {
+  int			c;
+  unsigned int const	chrSYS = chrIFNAME | chrFILENAME;
+
+    /*@-sizeoftype@*/
+  memset(chrs, 0, sizeof(TokenTable));
+    /*@=sizeoftype@*/
+
+  /*@+charintliteral@*/
+  for (c='0'; c<='9'; ++c) chrs[c] |= (chrDIGIT | chrNUMBER | chrIP |
+			 	          chrSYS | chrUSERNAME);
+  for (c='A'; c<='Z'; ++c) chrs[c] |= chrUPPERALPHA | chrSYS | chrUSERNAME;
+  for (c='a'; c<='z'; ++c) chrs[c] |= chrLOWALPHA   | chrSYS | chrUSERNAME;
+  chrs['\r'] |= chrNL;
+  chrs['\n'] |= chrNL;
+  
+  chrs['\t'] |= chrBLANK;
+  chrs[' ']  |= chrBLANK;
+  chrs['.']  |= chrIP | chrFILENAME | chrUSERNAME;
+  chrs['_']  |= chrSYS | chrUSERNAME;
+  chrs['-']  |= chrSYS | chrUSERNAME;
+  chrs[':']  |= chrSYS;
+  chrs['/']  |= chrFILENAME;
+
+  chrs['M']  |= chrUNIT;
+  chrs['K']  |= chrUNIT;
+  chrs['x']  |= chrBASEMOD;
+  chrs['X']  |= chrBASEMOD;
+  /*@-charintliteral@*/
+
+  CHARACTERS = chrs;
+}
+
+
+inline static bool
+isCharType(/*@sef@*/int c, /*@sef@*/unsigned int type) /*@*/
+{
+    /*@-globs@*/
+  return (CHARACTERS[c] & type)!=0;
+    /*@=globs@*/
+}
+
+/*@unchecked@*/static int		look_ahead = tkEOF;
+/*@checkmod@*/static int		fd;
+/*@unchecked@*/static unsigned int	line_nr, col_nr;
+/*@null@*/static char const		*filename = 0;
+
+  /*@noreturn@*//*@unused@*/
+static void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
+#define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
+#define scWRITE(msg)		(void)write(2, msg, sizeof(msg)-1)
+
+/*@noreturn@*/
+static void
+exitFatal(/*@observer@*/char const msg[],
+	  register size_t len) __attribute__ ((noreturn)) /*@*/ ;
+
+inline static void
+exitFatal(char const msg[], register size_t len) 
+{
+    /*@-internalglobs@*//*@-globs@*/
   if (filename!=0) (void)write(2, filename, strlen(filename));
-  else             WRITE("<null>");
-  WRITE(":");
+  else             scWRITE("<null>");
+  scWRITE(":");
   writeUInt(2, line_nr);
-  WRITE(":");
+  scWRITE(":");
   writeUInt(2, col_nr);
-  WRITE(":");
+  scWRITE(":");
   (void)write(2, msg, len);
-  WRITE("\n");
+  scWRITE("\n");
+    /*@=internalglobs@*//*@=globs@*/
 
   exit(3);
 }
 
 inline static void
 setNext()
+    /*@globals col_nr, line_nr, fd, look_ahead@*/
+    /*@modifies col_nr, line_nr, look_ahead@*/
 {
   char			c;
-  register int		cnt;
+  int			cnt;
 
   ++col_nr;
   cnt = TEMP_FAILURE_RETRY(read(fd, &c, 1));
-  if (cnt==EOFVAL) EXITFATAL("read() failed");
+  if (cnt==-1) scEXITFATAL("read() failed");
 
-  if (cnt>0 && c=='\n') {
-    ++line_nr;
-    col_nr = 0;
+  if (cnt>0) {
+    switch (c) {
+      case '\n'	:  ++line_nr; col_nr = 0; break;
+      case '\t'	:  col_nr = (col_nr+7)/8 * 8;
+    }
+    look_ahead = static_cast(int)(c);
   }
-
-  if (cnt==0) look_ahead = EOFVAL;
-  else        look_ahead = static_cast(int)(c);
+  else if (cnt==0) look_ahead = tkEOF;
+  else assert(false);
 }
 
 inline static int
 getLookAhead()
+    /*@globals look_ahead, fd@*/
+    /*@modifies look_ahead@*/
 {
-  if (look_ahead==EOFVAL) setNext();
+  if (look_ahead==tkEOF) setNext();
 
   return look_ahead;
 }
 
 inline static void
 match(char /*@alt int@*/ c)
+    /*@globals look_ahead, fd@*/
+    /*@modifies look_ahead@*/
 {
   register int		got = getLookAhead();
   
-  if (got==EOFVAL) EXITFATAL("unexpected EOF while parsing");
-  if (got!=c)      EXITFATAL("unexpected symbol");
+  if (got==tkEOF) scEXITFATAL("unexpected EOF while parsing");
+  if (got!=c)     scEXITFATAL("unexpected symbol");
 
-  look_ahead = EOFVAL;
+  look_ahead = tkEOF;
 }
 
 inline static void
-matchStr(char const *str)
+matchStr(/*@in@*/char const *str)
+    /*@globals look_ahead, fd@*/
+    /*@modifies look_ahead@*/
 {
   assert(str!=0);
   for (; *str!='\0'; ++str) match(*str);
@@ -112,18 +197,19 @@ matchStr(char const *str)
 
 inline static /*@exposed@*/ struct InterfaceInfo *
 newInterface(struct InterfaceInfoList *ifs)
+    /*@modifies *ifs@*/
 {
   size_t		new_len;
   struct InterfaceInfo	*result;
   
   ++ifs->len;
   
-  new_len  = ifs->len * (sizeof(struct InterfaceInfo));
+  new_len  = ifs->len * (sizeof(*ifs->dta));
   ifs->dta = static_cast(struct InterfaceInfo*)(Erealloc(ifs->dta, new_len));
 
   assert(ifs->dta!=0);
   
-  result        = ifs->dta + ifs->len - 1;
+  result        = &ifs->dta[ifs->len - 1];
   result->if_ip = INADDR_NONE;
 
   return result;
@@ -131,29 +217,75 @@ newInterface(struct InterfaceInfoList *ifs)
 
 inline static /*@exposed@*/struct ServerInfo *
 newServer(struct ServerInfoList *servers)
+    /*@modifies *servers@*/
 {
   size_t		new_len;
   
   ++servers->len;
-  new_len      = servers->len * (sizeof(struct ServerInfo));
+  new_len      = servers->len * (sizeof(*servers->dta));
   servers->dta = static_cast(struct ServerInfo *)(Erealloc(servers->dta, new_len));
+
+  assert(servers->dta!=0);
   
-  return servers->dta + servers->len - 1;
+  return &servers->dta[servers->len - 1];
+}
+
+inline static /*@exposed@*/ struct UlimitInfo *
+registerUlimit(struct UlimitInfoList *ulimits, int code, rlim_t val)
+    /*@modifies *ulimits@*/
+{
+    /*@dependent@*//*@null@*/
+  struct UlimitInfo *		result=0;
+
+  if (ulimits->dta!=0) {
+    struct UlimitInfo *		limit;
+    for (limit=ulimits->dta; limit<&ulimits->dta[ulimits->len]; ++limit) {
+      if (limit->code==code) {
+	result = limit;
+	break;
+      }
+    }
+  }
+
+  if (result==0) {
+    size_t		new_len;
+
+    ++ulimits->len;
+    new_len      = ulimits->len * (sizeof(*ulimits->dta));
+    ulimits->dta = static_cast(struct UlimitInfo *)(Erealloc(ulimits->dta, new_len));
+
+    assert(ulimits->dta!=0);
+
+    result       = &ulimits->dta[ulimits->len - 1];
+    result->code = code;
+  }
+
+  assert(result!=0);
+  assert(result->code==code);
+
+  result->rlim.rlim_cur = val;
+  result->rlim.rlim_max = val;
+
+  return result;
 }
 
 inline static /*@exposed@*/ struct InterfaceInfo *
 searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
+   /*@*/
 {
   register struct InterfaceInfo		*iface;
 
   assert(ifs->dta!=0 || ifs->len==0);
-  
+
+  /*@-ptrarith@*//*@-nullptrarith@*/
   for (iface=ifs->dta; iface < ifs->dta + ifs->len; ++iface) {
     assert(iface!=0);
     if (strcmp(name, iface->name)==0) break;
   }
 
-  if (iface==ifs->dta + ifs->len) EXITFATAL("unknown interface");
+  if (iface==ifs->dta + ifs->len) scEXITFATAL("unknown interface");
+  /*@=ptrarith@*//*@=nullptrarith@*/
+
   assert(iface!=0);
 
   return iface;
@@ -161,6 +293,8 @@ searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
 
 inline static void
 matchEOL()
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead@*/
 {
   register int		state = 0xFF00;
   
@@ -169,30 +303,17 @@ matchEOL()
     
     switch (state) {
       case 0xFF00	:
-	switch (c) {
-	  case ' '	:
-	  case '\t'	:  break;
-	  case '\n'	:  state = 0;    break;
-	  case '\r'	:  state = 0x10; break;
-	  default	:  goto err;
-	}
+	if      (isCharType(c, chrBLANK)) {}
+	else if (isCharType(c, chrNL))    { state = 0; }
+	else goto err;
+	
 	match(c);
 	break;
 	
       case 0		:
-	switch (c) {
-	  case '\n'	:  state = 0;    match(c); break;
-	  case '\r'	:  state = 0x10; match(c); break;
-	  default	:  state = 0xFFFF; break;
-	}
-	break;
-
-      case 0x10		:
-	switch (c) {
-	  case '\n'	:  state = 0;    break;
-	  default	:  goto err;
-	}
-	match(c);
+	if (isCharType(c, chrNL)) match(c);
+	else                      state = 0xFFFF;
+	
 	break;
 
       default		:  assert(false); goto err;
@@ -202,98 +323,231 @@ matchEOL()
   return;
 
   err:
-  EXITFATAL("unexpected character");
+  scEXITFATAL("unexpected character");
 }
 
 inline static void
 readBlanks()
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead@*/
 {
-  register int		c   = 0;
+  int			c   = 0;
   register size_t	cnt = 0;
-  
-  while (c!=EOFVAL) {
+
+  while (c!=tkEOF) {
     c = getLookAhead();
-    
-    switch (c) {
-      case ' '	:
-      case '\t'	:  match(c); ++cnt; break;
-      default	:  c=EOFVAL; break;
-    }
+
+    if (isCharType(c, chrBLANK)) { ++cnt; match(c); }
+    else                         c=tkEOF;
   }
 
-  if (cnt==0) EXITFATAL("Expected blank, got character");
+  if (cnt==0) scEXITFATAL("Expected blank, got character");
 }
 
 /*@+charintliteral@*/
-inline static void
-readName(/*@out@*/char buffer[], size_t len)
+inline static size_t
+readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
     /*@requires (maxSet(buffer)+1) >= len@*/
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead, *buffer@*/
 {
   register char		*ptr = buffer;
-  
-  while (ptr+1 < buffer + len) {
+
+    /*@-ptrarith@*/
+  while (ptr+1 < buffer+len) {
     int			c = getLookAhead();
 
-    if ( (c>='a' && c<='z') || (c>='A' && c<='Z') ||
-	 (c>='0' && c<='9') ||
-	 c=='-' || c=='_' || c=='/' || c=='.' )
-    {
+    if (isCharType(c, char_class)) {
       *ptr++ = static_cast(char)(c);
       match(c);
     }
     else break;
   }
+    /*@=ptrarith@*/
 
   if (len>0) *ptr = '\0';
   assertDefined(buffer);	// either buffer is empty or defined...
+  assert(ptr>=buffer);
+
+    /*@-strictops@*/
+  return static_cast(size_t)(ptr-buffer);
+    /*@=strictops@*/
 }
 /*@=charintliteral@*/
 
 inline static void
-readIfname(/*@out@*/char iface[])
-    /*@requires (maxSet(iface)+1) >= IFNAMSIZ @*/
+readFileName(/*@out@*/char buffer[], size_t len)
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead, *buffer@*/
 {
-  readName(iface, IFNAMSIZ);
+  if (readString(buffer, len, chrFILENAME)==0)
+    scEXITFATAL("Invalid filename");
+}
+
+inline static void
+readUserName(/*@out@*/char buffer[], size_t len)
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead, *buffer@*/
+{
+  if (readString(buffer, len, chrUSERNAME)==0)
+    scEXITFATAL("Invalid user- or groupname");
+}
+
+inline static int
+readLimit()
+    /*@globals fd, look_ahead, ULIMIT_CODES@*/
+    /*@modifies look_ahead@*/
+{
+  char		buffer[128];
+  size_t	i;
   
-  if (iface[0]=='\0') EXITFATAL("Invalid interface name");
+  (void)readString(buffer, sizeof buffer, chrALPHA);
+  for (i=0; i<sizeof(ULIMIT_CODES)/sizeof(ULIMIT_CODES[0]); ++i) {
+    if (strcmp(ULIMIT_CODES[i].name, buffer)==0) return ULIMIT_CODES[i].code;
+  }
+
+  scEXITFATAL("Unknown ulimit-specifier");
+}
+
+inline static long
+readLong()
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead@*/
+{
+  char		value[64];
+  char		*ptr = value;
+  long		result;
+  int		state = 0;
+  int		base  = 10;
+
+    /*@-ptrarith@*/
+  while (state!=0xFFFF && ptr+2<&value[sizeof(value)]) {
+    /*@=ptrarith@*/
+    int		c = getLookAhead();
+    
+    switch (state) {
+      case 0		:
+      {
+	bool		do_match = true;
+	
+	switch (c) {
+	  case '-'	:  break;
+	  case '0'	:  state = 0x0200; break;
+	  default	:  state = 0x0100; do_match=false; break;
+	}
+
+	if (do_match) { match(c); *ptr++ = static_cast(char)(c); }
+	break;
+      }
+      case 0x0100	:
+	  /*@+charintliteral@*/
+	if ( (c>='0' && c<='9' && (c-'0')<base) ||
+	     (isCharType(c, chrLOWALPHA)   && (c-'a'+10)<base) ||
+	     (isCharType(c, chrUPPERALPHA) && (c-'A'+10)<base) )
+	  /*@=charintliteral@*/
+	{
+	  *ptr++ = static_cast(char)(c);
+	  match(c);
+	}
+	else state = 0xFFFF;
+	break;
+
+      case 0x0200	:
+	switch (c) {
+	  case 'x'	:
+	  case 'X'	:
+	    match(c);
+	    *ptr++ = static_cast(char)(c);
+	    base   = 16;
+	    state  = 0x0100;
+	    break;
+	  default	:
+	      /*@+charintliteral@*/
+	    if (c>'0' && c<'8') state=0x0100;	// octal
+	      /*@=charintliteral@*/
+	    else                state=0xFFFF;
+	    break;
+	}
+	break;
+      default		:  assert(false); goto err;
+    }
+  }
+
+  assert(ptr<&value[sizeof(value)]);
+  assertDefined(value);
+  
+  *ptr   = '\0';
+  result = strtol(value, &ptr, 0);
+  if (*ptr!='\0') goto err;
+
+  return result;
+
+  err:
+  scEXITFATAL("Can not parse integer");
+}
+
+inline static int
+readInteger()
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead@*/
+{
+  return static_cast(int)(readLong());
+}
+
+inline static rlim_t
+readLimitVal()
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead@*/
+{
+  long		tmp    = readLong();
+  rlim_t	result;
+  int		c      = getLookAhead();
+
+  if (tmp==-1l) result = RLIM_INFINITY;
+  else          result = static_cast(rlim_t)(tmp);
+
+  switch (c) {
+    case 'M'	:  result *= 1024; /*@fallthrough@*/
+    case 'K'	:  result *= 1024; match(c); break;
+    case 'm'	:  result *= 1000; /*@fallthrough@*/
+    case 'k'	:  result *= 1000; match(c); break;
+    default	:  break;
+  }
+
+  return result;
+}
+
+inline static void
+readIfname(/*@out@*/char *iface)
+    /*@requires (maxSet(iface)+1) >= IFNAMSIZ @*/
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead, *iface@*/
+{
+  if (readString(iface, IFNAMSIZ, chrIFNAME)==0)
+    scEXITFATAL("Invalid interface name");
 }
 
 inline static void
 readIp(/*@out@*/struct in_addr	*ip)
     /*@requires maxSet(ip) == 0@*/
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead, *ip@*/
 {
-  register int		state = 0;
   char			buffer[1024];
-  register char		*ptr = buffer;
+  (void)readString(buffer, sizeof buffer, chrIP);
 
-  while (state!=0xFFFF) {
-    int		c = getLookAhead();
-    switch (c) {
-      case EOFVAL	:
-      case ' '		:
-      case '\t'		:
-      case '\n'		:
-      case '\r'		:  state = 0xFFFF; break;
-      default	:
-	if (ptr+1 >= buffer+sizeof(buffer)) EXITFATAL("IP too long");
-
-	*ptr++ = static_cast(char)(c);
-	match(c);
-	
-	break;
-    }
-  }
-
-  *ptr = '\0';
   assertDefined(buffer);	// ptr is an alias for buffer
-  if (inet_aton(buffer, ip)==0) EXITFATAL("Invalid IP");
+  if (inet_aton(buffer, ip)==0) scEXITFATAL("Invalid IP");
 }
 
 inline static void
 readBool(/*@out@*/bool *val)
     /*@requires maxSet(val) >= 0@*/
+    /*@globals fd, look_ahead@*/
+    /*@modifies look_ahead, *val@*/
 {
   int		state = 0;
+
   while (state!=0xFFFF) {
     int		c = getLookAhead();
     
@@ -315,25 +569,23 @@ readBool(/*@out@*/bool *val)
 	break;
 
       case 0x1000	:
-	switch (c) {
-	  case 'o'	:  match(c); /*@fallthrough@*/
-	  case EOFVAL	:
-	  case ' '	:
-	  case '\t'	:
-	  case '\n'	:
-	  case '\r'	:  *val = false; state = 0xFFFF; break;
+	if (isCharType(c, chrBLANK | chrNL | chrEOF)) {
+	  *val  = false;
+	  state = 0xFFFF;
+	}
+	else switch (c) {
+	  case 'o'	:  *val  = false; state = 0xFFFF; match(c); break;
 	  default	:  goto err;
 	}
 	break;
 
       case 0x2000	:
-	switch (c) {
-	  case 'e'	:  matchStr("es"); /*@fallthrough@*/
-	  case EOFVAL	:
-	  case ' '	:
-	  case '\t'	:
-	  case '\n'	:
-	  case '\r'	:  *val = true; state = 0xFFFF; break;
+	if (isCharType(c, chrBLANK | chrNL | chrEOF)) {
+	  *val  = true;
+	  state = 0xFFFF;
+	}
+	else switch (c) {
+	  case 'e'	:  *val = true;  state = 0xFFFF; matchStr("es"); break;
 	  default	:  goto err;
 	}
 	break;
@@ -346,13 +598,16 @@ readBool(/*@out@*/bool *val)
   return;
 
   err:
-  EXITFATAL("unexpected character");
+  scEXITFATAL("unexpected character");
 }
 
 void
-parse(char const			fname[],
-      struct ConfigInfo			*cfg)
+parse(/*@in@*/char const		fname[],
+      /*@dependent@*/struct ConfigInfo	*cfg)
+    /*@globals fileSystem, internalState, fd, look_ahead, filename, line_nr, col_nr, CHARACTERS, ULIMIT_CODES@*/
+    /*@modifies  fileSystem, internalState, *cfg, fd, look_ahead, filename, line_nr, col_nr, CHARACTERS@*/
 {
+  TokenTable		chrs;
   int			state = 0x0;
   char			ifname[IFNAMSIZ];
   char			agent_id[IFNAMSIZ];
@@ -362,37 +617,41 @@ parse(char const			fname[],
   bool			has_clients;
   bool			has_servers;
   bool			allow_bcast;
+  struct {
+      int		code;
+      rlim_t		val;
+  }			ulimit;
+  
 
   filename = fname;
-  line_nr  = 1;
-  col_nr   = 1;
+  line_nr  = 1u;
+  col_nr   = 1u;
   
   fd = open(filename, O_RDONLY);
   if (fd==-1) {
     perror("open()");
     exit(1);
   }
+
+  initCharacterClassification(chrs);
   
   while (state!=0xFFFF) {
     int		c = getLookAhead();
 
     switch (state) {
       case 0xFF00	:  /* comments */
-	switch (c) {
-	  case '\n'	:
-	  case '\r'	:  matchEOL(); state=0; break;
-	  default	:  match(c); break;
+	if (isCharType(c, chrNL)) {
+	  matchEOL(); state=0;
 	}
+	else match(c);
 	break;
 
       case 0xFFFE	:  matchEOL(); state=0; break;
 	  
       case 0		:
-	switch (c) {
-	  case '\t'	:
-	  case ' '	:  match(c);       break;
-	  case '\n'	:
-	  case '\r'	:  matchEOL();     break;
+	if      (isCharType(c, chrBLANK)) match(c);
+	else if (isCharType(c, chrNL))    matchEOL();
+	else switch (c) {
 	  case '#'	:  state = 0xFF00; break;
 	  case 'i'	:  state = 0x0100; break;
 	  case 'n'	:  state = 0x0200; break;
@@ -402,7 +661,7 @@ parse(char const			fname[],
 	  case 'c'	:  state = 0x0600; break;
 	  case 'l'	:  state = 0x0700; break;
 	  case 'p'	:  state = 0x0800; break;
-	  case EOFVAL	:  state = 0xFFFF; break;
+	  case tkEOF	:  state = 0xFFFF; break;
 	  default	:  goto err;
 	}
 	if (state!=0 && state!=0xFFFF) match(c);
@@ -414,7 +673,7 @@ parse(char const			fname[],
 	break;
 
       case 0x0801	:
-	readName(cfg->pidfile_name, sizeof(cfg->pidfile_name));
+	readFileName(cfg->pidfile_name, sizeof(cfg->pidfile_name));
 	state = 0xFFFE;
 	break;
 	
@@ -433,19 +692,34 @@ parse(char const			fname[],
 	break;
 
       case 0x0710	:
-	readName(cfg->logfile_name, sizeof(cfg->logfile_name));
+	readFileName(cfg->logfile_name, sizeof(cfg->logfile_name));
 	state = 0xFFFE;
 	break;
 
       case 0x0720	:
-	readName(name, sizeof(name));
-	cfg->loglevel = atoi(name);
+	cfg->loglevel = readInteger();
 	state = 0xFFFE;
 	break;
 	
       case 0x0400	:
-	matchStr("ser"); readBlanks();
-	state = 0x0401;
+	switch (c) {
+	  case 's'	:  state = 0x1401; break;
+	  case 'l'	:  state = 0x0900; break;
+	  default	:  goto err;
+	}
+	break;
+
+      case 0x0900	:
+	matchStr("limit"); readBlanks();	// (u)limit
+	ulimit.code = readLimit(); readBlanks();
+	ulimit.val  = readLimitVal();
+	state       = 0x0910;
+	break;
+
+      case 0x0910	:
+	assertDefined(&ulimit);
+	(void)registerUlimit(&cfg->ulimits, ulimit.code, ulimit.val);
+	state = 0xFFFE;
 	break;
 
       case 0x0500	:
@@ -453,9 +727,14 @@ parse(char const			fname[],
 	state = 0x501;
 	break;
 
+      case 0x1401	:
+	matchStr("ser"); readBlanks(); // (u)ser
+	state = 0x0401;
+	break;
+
       case 0x0401	: /*@fallthrough@*/
       case 0x0501	:
-	readName(name, sizeof(name));
+	readUserName(name, sizeof(name));
 	++state;
 	break;
 
@@ -508,7 +787,7 @@ parse(char const			fname[],
 
       case 0x0600	:
 	matchStr("hroot"); readBlanks();
-	readName(name, sizeof(name));
+	readFileName(name, sizeof(name));
 	++state;
 	break;
 
@@ -666,7 +945,7 @@ parse(char const			fname[],
   return;
 
   err:
-  EXITFATAL("Bad character");
+  scEXITFATAL("Bad character");
 }
 
   // Local Variables:
