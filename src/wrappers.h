@@ -87,6 +87,16 @@ Egetpwnam(char const *name)
 }
 
 /*@unused@*/
+inline static pid_t
+Esetsid()
+{
+  pid_t		res = setsid();
+  FatalErrnoError(res==-1, 1, "setsid()");
+
+  return res;
+}
+
+/*@unused@*/
 inline static void
 Echroot(char const path[])
   /*@globals internalState, errno@*/
