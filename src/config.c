@@ -260,7 +260,6 @@ initializeSystem(int argc, char *argv[],
   return pid;
 }
 
-
   // Local Variables:
   // compile-command: "make -k -C .."
   // fill-column: 80
