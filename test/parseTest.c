@@ -34,6 +34,18 @@ showString(char const varname[], char const value[])
   write(1, "'\n", 2);
 }
 
+inline static void
+showRlimit(struct rlimit const *val)
+{
+  if (val->rlim_cur==RLIM_INFINITY) write(1, "INF", 3);
+  else                              writeUInt(1, val->rlim_cur);
+
+  write(1, ", ", 2);
+  
+  if (val->rlim_max==RLIM_INFINITY) write(1, "INF", 3);
+  else                              writeUInt(1, val->rlim_max);
+}
+
 int main(int argc, char const *argv[])
 {
   struct ConfigInfo		cfg;
@@ -73,9 +85,7 @@ int main(int argc, char const *argv[])
     }
     
     write(1, "-> (", 4);
-    writeUInt(1, cfg.ulimits.dta[i].rlim.rlim_cur);
-    write(1, ", ", 2);
-    writeUInt(1, cfg.ulimits.dta[i].rlim.rlim_max);
+    showRlimit(&cfg.ulimits.dta[i].rlim);
     write(1, ")", 1);
   }
   write(1, "}}\n", 3);

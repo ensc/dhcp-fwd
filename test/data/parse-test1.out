@@ -7,7 +7,7 @@ loglevel=1
 ulimits={9, data={
   stack     -> (102400, 102400)
   data      -> (10000, 10000)
-  core      -> (4294967295, 4294967295)
+  core      -> (INF, INF)
   rss       -> (1048576, 1048576)
   nproc     -> (0, 0)
   nofile    -> (2, 2)
