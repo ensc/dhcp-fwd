@@ -1,0 +1,31 @@
+Release notes for dhcp-forwarder, version 0.1
+---------------------------------------------
+
+This program is used to forward DHCP and BOOTP messages between two
+networks with different broadcast domains.
+
+
+FEATURES:
+- runs as non-root in a chroot-environment
+
+- supports DHCP Agent IDs as described in RFC 3046. These IDs can be
+  defined freely.
+
+- uses AF_INET sockets to listen for DHCP messages so packetfilters
+  like iptables can be used to filter incoming messages
+
+- small memory-footprint; the static-linked executable is <40KiB, the
+  runtime memory-usage <70KiB
+
+
+
+BUGS:
+- no documentation; only contrib/dhcp-fwd.conf contains some information
+
+- bad behavior when serverside-interface has a smaller MTU than the
+  MTU on the server itself. An example is
+
+         [Server]-- Ethernet --[Router]-- PPP --[Forwarder]
+
+- on client-side only ethernet supported; same holds on server-side if
+  server is a broadcast-address
