@@ -36,19 +36,74 @@
 #include "wrappers.h"
 #include "compat.h"
 #include "output.h"
-#include "parser-const.h"
-#include "src/parser-tokentbl.h"
 
 #define tkEOF			(256)
 
+typedef unsigned int	TokenTable[257];
+static unsigned int	*CHARACTERS;
+
+#define chrDIGIT	0x01u
+#define chrLOWALPHA	0x02u
+#define chrUPPERALPHA	0x04u
+#define chrALPHA        (chrUPPERALPHA | chrLOWALPHA)
+#define chrBLANK	0x08u
+#define chrIP		0x10u
+#define chrNUMBER	0x20u
+#define chrUNIT		0x40u
+#define chrNL		0x80u
+#define chrEOF		0x100u
+#define chrUSERNAME	0x200u
+#define chrIFNAME	0x400u
+#define chrFILENAME	0x800u
+#define chrBASEMOD	0x1000u
+
 #define ensc_DHCP_FORWARDER_ULIMIT_H_I_KNOW_WHAT_I_DO
 #include "ulimit_codes.h"
+
+inline static void
+initCharacterClassification(/*@out@*/unsigned int *chrs)
+    /*@requires maxSet(*chrs)==256@*/
+    /*@globals CHARACTERS@*/
+    /*@modifies CHARACTERS, *chrs@*/
+{
+  int			c;
+  unsigned int const	chrSYS = chrIFNAME | chrFILENAME;
+
+    /*@-sizeoftype@*/
+  memset(chrs, 0, sizeof(TokenTable));
+    /*@=sizeoftype@*/
+
+  /*@+charintliteral@*/
+  for (c='0'; c<='9'; ++c) chrs[c] |= (chrDIGIT | chrNUMBER | chrIP |
+				       chrSYS | chrUSERNAME);
+  for (c='A'; c<='Z'; ++c) chrs[c] |= chrUPPERALPHA | chrSYS | chrUSERNAME;
+  for (c='a'; c<='z'; ++c) chrs[c] |= chrLOWALPHA   | chrSYS | chrUSERNAME;
+  chrs['\r'] |= chrNL;
+  chrs['\n'] |= chrNL;
+  
+  chrs['\t'] |= chrBLANK;
+  chrs[' ']  |= chrBLANK;
+  chrs['.']  |= chrIP | chrFILENAME | chrUSERNAME;
+  chrs['_']  |= chrSYS | chrUSERNAME;
+  chrs['-']  |= chrSYS | chrUSERNAME;
+  chrs[':']  |= chrSYS;
+  chrs['/']  |= chrFILENAME;
+
+  chrs['M']  |= chrUNIT;
+  chrs['K']  |= chrUNIT;
+  chrs['x']  |= chrBASEMOD;
+  chrs['X']  |= chrBASEMOD;
+  /*@-charintliteral@*/
+
+  CHARACTERS = chrs;
+}
+
 
 inline static bool
 isCharType(/*@sef@*/int c, /*@sef@*/unsigned int type) /*@*/
 {
     /*@-globs@*/
-  return (CFGTOKENS[c] & type)!=0;
+  return (CHARACTERS[c] & type)!=0;
     /*@=globs@*/
 }
 
@@ -569,6 +624,7 @@ parse(/*@in@*/char const		fname[],
     /*@globals fileSystem, internalState, fd, look_ahead, filename, line_nr, col_nr, CHARACTERS, ULIMIT_CODES@*/
     /*@modifies  fileSystem, internalState, *cfg, fd, look_ahead, filename, line_nr, col_nr, CHARACTERS@*/
 {
+  TokenTable		chrs;
   int			state = 0x0;
   char			ifname[IFNAMSIZ];
   char			agent_id[IFNAMSIZ];
@@ -594,6 +650,8 @@ parse(/*@in@*/char const		fname[],
     exit(1);
   }
 
+  initCharacterClassification(chrs);
+  
   while (state!=0xFFFF) {
     int		c = getLookAhead();
 
