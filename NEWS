@@ -1,3 +1,8 @@
+Version 0.5
+-----------
+	- minor cleanups in the spec-file
+	- allowed '.' in interface names to make it work with VLAN kernels
+
 Version 0.4
 -----------
 	- remove agent-id in BOOTREPLYs instead of padding it; WinNT seems
