@@ -5,28 +5,42 @@
 Summary:	An DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	0.1
+Release:	0.3
 License:	GPL
 Group:		System Environment/Daemons
+Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 URL:		http://www.tu-chemnitz.de/~ensc/dhcpfwd
 Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
+
+%if %{?_without_dietlibc:0}%{!?_without_dietlibc:1}
 BuildRequires:	dietlibc
+%endif
+
 
 %description
+dhcp-fwd forwards DHCP messages between subnets with different sublayer
+broadcast domains. It is similar to the DHCP relay agent dhcrelay of
+ISC's DHCP, but has the following features which are important for me:
+
+* Runs as non-root in a chroot-jail
+* Uses "normal" AF_INET sockets which allows to uses packagefilters to
+  filter incoming messages.
+* The DHCP agent IDs can be defined freely
+* Has a small memory footprint when using dietlibc
 
 
 %prep
 %setup -q
 
 %build
-%configure --enable-release
+%configure --enable-release %{?_without_dietlibc:--disable-dietlibc}
 make
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
-make DESTDIR=${RPM_BUILD_ROOT} install install-contrib
+make DESTDIR=${RPM_BUILD_ROOT} install-strip install-contrib
 
 install -d ${RPM_BUILD_ROOT}%{_sysconfdir}
 install -m 644 contrib/dhcp-fwd.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/
@@ -65,5 +79,8 @@ fi
 
 
 %changelog
+* Thu Jun 13 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.1-0.3
+- Added --without dietlibc option
+
 * Sat Jun  1 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 
 - Initial build.
