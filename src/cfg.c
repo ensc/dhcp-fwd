@@ -33,6 +33,7 @@
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <net/if_arp.h>
+#include <sys/resource.h>
 
 #include <stdio.h>
 
@@ -175,8 +176,10 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     ifinfo->if_idx = (unsigned int)(iface.ifr_ifindex);
       /*@=usedef@*/
 
-    if (ioctl(fd, SIOCGIFADDR,   &iface)==-1) goto err;
-    ifinfo->if_ip  = sockaddrToInet4(&iface.ifr_addr);
+    if (ifinfo->if_ip==INADDR_NONE) {
+      if (ioctl(fd, SIOCGIFADDR,   &iface)==-1) goto err;
+      ifinfo->if_ip  = sockaddrToInet4(&iface.ifr_addr);
+    }
 
     if (ioctl(fd, SIOCGIFMTU,    &iface)==-1) goto err;
     ifinfo->if_mtu = static_cast(size_t)(iface.ifr_mtu);
@@ -278,6 +281,27 @@ showHelp(/*@in@*//*@nullterminated@*/char const *cmd)
   (void)write(1, msg, strlen(msg));
 }
 
+inline static void
+limitResources()
+{
+  size_t			i;
+  struct LimitStruct {
+      int		res;
+      struct rlimit	limit;
+  } syslimit[] = {
+    { RLIMIT_FSIZE,   { 64, 64 } },	// for the PID-file...
+    { RLIMIT_DATA,    { 0x10000, 0x10000 } },
+    { RLIMIT_STACK,   { 0x10000, 0x10000 } },
+    { RLIMIT_AS,      { 0, 0 } },
+    { RLIMIT_NPROC,   { 1, 1 } },
+    { RLIMIT_NOFILE,  { 0, 0 } },
+    { RLIMIT_MEMLOCK, { 0, 0 } },
+    { RLIMIT_LOCKS,   { 0, 0 } } };
+
+  for (i=0; i<sizeof(syslimit)/sizeof(syslimit[0]); ++i)
+    Esetrlimit(syslimit[i].res, &syslimit[i].limit);
+}
+
 int
 initializeSystem(int argc, char *argv[],
 		 struct InterfaceInfoList *	ifs,
@@ -318,7 +342,9 @@ initializeSystem(int argc, char *argv[],
   *servers = cfg.servers;
 
   Eclose(0);
-  
+
+  limitResources();
+
   if (do_fork) pid = fork();
   else         pid = 0;
 
