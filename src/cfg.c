@@ -28,43 +28,29 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include <arpa/inet.h>
-#include <sys/ioctl.h>
 #include <sys/param.h>
 #include <net/if_arp.h>
 #include <sys/resource.h>
-
-#include <stdio.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #include "output.h"
 #include "parser.h"
 #include "wrappers.h"
 #include "inet.h"
 
-#define EXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
-
-static
-struct LimitStruct {
-    int			res;
-    struct rlimit	limit;
-} const syslimit[] = {
-    //{ RLIMIT_FSIZE,   { 64, 64 } },	// for the PID-file...
-  { RLIMIT_DATA,    { 0x10000, 0x10000 } },
-  { RLIMIT_STACK,   { 0x10000, 0x10000 } },
-  { RLIMIT_AS,      { 0, 0 } },
-  { RLIMIT_NOFILE,  { 0, 0 } },
-  { RLIMIT_MEMLOCK, { 0, 0 } },
-#ifdef RLIMIT_LOCKS    
-  { RLIMIT_LOCKS,   { 0, 0 } }
-#else
-#  warning RLIMIT_LOCKS limit not set
-#endif
-};
 
 /*@noreturn@*/ static void
 exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
-  /*:requires maxRead(msg)+1 >= len@*/ ;
+  /*:requires maxRead(msg)+1 >= len@*/
+  /*@*/ ;
+
+  /*@noreturn@*/
+static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/; 
+#define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
 
 inline static void
@@ -78,11 +64,12 @@ exitFatal(char const msg[], register size_t len)
 
 
 inline static in_addr_t
-sockaddrToInet4(struct sockaddr const *addr)
+sockaddrToInet4(/*@in@*//*@sef@*/struct sockaddr const *addr)
+    /*@*/
 {
 
   if (/*@-type@*/addr->sa_family!=AF_INET/*@=type@*/)
-    EXITFATAL("Interface has not IPv4 address");
+    scEXITFATAL("Interface has not IPv4 address");
 
   return (reinterpret_cast(struct sockaddr_in const *)(addr))->sin_addr.s_addr;
 }
@@ -90,6 +77,8 @@ sockaddrToInet4(struct sockaddr const *addr)
 inline static void
 initClientFD(struct FdInfo *fd,
 	     /*@in@*//*@observer@*/struct InterfaceInfo const *iface)
+    /*@globals internalState, fileSystem@*/
+    /*@modifies internalState, fileSystem, *fd@*/
 {
   struct sockaddr_in	s;
   int const		ON = 1;
@@ -119,7 +108,8 @@ initClientFD(struct FdInfo *fd,
 
 inline static void
 initRawFD(/*@out@*/int *fd)
-    /*@modifies *fd@*/
+    /*@globals internalState@*/
+    /*@modifies internalState, *fd@*/
     /*@requires maxSet(fd)==0@*/
 {
   assert(fd!=0);
@@ -129,7 +119,8 @@ initRawFD(/*@out@*/int *fd)
 
 inline static void
 initSenderFD(/*@out@*/int *fd)
-    /*@modifies *fd@*/
+    /*@globals internalState, fileSystem@*/
+    /*@modifies internalState, fileSystem, *fd@*/
     /*@requires maxRead(fd)==0 /\ maxSet(fd)==0@*/
 {
   struct sockaddr_in	s;
@@ -154,6 +145,7 @@ inline static void
 sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
 		 /*@out@*/uint8_t		mac[],
 		 /*@out@*/size_t		*len)
+    /*@modifies *mac, *len@*/
     /*@requires maxSet(len)==1 /\ maxSet(mac)>=ETH_ALEN @*/
     /*@ensures  maxRead(mac)==(*len)@*/
 {
@@ -163,7 +155,7 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
     case ARPHRD_EETHER	:
     case ARPHRD_IEEE802	:
     case ARPHRD_ETHER	:  *len = ETH_ALEN; break;
-    default		:  EXITFATAL("Unsupported hardware-type"); 
+    default		:  scEXITFATAL("Unsupported hardware-type"); 
   }
 
     /*@-boundsread@*/
@@ -177,15 +169,21 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
 
 inline static void
 fillInterfaceInfo(struct InterfaceInfoList *ifs)
+    /*@globals fileSystem, internalState@*/
+    /*@modifies ifs->dta, fileSystem, internalState@*/
     /*@requires maxRead(ifs->dta)==ifs->len /\ maxRead(ifs)==0@*/
-    /*@modifies ifs->dta, fileSystem@*/
 {
   int			fd = Esocket(AF_INET, SOCK_DGRAM, 0);
   size_t		i;
 
+  assert(ifs->len==0 || ifs->dta!=0);
+
   for (i=0; i<ifs->len; ++i) {
     struct ifreq		iface;
-    struct InterfaceInfo	*ifinfo = ifs->dta + i;
+    struct InterfaceInfo	*ifinfo;
+
+    assert(ifs->dta!=0);
+    ifinfo = &ifs->dta[i];
 
     memcpy(iface.ifr_name, ifinfo->name, IFNAMSIZ);
     if (ioctl(fd, SIOCGIFINDEX,  &iface)==-1) goto err;
@@ -213,38 +211,42 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
   return;
   err:
   perror("ioctl()");
-  EXITFATAL("Can not get interface information");
+  scEXITFATAL("Can not get interface information");
 }
 
 inline static void
 initFDs(/*@out@*/struct FdInfoList 		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
-    /*@modifies *fds@*/
+    /*@globals internalState, fileSystem@*/
+    /*@modifies internalState, fileSystem, *fds@*/
     /*@requires maxRead(fds)>=0 /\ maxSet(fds)>=0 /\ maxSet(fds->sender_fd)>=0@*/
 {
   size_t					i, idx;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
 
-    /*@-boundsread@*//*@-boundswrite@*/
   initSenderFD(&fds->sender_fd);
   initRawFD(&fds->raw_fd);
-    /*@=boundsread@*//*@=boundswrite@*/
   
   fds->len = ifs->len;
   fds->dta = static_cast(struct FdInfo*)(Emalloc(fds->len *
-						 (sizeof(struct FdInfo))));
+						 (sizeof(*fds->dta))));
 
+  assert(fds->dta!=0 || fds->len==0);
+  assert(ifs->dta!=0 || ifs->len==0);
+  
   for (idx=0, i=0; i<ifs->len; ++i, ++idx) {
-    /*dependent*/struct InterfaceInfo const * const	ifinfo = ifs->dta + i;
+    assert(ifs->dta!=0);
+    assert(fds->dta!=0);
     
-    initClientFD(fds->dta + idx, ifinfo);
+    initClientFD(&fds->dta[idx], &ifs->dta[i]);
   }
 }
 
 inline static void
-getConfig(/*@in@*/char const		*filename,
-	  /*@out@*/struct ConfigInfo	*cfg)
-    /*@modifies *cfg, fileSystem@*/
+getConfig(/*@in@*/char const				*filename,
+	  /*@out@*//*@dependent@*/struct ConfigInfo	*cfg)
+    /*@globals internalState, fileSystem@*/
+    /*@modifies *cfg, internalState, fileSystem@*/
     /*@requires maxRead(cfg)>=0
              /\ PATH_MAX >= 1
              /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
@@ -259,6 +261,9 @@ getConfig(/*@in@*/char const		*filename,
 
   cfg->servers.dta    = 0;
   cfg->servers.len    = 0;
+
+  cfg->ulimits.dta    = 0;
+  cfg->ulimits.len    = 0;
 
   cfg->uid            = 99;
   cfg->gid            = 99;
@@ -275,15 +280,17 @@ getConfig(/*@in@*/char const		*filename,
     /*@=boundsread@*/
 }
 
+  /*@maynotreturn@*/
 inline static void
-showVersion()
+showVersion() /*@*/
 {
   (void)write(1, PACKAGE_STRING, strlen(PACKAGE_STRING));
   (void)write(1, "\n", 1);
 }
 
+  /*@maynotreturn@*/
 inline static void
-showHelp(/*@in@*//*@nullterminated@*/char const *cmd)
+showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
   char const	msg[] = (" [-v] [-h] [-c <filename>] [-d]\n\n"
 			 "  -v              show version\n"
@@ -301,14 +308,33 @@ showHelp(/*@in@*//*@nullterminated@*/char const *cmd)
 }
 
 inline static void
-limitResources()
+limitResources(/*@in@*/struct UlimitInfoList const *limits)
+    /*@globals internalState@*/
+    /*@modifies internalState@*/
+    /*@requires (maxRead(limits->dta)+1) == limits->len@*/
 {
   size_t			i;
 
-  for (i=0; i<sizeof(syslimit)/sizeof(syslimit[0]); ++i)
-    Esetrlimit(syslimit[i].res, &syslimit[i].limit);
+  assert(limits->len==0 || limits->dta!=0);
+  
+  for (i=0; i<limits->len; ++i) {
+    assert(limits->dta!=0);
+    Esetrlimit(limits->dta[i].code, &limits->dta[i].rlim);
+  }
 }
 
+inline static void
+freeLimitList(struct UlimitInfoList *limits)
+    /*@modifies limits->dta, limits->len@*/
+    /*@requires only   limits->dta@*/
+    /*@ensures  isnull limits->dta@*/
+{
+  /*@-nullpass@*/free(limits->dta);/*@=nullpass@*/
+  limits->dta=0;
+  limits->len=0;
+}
+
+  /*@-superuser@*/
 int
 initializeSystem(int argc, char *argv[],
 		 struct InterfaceInfoList *	ifs,
@@ -329,7 +355,7 @@ initializeSystem(int argc, char *argv[],
     else if (strcmp(argv[i], "-d")==0)             {      do_fork  = false;   }
     else if (strcmp(argv[i], "-c")==0 && i+1<argc) { ++i; cfg_name = argv[i]; }
       /*@=boundsread@*/
-    else EXITFATAL("Bad cmd-line option; use '-h' to get help");
+    else scEXITFATAL("Bad cmd-line option; use '-h' to get help");
 
     ++i;
   }
@@ -339,7 +365,7 @@ initializeSystem(int argc, char *argv[],
   initFDs(fds, &cfg);
     /*@=boundswrite@*/
 
-  pidfile_fd = open(cfg.pidfile_name, O_WRONLY | O_CREAT);
+  pidfile_fd = open(cfg.pidfile_name, O_WRONLY|O_CREAT);
   if (pidfile_fd==-1) {
     perror("open()");
     exit(1);
@@ -367,7 +393,7 @@ initializeSystem(int argc, char *argv[],
       Esetgid(cfg.uid);
       Esetuid(cfg.gid);
 
-      limitResources();
+      limitResources(&cfg.ulimits);
       break;
       
     default	:
@@ -375,11 +401,14 @@ initializeSystem(int argc, char *argv[],
       (void)write(pidfile_fd, "\n", 1);
       break;
   }
+  
+  freeLimitList(&cfg.ulimits);
 
     /* It is too late to handle an error here. So just ignore the error... */
   (void)close(pidfile_fd);
   return pid;
 }
+  /*@=superuser@*/
 
   // Local Variables:
   // compile-command: "make -k -C .."

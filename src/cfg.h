@@ -29,6 +29,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 #include <sys/param.h>
+#include <sys/resource.h>
 
 #include "util.h"
 #include "compat.h"
@@ -54,8 +55,12 @@ struct InterfaceInfoList {
     size_t				len;	//< length of InterfaceInfoList
 };
 
+  /*@-export@*/
+typedef enum { svUNICAST, svBCAST }	ServerInfoType;	//< type of server
+  /*@=export@*/
+
 struct ServerInfo {
-    enum { svUNICAST, svBCAST }		type;	//< type of server
+    ServerInfoType			type;
     union {
 	/*@observer@*/
 	struct InterfaceInfo const	*iface;
@@ -86,30 +91,46 @@ struct FdInfoList {
 };
 
 
+struct UlimitInfo {
+    int					code;
+    struct rlimit			rlim;
+};
+
+struct UlimitInfoList {
+      /*@only@*//*@null@*/
+    struct UlimitInfo			*dta;
+    size_t				len;
+};
+
 struct ConfigInfo {
     uid_t				uid;
     gid_t				gid;
     char				chroot_path[PATH_MAX];
+    struct UlimitInfoList		ulimits;
     
     char				logfile_name[PATH_MAX];
     int					loglevel;
 
     char				pidfile_name[PATH_MAX];
-
+    
     struct InterfaceInfoList		interfaces;
     struct ServerInfoList		servers;
 };
 
+  /*@-superuser@*/
 extern int	initializeSystem(int argc, /*@in@*/char *argv[],
 				 /*@out@*/struct InterfaceInfoList *	ifs,
 				 /*@out@*/struct ServerInfoList *	servers,
 				 /*@out@*/struct FdInfoList *		fds)
-  /*@modifies *ifs, *servers, *fds, fileSystem@*/
+  /*@warn superuser "Only super-user processes may call initializeSystem()"@*/
+  /*@globals errno, fileSystem, internalState@*/
+  /*@modifies *ifs, *servers, *fds, fileSystem, errno, internalState@*/
   /*@requires (maxRead(argv)+1)==argc
            /\ maxSet(ifs)==0
 	   /\ maxSet(servers)==0
 	   /\ maxRead(fds)==0@*/  ;
-
+  /*@=superuser@*/
+    
 #endif	// H_DHCP_FORWARDER_SRC_CONFIG_H
 
   // Local Variables:
