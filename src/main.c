@@ -20,6 +20,8 @@
 #  include <config.h>
 #endif
 
+#include "splint_compat.h"
+
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -36,15 +38,26 @@
 #include <netpacket/packet.h>
 #include <net/if_arp.h>
 
-
 #include "config.h"
+#include "wrappers.h"
 #include "dhcp.h"
 #include "inet.h"
-#include "wrappers.h"
 #include "recvfromflags.h"
 
 #include "assertions.h"
 #include "logging.h"
+
+  //#define ENABLE_AGENT_REPLACE		1
+
+typedef enum {
+  acIGNORE,		//< Do nothing...
+  acREMOVE_ID,		//< Remove an already existing agent-id field
+  acADD_ID,		//< Add an agent-id field if such a field does not
+			//< already exists
+#ifdef ENABLE_AGENT_REPLACE  
+  acREPLACE_ID		//< Replace an already existing agent-id field
+#endif  
+} OptionFillAction;
 
 static struct ServerInfoList	servers;
 static struct FdInfoList	fds;
@@ -53,23 +66,26 @@ inline static void
 fillFDSet(/*@out@*/fd_set			*fd_set,
 	  /*@out@*/int				*max)
 {
-  size_t	i = 0;
+  size_t		i;
   FD_ZERO(fd_set);
   *max = -1;
-  
+
   for (i=0; i<fds.len; ++i) {
-    *max = MAX(*max, fds.dta[i].fd);
-    FD_SET(fds.dta[i].fd, fd_set);
+    struct FdInfo const * const		fdinfo = fds.dta + i;
+    
+    *max = MAX(*max, fdinfo->fd);
+    FD_SET(fdinfo->fd, fd_set);
   }
 }
 
-inline static struct FdInfo const *
+inline static /*@exposed@*//*@null@*/struct FdInfo const *
 lookupFD(/*@in@*/struct in_addr const addr)
 {
   size_t		i;
-  
+
   for (i=0; i<fds.len; ++i) {
-    struct FdInfo const	* const		fd = &fds.dta[i];
+    struct FdInfo const * const		fd = fds.dta + i;
+    
     if (fd->iface->if_ip==addr.s_addr) return fd;
   }
 
@@ -80,10 +96,13 @@ inline static size_t
 determineMaxMTU()
 {
   size_t		result = 1500;
-  struct FdInfo	const	*fd;
-  
-  for (fd=fds.dta; fd<fds.dta+fds.len; ++fd)
+  size_t		i;
+
+  for (i=0; i<fds.len; ++i) {
+    struct FdInfo const * const		fd = fds.dta + i;
+    
     result = MAX(result, fd->iface->if_mtu);
+  }
 
   return result;
 }
@@ -92,10 +111,9 @@ inline static bool
 isValidHeader(struct DHCPHeader *header)
 {
   char const		*reason = 0;
-  unsigned int		mbz = header->flags.mbz1+header->flags.mbz2;
  
-  if      (mbz!=0)                 { reason = "Invalid flags field\n"; }
-  else if (header->hops>=MAX_HOPS) { reason = "Looping detected\n"; }
+  if ((header->flags&~flgDHCP_BCAST)!=0) { reason = "Invalid flags field\n"; }
+  else if (header->hops>=MAX_HOPS)       { reason = "Looping detected\n"; }
 #if 0  
   else switch (header->htype) {
     case ARPHRD_ETHER	:
@@ -127,7 +145,7 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
     /* Is this really ok? Is an empty option-field RFC compliant? */
   if (o_len==0) return true;
   if (o_len<=4) return false;
-  if (options->cookie != DHCP_COOKIE) return false;
+  if (options->cookie != optDHCP_COOKIE) return false;
 
   do {
     switch (opt->code) {
@@ -142,16 +160,98 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 }
 
 inline static size_t
-fillOptions(void				*option_ptr,
-	    /*@in@*/struct InterfaceInfo const	*iface)
+addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
+	       struct DHCPSingleOption				*end_opt,
+	       size_t						len)
 {
-  struct DHCPSingleOption 		*opt     = static_cast(struct DHCPSingleOption *)(option_ptr);
-  struct DHCPSingleOption		*end_opt = 0, *relay_opt = 0;
-  size_t				len;
+    /* Replace the end-tag
+       
+     *  - - - - - - -----
+     * |           | END |
+     *  - - - - - - -----
+     * with
+     *  - - - - - - ----- ----- ----- ----- ------------ -----
+     * |           | 82  | len | sub | sub | ... id ... | END |
+     * |           |     |     | opt | len |            |     |
+     *  - - - - - - ----- ----- ----- ----- ------------ -----
+     * */
+  
+  assert(strlen(iface->aid)<=IFNAMSIZ);
+    
+    /* Add space needed for our RFC 3046 agent id. See figure above for
+     * details. */
+  len += 4 + strlen(iface->aid);
+
+    /* 'len' should now have the length of the complete option-field. RFC 2131
+     * sets a lower limit of 312 octets, so we are checking against this
+     * value. Since the function got only the real options without the
+     * magic-cookie, 4 octets must be added.
+     *
+     * Because the underlying buffer was declared to hold more than this
+     * minimum amount, we can exclude overflows here.
+     *
+     * Further versions of this software should make it possible to configure
+     * the maximum size at runtime. */
+  if (len+4 < 312) {
+      /* replace old end-tag with our information */
+    end_opt->code    = cdRELAY_AGENT;
+    end_opt->data[0] = agCIRCUITID;	/* circuit id code as specified by RFC 3046 */
+    end_opt->data[1] = static_cast(uint8_t)(strlen(iface->aid));
+    end_opt->len     = 2 + end_opt->data[1];
+    memcpy(end_opt->data+2, iface->aid, end_opt->data[1]);
+
+      /* set new end-tag */
+    end_opt = DHCP_nextSingleOption(end_opt);
+    end_opt->code = cdEND;
+  }
+
+  return len;
+}
+
+#ifdef ENABLE_AGENT_REPLACE
+inline static size_t
+replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
+		   struct DHCPSingleOption			*relay_opt,
+		   struct DHCPSingleOption			*end_opt,
+		   size_t					len)
+{
+  size_t	opt_len = DHCP_getOptionLength(relay_opt);
+  size_t	str_len = strlen(iface->aid);
+
+  assert(relay_opt!=0);
+  
+  if (str_len+4<=opt_len) {
+    relay_opt->len     = str_len + 2;
+    relay_opt->data[1] = static_cast(uint8_t)(str_len);
+    memcpy(relay_opt->data+2, iface->aid, str_len);
+
+    if (str_len+4<opt_len)
+      memset(relay_opt->data+2+str_len, /*@+charint@*/cdPAD/*@=charint@*/, opt_len-str_len-4);
+  }
+  else {
+    DHCP_zeroOption(relay_opt);
+    len = addAgentOption(iface, end_opt, len);
+  }
+
+  return len;
+}
+#endif
+
+inline static size_t
+fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
+	    void					*option_ptr,
+	    OptionFillAction				action)
+{
+  struct DHCPSingleOption 	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
+  struct DHCPSingleOption	*end_opt   = 0;
+  struct DHCPSingleOption	*relay_opt = 0;
+  size_t			len;
   
   do {
     switch (opt->code) {
-      case cdRELAY_AGENT	:  relay_opt = opt; break;
+      case cdRELAY_AGENT	:
+	if (opt->data[0]==agCIRCUITID) relay_opt = opt;
+	break;
       case cdEND		:  end_opt   = opt; break;
       default			:  break;
     }
@@ -163,49 +263,24 @@ fillOptions(void				*option_ptr,
      * (1 octet). */
   len  = (reinterpret_cast(char *)(end_opt) -
 	  static_cast(char *)(option_ptr) + 1u);
-  
-    /* Check if a relay-agent field exists already; if not, replace the end-tag
-       
-     *  - - - - - - -----
-     * |           | END |
-     *  - - - - - - -----
-     * with
-     *  - - - - - - ----- ----- ----- ----- ------------ -----
-     * |           | 82  | len | sub | sub | ... id ... | END |
-     * |           |     |     | opt | len |            |     |
-     *  - - - - - - ----- ----- ----- ----- ------------ -----
-     * */
-  if (relay_opt==0) {
-    assert(strlen(iface->aid)<=IFNAMSIZ);
-    
-      /* Add space needed for our RFC 3046 agent id. See figure above for
-       * details. */
-    len += 4 + strlen(iface->aid);
 
-      /* 'len' should now have the length of the complete option-field. RFC 2131
-       * sets a lower limit of 312 octets, so we are checking against this
-       * value. Since the function got only the real options without the
-       * magic-cookie, 4 octets must be added.
-       *
-       * Because the underlying buffer was declared to hold more than this
-       * minimum amount, we can exclude overflows here.
-       *
-       * Further versions of this software should make it possible to configure
-       * the maximum size at runtime. */
-    if (len+4 < 312) {
-	/* replace old end-tag with our information */
-      end_opt->code    = cdRELAY_AGENT;
-      end_opt->data[0] = agCIRCUITID;	/* code for circuit id as specified by RFC 3046 */
-      end_opt->data[1] = static_cast(uint8_t)(strlen(iface->aid));
-      end_opt->len     = 2 + end_opt->data[1];
-      memcpy(end_opt->data+2, iface->aid, end_opt->data[1]);
-
-	/* set new end-tag */
-      end_opt = DHCP_nextSingleOption(end_opt);
-      end_opt->code = cdEND;
-    }
+  switch (action) {
+    case acREMOVE_ID	:
+      if (relay_opt!=0) DHCP_zeroOption(relay_opt);
+      break;
+    case acADD_ID	:
+      if (relay_opt!=0) len = addAgentOption(iface, end_opt, len);
+      break;
+#ifdef ENABLE_AGENT_REPLACE      
+    case acREPLACE_ID	:
+      if (relay_opt==0) len = addOption(end_opt, len);
+      else              len = replaceAgentOption(iface, relay_opt, end_opt, len);
+      break;
+#endif
+    case acIGNORE	:  break;
+    default		:  assert(false);
   }
-
+      
   return len;
 }
 
@@ -218,6 +293,7 @@ calculateCheckSum(/*@in@*/void const * const	dta,
   uint16_t const	*data = reinterpret_cast(uint16_t const *)(dta);
   
   for (i=0; i<size/2; ++i) sum += ntohs(data[i]);
+  
   if (size%2 != 0) {
     union {
 	uint8_t		aval[2];
@@ -271,10 +347,10 @@ fixCheckSumUDP(struct udphdr * const			udp,
 }
 
 inline static void
-sendEtherFrame(struct InterfaceInfo const	*iface,
-	       struct DHCPllPacket		*frame,
-	       char const			*buffer,
-	       size_t				size)
+sendEtherFrame(struct InterfaceInfo const		*iface,
+	       /*@dependent@*/struct DHCPllPacket	*frame,
+	       /*@dependent@*/char const		*buffer,
+	       size_t					size)
 {
   struct sockaddr_ll		sock;
   struct msghdr			msg;
@@ -285,7 +361,7 @@ sendEtherFrame(struct InterfaceInfo const	*iface,
   assert(iface->if_maclen == sizeof(frame->eth.ether_dhost));
   
   memset(&sock, 0, sizeof sock);
-  sock.sll_family    = AF_PACKET;
+  sock.sll_family    = static_cast(sa_family_t)(AF_PACKET);
   sock.sll_ifindex   = static_cast(int)(iface->if_idx);
     /* We do not need to initialize the other attributes of rcpt_sock since
      * dst-hwaddr et.al. are determined by the ethernet-frame defined below */
@@ -326,7 +402,7 @@ sendEtherFrame(struct InterfaceInfo const	*iface,
 inline static void
 sendToClient(/*@in@*/struct FdInfo const * const	fd,
 	     /*@in@*/struct DHCPHeader const * const	header,
-	     /*@in@*/char const * const			buffer,
+	     /*@in@*//*@dependent@*/char const * const	buffer,
 	     size_t const				size)
 {
   struct DHCPllPacket		frame;
@@ -345,7 +421,7 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
   else
     memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
   
-  if (!header->flags.bcast && header->ciaddr!=0)
+  if ((header->flags&flgDHCP_BCAST)!=0 && header->ciaddr!=0)
     frame.ip.daddr  = header->ciaddr;
   else if (iface->allow_bcast)
     frame.ip.daddr  = INADDR_BROADCAST;
@@ -360,7 +436,7 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
 
 inline static void
 sendServerBcast(struct ServerInfo const	* const		server,
-		char const * const			buffer,
+		/*@dependent@*/char const * const	buffer,
 		size_t const				size)
 {
   struct DHCPllPacket		frame;
@@ -398,14 +474,14 @@ sendServerUnicast(struct ServerInfo const * const	server,
 }
 
 inline static void
-sendToServer(char const * const				buffer,
+sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
 	     size_t const				size)
 {
-  size_t		j;
+  size_t		i;
 
-  for (j=0; j<servers.len; ++j) {
-    struct ServerInfo const * const	server = servers.dta + j;
-
+  for (i=0; i<servers.len; ++i) {
+    struct ServerInfo const * const	server = servers.dta + i;
+    
     switch (server->type) {
       case svUNICAST	:
 	sendServerUnicast(server, buffer, size);
@@ -444,10 +520,18 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
       return;
     }
 
-      /* Do not add an option-field if such a field does not already exists. */
+      /* Do not fill the option-field if this field does not exists. */
     if (options_len!=0) {
+      OptionFillAction		action;
+
+      switch (header->op) {
+	case opBOOTREPLY	:  action = acREMOVE_ID; break;
+	case opBOOTREQUEST	:  action = acADD_ID;    break;
+	default			:  assert(false); action = acIGNORE; break;
+      }
+      
 	/* Fill agent-info and adjust size-information */
-      options_len  = fillOptions(options->data, fd->iface);
+      options_len  = fillOptions(fd->iface, options->data, action);
       options_len += sizeof(options->cookie);
       size         = options_len + sizeof(*header);
     }
@@ -478,9 +562,7 @@ execRelay()
 {
   size_t const			max_mtu   = determineMaxMTU();
   size_t const			total_len = max_mtu + IFNAMSIZ + 4;
-  char				*buffer   = 0;
-
-  buffer = static_cast(char *)(alloca(total_len));
+  char				*buffer   = static_cast(char *)(Ealloca(total_len));
 
   while (true) {
     fd_set			fd_set;
@@ -491,11 +573,11 @@ execRelay()
     if (Wselect(max+1, &fd_set, 0, 0, 0)==-1) continue;
 
     for (i=0; i<fds.len; ++i) {
-      struct FdInfo const	*fd_info = &fds.dta[i];
-      size_t			size;
-      struct sockaddr_in	addr;
-      struct in_pktinfo		pkinfo;
-      int			flags = 0;
+      struct FdInfo const * const	fd_info = fds.dta + i;
+      size_t				size;
+      struct sockaddr_in		addr;
+      struct in_pktinfo			pkinfo;
+      int				flags = 0;
       
       if (!FD_ISSET(fd_info->fd, &fd_set)) continue;
 
@@ -517,7 +599,8 @@ execRelay()
 	LOG("Malformed package\n");
       }
       else {
-	struct InterfaceInfo const	*iface_orig = fd_info->iface;
+	struct InterfaceInfo const * const	iface_orig = fd_info->iface;
+	struct FdInfo const *			fd_real    = fd_info;
 	
 	  /* Broadcast messages are designated for the interface, so lookup the
 	   * "real" dest-interface for unicast-messages only.
@@ -525,14 +608,14 @@ execRelay()
 	   * \todo: Can we setup the routing that datagrams from the server are
 	   *        received by the giaddr-interface? */
 	if (pkinfo.ipi_addr.s_addr!=INADDR_BROADCAST)
-	  fd_info = lookupFD(pkinfo.ipi_addr);
+	  fd_real = lookupFD(pkinfo.ipi_addr);
 
-	if (fd_info==0) LOG("Received package on unknown interface\n");
-	else if (size > fd_info->iface->if_mtu) {
+	if (fd_real==0) LOG("Received package on unknown interface\n");
+	else if (size > fd_real->iface->if_mtu) {
 	  LOG("Unexpected large packet\n");
 	}
 	else 
-	  handlePacket(fd_info, iface_orig, buffer, size);
+	  handlePacket(fd_real, iface_orig, buffer, size);
       }
     }
   }
@@ -556,4 +639,3 @@ main(int argc, char *argv[])
   // compile-command: "make -C .. -k"
   // fill-column: 80
   // End:
-

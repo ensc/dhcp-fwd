@@ -20,8 +20,11 @@
 #  include <config.h>
 #endif
 
+#include "splint.h"
+
 #include <unistd.h>
 #include "output.h"
+#include "util.h"
 
 void
 writeUInt(int fd, unsigned int val)
@@ -30,13 +33,14 @@ writeUInt(int fd, unsigned int val)
   register char		*ptr = buffer + sizeof(buffer) - 1;
 
   do {
-    *ptr-- = '0' + (val%10);
+    *ptr-- = '0' + static_cast(char)(val%10);
     val   /= 10;
   } while (val!=0);
 
   ++ptr;
+  assertDefined(ptr);
   
-  write(fd, ptr, (buffer+sizeof(buffer)) - ptr);
+  (void)write(fd, ptr, (buffer+sizeof(buffer)) - ptr);
 }
 
   // Local Variables:
