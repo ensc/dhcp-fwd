@@ -1,4 +1,4 @@
-Version 0.2.2
+Version 0.2.3
 -------------
 	- Minor enhancements in the build-system (generalized sed-subst
 	  rule)
@@ -10,12 +10,14 @@ Version 0.2.2
 	  recent CVS version of splint)
 	- minor cross-compilation fixes
 	- minor fixes to compile with CVS version of dietlibc
-	- added option to set specific 'giaddr'
+	- added option to set specific 'giaddr'; see man-page for
+	  instructions
 	- added sample configurations to README
 	- (low) resource-limits will be used now (after killing remotely a
   	  10km away located router by memory-overcommiting I felt this a
 	  good idea; if you encounter problems with the used limits please
 	  contact me)
+	- improved logging
 	
 Version 0.2
 -----------

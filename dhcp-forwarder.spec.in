@@ -5,7 +5,7 @@
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	2
+Release:	1
 License:	GPL
 Group:		System Environment/Daemons
 Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
