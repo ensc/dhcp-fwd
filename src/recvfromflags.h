@@ -29,10 +29,13 @@
 #include <netinet/in.h>
 
 extern ssize_t
-recvfrom_flags(int fd, void *ptr, size_t nbytes,
+recvfrom_flags(int fd,
+	       /*@out@*//*@dependent@*/void *ptr, size_t nbytes,
 	       int *flagsp,
-	       struct sockaddr *sa, socklen_t *salenptr,
-	       struct in_pktinfo *pktp);
+	       /*@out@*/struct sockaddr *sa, socklen_t *salenptr,
+	       /*@out@*/struct in_pktinfo *pktp)
+  /*@modifies *ptr, *flagsp, *sa, *salenptr, *pktp, errno, fileSystem@*/
+  /*@requires maxSet(ptr) >= nbytes@*/ ;
 
 
 #endif	/* DHCP_FORWARDER_SPLINT_RECVFROMFLAGS_H */

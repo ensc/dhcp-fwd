@@ -7,6 +7,8 @@
 #  include <config.h>
 #endif
 
+#include "splint.h"
+
 #include <sys/param.h>		/* ALIGN macro for CMSG_NXTHDR() macro */
 #include <string.h>
 
@@ -24,14 +26,11 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
   ssize_t			n;
 
   struct cmsghdr	*cmptr;
-  union {
-      struct cmsghdr	cm;
-      char		control[CMSG_SPACE(sizeof(struct in_addr)) +
+  char			control[CMSG_SPACE(sizeof(struct in_addr)) +
 				CMSG_SPACE(sizeof(struct in_pktinfo))];
-  } control_un;
 
-  msg.msg_control    = control_un.control;
-  msg.msg_controllen = sizeof(control_un.control);
+  msg.msg_control    = control;
+  msg.msg_controllen = sizeof(control);
   msg.msg_flags      = 0;
 
   msg.msg_name       = sa;
@@ -39,10 +38,17 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
   iov[0].iov_base    = ptr;
   iov[0].iov_len     = nbytes;
   msg.msg_iov        = iov;
-  msg.msg_iovlen     = 1;
+  msg.msg_iovlen     = 0;
 
   n = recvmsg(fd, &msg, *flagsp);
+  assertDefined(msg.msg_iov[0].iov_base);
+  assertDefined(ptr);
+  assertDefined(msg.msg_name);
+  assertDefined(msg.msg_control);
+
+    /*@-mustdefine@*/
   if (n<0) return(n);
+    /*@=mustdefine@*/
 
   *salenptr          = msg.msg_namelen;	/* pass back results */
   *flagsp            = msg.msg_flags;	/* pass back results */
@@ -52,9 +58,10 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
 
 
   if (msg.msg_controllen < sizeof(struct cmsghdr) ||
-      (msg.msg_flags & MSG_CTRUNC) || pktp == NULL)
+      (msg.msg_flags&MSG_CTRUNC)!=0 || pktp == NULL)
     return(n);
 
+    /*@-compmempass@*/
   for (cmptr = CMSG_FIRSTHDR(&msg); cmptr != NULL;
        cmptr = CMSG_NXTHDR(&msg, cmptr)) {
 
@@ -66,6 +73,8 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
     }
 	  
   }
+    /*@=compmempass@*/
+  
   return(n);
 }
 

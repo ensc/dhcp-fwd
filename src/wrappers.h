@@ -16,8 +16,8 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_WRAPPERS_H
-#define DHCP_FORWARDER_WRAPPERS_H
+#ifndef DHCP_FORWARDER_SRC_WRAPPERS_H
+#define DHCP_FORWARDER_SRC_WRAPPERS_H
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -29,6 +29,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <stdio.h>
+#include <alloca.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -36,7 +37,7 @@
 #include "util.h"
 #include "recvfromflags.h"
 
-/*@unused@*/
+/*@unused@*//*@noreturnwhentrue@*/
 inline static void
 FatalErrnoError(bool condition, int retval, char const msg[])
 {
@@ -57,17 +58,21 @@ FatalErrnoError(bool condition, int retval, char const msg[])
 
 
 /*@unused@*/
-inline static struct group const *
+inline static /*@observer@*/ struct group const *
 Egetgrnam(char const *name)
 {
-  struct group const	*res = getgrnam(name);
+  /*@observer@*/struct group const	*res = getgrnam(name);
   FatalErrnoError(res==0, 1, "getgrnam()");
 
+    /*@-freshtrans@*/
+    /*@-mustfreefresh@*/
   return res;
 }
+  /*@=mustfreefresh@*/
+  /*@=freshtrans@*/
 
 /*@unused@*/
-inline static struct passwd const *
+inline static /*@observer@*/ struct passwd const *
 Egetpwnam(char const *name)
 {
   struct passwd const	*res = getpwnam(name);
@@ -105,24 +110,39 @@ Esetgid(gid_t gid)
 }
 
 /*@unused@*/
-inline static void *
-Erealloc(void *ptr, size_t new_size)
+inline static /*@null@*//*@only@*/ void *
+Erealloc(/*@only@*//*@out@*//*@null@*/ void *ptr,
+	 size_t new_size)
+    /*@ensures maxSet(result) == new_size@*/
 {
   register void		*res = realloc(ptr, new_size);
-
   FatalErrnoError(res==0 && new_size!=0, 1, "realloc()");
 
   return res;
 }
 
 /*@unused@*/
-inline static void *
+inline static /*@null@*//*@only@*/ void *
 Emalloc(size_t size)
+    /*@ensures maxSet(result) == size@*/
 {
-  register void		*res = malloc(size);
+  register void /*@out@*/		*res = malloc(size);
   FatalErrnoError(res==0 && size!=0, 1, "malloc()");
-
+    /*@-compdef@*/
   return res;
+    /*@=compdef@*/
+}
+
+/*@unused@*/
+inline static /*@null@*//*@temp@*//*@only@*/ void *
+Ealloca(size_t size)
+    /*@ensures maxSet(result) == size@*/
+{
+  register void /*@temp@*/		*res = alloca(size);
+  FatalErrnoError(res==0 && size!=0, 1, "malloc()");
+    /*@-freshtrans -mustfreefresh@*/
+  return res;
+    /*@=freshtrans =mustfreefresh@*/
 }
 
 /*@unused@*/
@@ -155,6 +175,7 @@ Eclose(int s)
 /*@unused@*/
 inline static void
 Esetsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
+    /*@requires maxRead(optval) >= optlen@*/
 {
   FatalErrnoError(setsockopt(s, level, optname, optval, optlen)==-1,
 		  1, "setsockopt()");
@@ -183,6 +204,7 @@ Wselect(int n,
 inline static size_t
 Wrecv(int s,
       /*@out@*/void *buf, size_t len, int flags)
+    /*@requires maxSet(buf) >= len@*/
 {
   register ssize_t		res;
 
@@ -201,6 +223,7 @@ inline static size_t
 WrecvfromInet4(int s,
 	       /*@out@*/void *buf, size_t len, int flags,
 	       struct sockaddr_in *from)
+    /*@requires maxSet(buf) >= len@*/
 {
   register ssize_t		res;
   socklen_t			size = sizeof(*from);
@@ -213,7 +236,8 @@ WrecvfromInet4(int s,
     if (errno==EINTR) goto retry;
   }
 
-  if (res==-1 || size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
+  if (res==-1 || size!=sizeof(struct sockaddr_in) ||
+    /*@-type@*/from->sin_family!=AF_INET/*@=type@*/) 
     res = -1;
 
   return static_cast(size_t)(res);
@@ -221,12 +245,13 @@ WrecvfromInet4(int s,
 
 /*@unused@*/
 inline static size_t
-WrecvfromFlagsInet4(int				s,
-		    /*@out@*/void		*buf,
-		    size_t			len,
-		    int				*flags,
-		    struct sockaddr_in		*from,
-		    struct in_pktinfo		*pktp)
+WrecvfromFlagsInet4(int					s,
+		    /*@out@*//*@dependent@*/void	*buf,
+		    size_t				len,
+		    int					*flags,
+		    struct sockaddr_in			*from,
+		    struct in_pktinfo			*pktp)
+    /*@requires maxSet(buf) >= len@*/
 {
   register ssize_t		res;
   socklen_t			size = sizeof(*from);
@@ -240,7 +265,8 @@ WrecvfromFlagsInet4(int				s,
     if (errno==EINTR) goto retry;
   }
 
-  if (res==-1 || size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
+  if (res==-1 || size!=sizeof(struct sockaddr_in) ||
+      /*@-type@*/from->sin_family!=AF_INET/*@=type@*/)
     res = -1;
 
   return static_cast(size_t)(res);
@@ -252,6 +278,7 @@ Wsendto(int s,
 	const void *msg, size_t len,
 	int flags,
 	const struct sockaddr *to, socklen_t tolen)
+    /*@requires maxRead(msg) >= len@*/
 {
   register ssize_t		res;
 
@@ -278,7 +305,7 @@ Wsendmsg(int s, struct msghdr const *msg, int flags)
 }
 
 
-#endif	/* DHCP_FORWARDER_WRAPPERS_H */
+#endif	/* DHCP_FORWARDER_SRC_WRAPPERS_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"
