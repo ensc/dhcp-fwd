@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # chkconfig: - 95 05
 # description: The dhcp-forward agent relays DHCP messages between two \
