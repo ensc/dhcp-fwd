@@ -27,7 +27,6 @@
 #include <pwd.h>
 #include <grp.h>
 #include <stdio.h>
-#include <alloca.h>
 #include <sys/resource.h>
 #include <grp.h>
 #include <fcntl.h>
@@ -168,22 +167,6 @@ Emalloc(size_t size)
     /*@-compdef@*/
   return res;
     /*@=compdef@*/
-}
-
-/*@unused@*/
-inline static /*@null@*//*@temp@*//*@only@*/ void *
-Ealloca(size_t size)
-    /*@ensures maxSet(result) == size@*/
-    /*@*/
-{
-    /*@-modunconnomods@*/
-  register void /*@temp@*/		*res = alloca(size);
-    /*@=modunconnomods@*/
-  
-  FatalErrnoError(res==0 && size!=0, 1, "malloc()");
-    /*@-freshtrans -mustfreefresh@*/
-  return res;
-    /*@=freshtrans =mustfreefresh@*/
 }
 
 /*@unused@*/
