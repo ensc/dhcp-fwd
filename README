@@ -36,6 +36,15 @@ INSTALLATION
   compiling and I am not not sure if they are harmful or not. I am
   running dhcp-fwd with dietlibc-0.17 successfully.
 
+- create an user the daemon will setuid() to. Do not use 'nobody'; it
+  makes no sense to have running all important services as the 'nobody'
+  user...
+
+- create a directory where the daemon will chroot to. This directory
+  should be created in the most secure manner; the daemon does not
+  access this directory so I suggest to make it unreadable, unwritable
+  and unaccessible for the user created before
+
 - install contrib/dhcp-fwd.conf in $(sysconfdir)/ and adapt it to your
   needs; the possible settings are described in this file.
 
@@ -89,3 +98,46 @@ BUGS
   * cooperation within an IPv6 network or
   * running on a big-endian host (will probably fail)
   * IP fragmentation
+  * resource limits; they were set for my i386 system. Other
+    architectures or libraries may have higher requirements so I
+    should make this configurably (will add additional 5k code to
+    the parser :( )
+
+
+
+SAMPLE CONFIGURATIONS
+=====================
+
+The contributed configfile contrib/dhcp-fwd.conf contains a sample
+configuration for the real-world scenario described in its header:
+
+ --------------              ----------              -------------
+|  DHCP Server |            |          |            |             |
+| 192.168.8.67 |------<eth1>| dhcp-fwd |<eth2>------|   Clients   |
+|              |            |          |            |             |
+ --------------              ----------              -------------
+
+
+
+Additionally it has been tested successfully when running in the
+following environment:
+
+
+ --------------              ----------              -------------
+|  DHCP Server |            |          |            |             |
+| 192.168.8.67 |------<eth1>| Firewall |<eth2>------|   Clients   |
+|              |            |          |            |             |
+ --------------              ----------             |   ~~~~~~    |
+						    |  |dhcp- |   |
+                                                    |  | fwd  |   |
+                                                    |   ~~~~~~    |
+                                                     -------------
+
+The clients have the a netmask of 192.168.2.231/255.255.248.0; the
+dhcp-fwd itself one interface with an IP of 192.168.0.6. Then I am
+using the following core-configuration:
+
+| if              eth0    true true true
+| name            eth0    ws-c
+| server          ip      192.168.8.66
+
