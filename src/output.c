@@ -45,7 +45,7 @@ openMsgfile(/*@in@*//*@null@*/char const *filename)
   else {
     int		new_fd;
     
-    new_fd = Eopen(filename, O_CREAT|O_WRONLY|O_APPEND);
+    new_fd = Eopen(filename, O_CREAT|O_WRONLY|O_APPEND, 0400);
     msg_fd = Edup2(new_fd, 2);
     assert(msg_fd==2);
     

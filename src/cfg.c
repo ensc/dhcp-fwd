@@ -353,12 +353,7 @@ initializeSystem(int argc, char *argv[],
   initFDs(fds, &cfg);
     /*@=boundswrite@*/
 
-  pidfile_fd = open(cfg.pidfile_name, O_WRONLY|O_CREAT);
-  if (pidfile_fd==-1) {
-    perror("open()");
-    exit(1);
-  }
-
+  pidfile_fd = Eopen(cfg.pidfile_name, O_WRONLY|O_CREAT, 0444);
   openMsgfile(cfg.logfile_name);
   
   *ifs     = cfg.interfaces;

@@ -204,11 +204,11 @@ Edup2(int oldfd, int newfd)
 
 /*@unused@*/
 inline static int
-Eopen(char const *pathname, int flags)
+Eopen(char const *pathname, int flags, int mode)
     /*@globals internalState@*/
     /*@modifies internalState@*/
 {
-  int		res = open(pathname, flags);
+  int		res = open(pathname, flags, mode);
   FatalErrnoError(res==-1, 1, "open()");
 
   return res;
