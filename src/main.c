@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <netpacket/packet.h>
 
+
 #include "config.h"
 #include "dhcp.h"
 #include "inet.h"
@@ -44,10 +45,15 @@
 #include "assertions.h"
 #include "logging.h"
 
-static struct ServerInfoList		servers;
-static struct FdInfoList		fds;
+static struct ServerInfoList	servers;
+static struct FdInfoList	fds;
 
-static void
+  //static void		execRelay() __attribute__ ((__noreturn__));
+static bool			isValidHeader(struct DHCPHeader *header) __attribute__((pure));
+static struct FdInfo const *	lookupFD(/*@in@*/struct in_addr const addr) __attribute__((const));
+static size_t			determineMaxMTU() __attribute__((const));
+  
+inline static void
 fillFDSet(/*@out@*/fd_set			*fd_set,
 	  /*@out@*/int				*max)
 {
@@ -61,37 +67,59 @@ fillFDSet(/*@out@*/fd_set			*fd_set,
   }
 }
 
-static bool
+inline static struct FdInfo const *
+lookupFD(/*@in@*/struct in_addr const addr)
+{
+  size_t		i;
+  
+  for (i=0; i<fds.len; ++i) {
+    struct FdInfo const	* const		fd = &fds.dta[i];
+    if (fd->iface->if_ip==addr.s_addr) return fd;
+  }
+
+  return 0;
+}
+
+inline static size_t
+determineMaxMTU()
+{
+  size_t		result = 0;
+  struct FdInfo	const	*fd;
+  
+  for (fd=fds.dta; fd<fds.dta+fds.len; ++fd)
+    result = MAX(result, fd->iface->if_mtu);
+
+  return result;
+}
+
+inline static bool
 isValidHeader(struct DHCPHeader *header)
 {
-  char const	*reason = 0;
-  
-  if      (header->flags.mbz!=0)   { reason = "Invalid flags field"; }
-  else if (header->hops>=MAX_HOPS) { reason = "Looping detected"; }
-  else if (header->hlen!=6)        { reason = "Unknown/unsupported hardware-type"; }
+  char const		*reason = 0;
+  unsigned int		mbz = header->flags.mbz1+header->flags.mbz2;
+ 
+  if      (mbz!=0)                 { reason = "Invalid flags field\n"; }
+  else if (header->hops>=MAX_HOPS) { reason = "Looping detected\n"; }
   else switch (header->op) {
     case opBOOTREPLY	:
     case opBOOTREQUEST	:  break;
-    default		:  reason = "Unknown operation"; break;
+    default		:  reason = "Unknown operation\n"; break;
   };
 
-  if (reason!=0) {
-    LOGSTR(reason);
-    LOG("\n");
-  }
-
+  if (reason!=0) LOGSTR(reason);
     
   return reason==0;
 }
 
-static bool
+inline static bool
 isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 	       size_t				o_len)
 {
   bool				seen_end     = false;
   struct DHCPSingleOption const	*opt         = reinterpret_cast(struct DHCPSingleOption const *)(options->data);
   struct DHCPSingleOption const	*end_options = reinterpret_cast(struct DHCPSingleOption const *)(reinterpret_cast(uint8_t const *)(options) + o_len);
-  
+
+    /* Is this really ok? Is an empty option-field RFC compliant? */
   if (o_len==0) return true;
   if (o_len<=4) return false;
   if (options->cookie != DHCP_COOKIE) return false;
@@ -108,7 +136,7 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
   return (seen_end && opt==end_options);
 }
 
-static size_t
+inline static size_t
 fillOptions(void				*option_ptr,
 	    /*@in@*/struct InterfaceInfo const	*iface)
 {
@@ -176,7 +204,7 @@ fillOptions(void				*option_ptr,
   return len;
 }
 
-static uint16_t
+inline static uint16_t
 calculateCheckSum(/*@in@*/void const * const	dta,
 		  size_t size,
 		  uint32_t sum)
@@ -203,7 +231,7 @@ calculateCheckSum(/*@in@*/void const * const	dta,
   return sum;
 }
 
-static void
+inline static void
 fixCheckSumIP(struct iphdr * const	ip)
 {
   ip->check = 0;
@@ -236,8 +264,8 @@ fixCheckSumUDP(struct udphdr * const			udp,
 #endif
   
   udp->check = 0;
-  sum = calculateCheckSum(&pseudo_hdr, sizeof(pseudo_hdr), 0);
-  sum = calculateCheckSum(udp,         sizeof(*udp),       sum);
+  sum = calculateCheckSum(&pseudo_hdr, sizeof pseudo_hdr, 0);
+  sum = calculateCheckSum(udp,         sizeof(*udp),      sum);
   sum = calculateCheckSum(data,        ntohs(udp->len)-sizeof(*udp), sum);
 
   sum = ~ntohs(sum);
@@ -245,7 +273,7 @@ fixCheckSumUDP(struct udphdr * const			udp,
   udp->check = sum;
 }
 
-static void
+inline static void
 sendEtherFrame(struct InterfaceInfo const	*iface,
 	       struct DHCPllPacket		*frame,
 	       char const			*buffer,
@@ -259,9 +287,9 @@ sendEtherFrame(struct InterfaceInfo const	*iface,
      * only... */
   assert(iface->if_maclen == sizeof(frame->eth.ether_dhost));
   
-  memset(&sock, 0, sizeof(sock));
+  memset(&sock, 0, sizeof sock);
   sock.sll_family    = AF_PACKET;
-  sock.sll_ifindex   = reinterpret_cast(int)(iface->if_idx);
+  sock.sll_ifindex   = static_cast(int)(iface->if_idx);
     /* We do not need to initialize the other attributes of rcpt_sock since
      * dst-hwaddr et.al. are determined by the ethernet-frame defined below */
 
@@ -284,7 +312,7 @@ sendEtherFrame(struct InterfaceInfo const	*iface,
 
   iovec_data[0].iov_base = frame;
   iovec_data[0].iov_len  = sizeof(*frame);
-  iovec_data[1].iov_base = const_cast(void *)(buffer);
+  iovec_data[1].iov_base = const_cast(char *)(buffer);
   iovec_data[1].iov_len  = size;
   
   msg.msg_name       = &sock;
@@ -298,7 +326,7 @@ sendEtherFrame(struct InterfaceInfo const	*iface,
   Wsendmsg(fds.raw_fd, &msg, 0);
 }
 
-static void
+inline static void
 sendToClient(/*@in@*/struct FdInfo const * const	fd,
 	     /*@in@*/struct DHCPHeader const * const	header,
 	     /*@in@*/char const * const			buffer,
@@ -307,18 +335,24 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
   struct DHCPllPacket		frame;
   struct InterfaceInfo const	*iface = fd->iface;
 
-    /* Should be checked by isValidHeader() already */
-  assert(header->hlen == sizeof(frame.eth.ether_dhost));
-    //  assert(header->op   == opBOOTREPLY);
+  printf("sendToClient()\n");
 
-  memset(&frame, 0, sizeof(frame));
-  memcpy(frame.eth.ether_dhost, header->chaddr, header->hlen);
+  assert(header->op   == opBOOTREPLY);
+
+  memset(&frame, 0, sizeof frame);
   frame.eth.ether_type = htons(ETHERTYPE_IP);
 
-  if (iface->allow_bcast && header->flags.bcast)
-    frame.ip.daddr  = -1;
+  if (header->hlen==sizeof(frame.eth.ether_dhost))
+    memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
   else
+    memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
+  
+  if (!header->flags.bcast && header->ciaddr!=0)
     frame.ip.daddr  = header->ciaddr;
+  else if (iface->allow_bcast)
+    frame.ip.daddr  = INADDR_BROADCAST;
+  else
+    return;	//< \todo
   
   frame.udp.source  = htons(DHCP_PORT_SERVER);
   frame.udp.dest    = htons(DHCP_PORT_CLIENT);
@@ -334,12 +368,14 @@ sendServerBcast(struct ServerInfo const	* const		server,
   struct DHCPllPacket		frame;
   struct InterfaceInfo const	*iface = server->info.iface;
 
-  memset(&frame, 0, sizeof(frame));
-  memset(frame.eth.ether_dhost, 255, sizeof(frame.eth.ether_dhost));
+  printf("sendServerBroadcast('%s')\n", server->info.iface->name);
+  
+  memset(&frame, 0, sizeof frame);
+  memset(frame.eth.ether_dhost, 255, sizeof frame.eth.ether_dhost);
 
   frame.eth.ether_type = htons(ETHERTYPE_IP);
 
-  frame.ip.daddr       = -1;
+  frame.ip.daddr       = INADDR_BROADCAST;
   
   frame.udp.source     = htons(DHCP_PORT_CLIENT);
   frame.udp.dest       = htons(DHCP_PORT_SERVER);
@@ -348,25 +384,26 @@ sendServerBcast(struct ServerInfo const	* const		server,
 }
 
 inline static void
-sendServerUnicast(int const				fd,
-		  struct ServerInfo const * const	server,
+sendServerUnicast(struct ServerInfo const * const	server,
 		  char const * const			buffer,
 		  size_t const				size)
 {
   struct sockaddr_in	sock;
-  
-  memset(&sock, 0, sizeof(sock));
+
+  printf("sendServerUnicast('%s')\n", inet_ntoa(server->info.ip));
+
+  memset(&sock, 0, sizeof sock);
   sock.sin_family = AF_INET;
 
   sock.sin_addr = server->info.ip;
   sock.sin_port = htons(DHCP_PORT_SERVER);
 	      
-  Wsendto(fd, buffer, size, 0,
+  Wsendto(fds.sender_fd, buffer, size, 0,
 	  reinterpret_cast(struct sockaddr *)(&sock),
-	  sizeof(sock));
+	  sizeof sock);
 }
 
-static void
+inline static void
 sendToServer(char const * const				buffer,
 	     size_t const				size)
 {
@@ -377,7 +414,7 @@ sendToServer(char const * const				buffer,
 
     switch (server->type) {
       case svUNICAST	:
-	sendServerUnicast(fds.sender_fd, server, buffer, size);
+	sendServerUnicast(server, buffer, size);
 	break;
       case svBCAST	:
 	sendServerBcast(server, buffer, size);
@@ -412,20 +449,25 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
       return;
     }
 
-      /* Fill agent-info and adjust size-information */
-    options_len  = fillOptions(options->data, fd->iface);
-    options_len += sizeof(options->cookie);
-    size         = options_len + sizeof(*header);
+      /* Do not add an option-field if such a field does not already exists. */
+    if (options_len!=0) {
+	/* Fill agent-info and adjust size-information */
+      options_len  = fillOptions(options->data, fd->iface);
+      options_len += sizeof(options->cookie);
+      size         = options_len + sizeof(*header);
+    }
 
     assert(isValidOptions(options, options_len));
   }
 
   switch (header->op) {
     case opBOOTREPLY	:
-      if (fd->iface->has_servers) sendToClient(fd, header, buffer, size);
+      if (fd->iface->has_clients) sendToClient(fd, header, buffer, size);
+      else printf("BOOTREPLY request for interface without clients\n");
       break;
     case opBOOTREQUEST	:
       if (fd->iface->has_clients) sendToServer(buffer, size);
+      else printf("BOOTREQUEST request from interface without clients\n");
       break;
 	/* isValidHeader() checked the correctness of header->op already and it
 	 * should be impossible to reach this code... */
@@ -433,44 +475,21 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
   }
 }
 
-static size_t
-determineMaxMTU()
-{
-  size_t		result = 0;
-  struct FdInfo	const	*fd;
-  
-  for (fd=fds.dta; fd<fds.dta+fds.len; ++fd)
-    if (fd->iface->if_mtu>result) result = fd->iface->if_mtu;
 
-  return result;
-}
 
-inline static struct FdInfo const *
-lookupFD(/*@in@*/struct in_addr const			addr)
-{
-  register size_t	i;
-  
-  for (i=0; i<fds.len; ++i) {
-    struct FdInfo const	* const		fd = &fds.dta[i];
-    if (fd->iface->if_ip==addr.s_addr) return fd;
-  }
-
-  return 0;
-}
 
 /*@noreturn@*/
-static void
+inline static void
 execRelay()
 {
   fd_set			fd_set;
-  int				c = 5;
-  size_t			max_mtu   = determineMaxMTU();
-  size_t			total_len = max_mtu + IFNAMSIZ + 4;
+  size_t const			max_mtu   = determineMaxMTU();
+  size_t const			total_len = max_mtu + IFNAMSIZ + 4;
   char				*buffer   = 0;
 
   buffer = static_cast(char *)(alloca(total_len));
 
-  while (c-- > 0) {
+  while (true) {
     int				max;
     size_t			i;
     
@@ -495,7 +514,7 @@ execRelay()
 	     inet_ntoa(pkinfo.ipi_addr), pkinfo.ipi_ifindex);
 #endif
       
-      if (reinterpret_cast(ssize_t)(size)==-1) {
+      if (static_cast(ssize_t)(size)==-1) {
 	int		error = errno;
 	LOG("recvfrom(): ");
 	LOGSTR(strerror(error));
@@ -504,7 +523,7 @@ execRelay()
 	LOG("Malformed package\n");
       }
       else {
-	if (pkinfo.ipi_addr.s_addr!=-1)
+	if (pkinfo.ipi_addr.s_addr!=INADDR_BROADCAST)
 	  fd_info = lookupFD(pkinfo.ipi_addr);
 
 	if (fd_info==0) LOG("Received package on unknown interface\n");
@@ -531,8 +550,6 @@ main(int argc, char *argv[])
     default	:  return 0;
   }
 }
-
-  // splint +matchanyintegral -exitarg -fullinitblock -boolfalse false -booltrue true -booltype bool +unixlib -D_GNU_SOURCE main.c
 
   // Local Variables:
   // compile-command: "make -C .. -k"
