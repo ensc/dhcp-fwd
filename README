@@ -1,11 +1,12 @@
-Release notes for dhcp-forwarder, version 0.1
----------------------------------------------
+Release notes for dhcp-forwarder, version 0.1.3
+===============================================
 
 This program is used to forward DHCP and BOOTP messages between two
 networks with different broadcast domains.
 
 
-FEATURES:
+FEATURES
+========
 - runs as non-root in a chroot-environment
 
 - uses AF_INET sockets to listen for DHCP messages. Thus, packetfilters
@@ -22,9 +23,44 @@ FEATURES:
   | nobody   24528  0.0  0.1    64   64 pts/2    S    04:02   0:00 ./dhcp-fwd
 
 
+INSTALLATION
+============
+- build with the usual './configure && make && make install'. When
+  not having an actual dietlibc, you will need to call ./configure
+  with a '--disable-dietlibc' option. *Not* using this flag results
+  in significantly smaller binaries and memory consumption.
+
+  Old dietlibc versions, being shipped with prominent distributions,
+  are causing strange warnings while compiling and I am not not sure
+  if they are harmful or not. I am running dhcp-fwd with dietlibc-0.17
+  successfully.
+
+- install contrib/dhcp-fwd.conf in $(sysconfdir)/ and adapt it to your
+  needs; the possible settings are described in this file.
+
+  An alternative cfg-file can be given on the commandline with the
+  '-c' option.
+
+- start '$(sbindir)/dhcp-fwd'
 
 
-BUGS:
+If you are a RH 7.3 user, I suggest to build an RPM with
+
+|     rpm -tb dhcp-forwarder-0.1.tar.bz2 --without dietlibc'
+
+and install the resulting binary. The '--without dietlibc' is neccessary
+since RH ships on elder dietlibc. After installation, the daemon can be
+started with
+
+|     service dhcp-fwd start
+
+and enabled permanently with
+
+|     chkconfig dhcp-fwd on
+
+
+BUGS
+====
 - no documentation; only contrib/dhcp-fwd.conf contains some information
 
 - bad behavior when serverside-interface has a smaller MTU than the
