@@ -1,16 +1,16 @@
 ## $Id$		--*- rpm-spec -*--
 
-%define		homedir		%{_var}/lib/dhcpfwd
+%define		homedir		%{_var}/lib/dhcp-fwd
 
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	1
+Release:	2
 License:	GPL
 Group:		System Environment/Daemons
 Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-URL:		http://www.tu-chemnitz.de/~ensc/dhcpfwd
-Source0:	http://www.tu-chemnitz.de/~ensc/dhcpfwd/files/%{name}-%{version}.tar.bz2
+URL:		http://www.tu-chemnitz.de/~ensc/dhcp-fwd
+Source0:	http://www.tu-chemnitz.de/~ensc/dhcp-fwd/files/%{name}-%{version}.tar.bz2
 PreReq:		/sbin/chkconfig /usr/sbin/userdel /usr/sbin/adduser
 PreReq:		/sbin/service
 BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
@@ -57,7 +57,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %pre
 /usr/sbin/adduser -r -s /sbin/nologin -d %{homedir} -M		\
-	 	  -c 'DHCP Forwarder user' dhcpfwd &>/dev/null || true
+	 	  -c 'DHCP Forwarder user' dhcp-fwd &>/dev/null || true
 
 %post
 /sbin/chkconfig --add dhcp-fwd
@@ -69,9 +69,9 @@ fi
 
 %postun
 if test "$1" = "0"; then
-	/usr/sbin/userdel dhcpfwd &>/dev/null || true
+	/usr/sbin/userdel dhcp-fwd &>/dev/null || true
 elif test "$1" -ge 1; then
-	/sbin/service dhcpfwd condrestart >/dev/null
+	/sbin/service dhcp-fwd condrestart >/dev/null
 fi
 
 
@@ -83,16 +83,20 @@ fi
 %config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
 
-## *DO NOT* add %defattr(-,dhcpfwd,dhcpfwd); the homedir is used for
+## *DO NOT* add %defattr(-,dhcp-fwd,dhcp-fwd); the homedir is used for
 ## the chroot() only and there is no reason why the setuid()'ed daemon
 ## needs any kind of access there
 %{homedir}
 
 
 %changelog
+* Fri Jul 12 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2.5-2
+- Renamed username from dhcpfwd to dhcp-fwd
+- Adjusted URL
+
 * Fri Jul 12 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2.5-1
 - version 0.2.5
-- fixed some typos
+- Fixed some typos
 - Added some PreReq's
 - Enhanced %postun script
 

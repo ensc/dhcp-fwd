@@ -22,7 +22,7 @@ FEATURES
   | dhcp-fwd: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), statically linked, stripped
 
   | # ps hu `pidof dhcp-fwd`
-  | dhcpfwd  19809  0.0  0.1    68   68 pts/3    S    14:03   0:00 ./dhcp-fwd -c etc/x
+  | dhcp-fwd  19809  0.0  0.1    68   68 pts/3    S    14:03   0:00 ./dhcp-fwd -c etc/x
 
 
 INSTALLATION
@@ -134,8 +134,8 @@ following environment:
                                                      -------------
 
 The clients have the a netmask of 192.168.0.0/255.255.248.0; the
-dhcp-fwd itself has one interface with an IP of 192.168.0.6. Then I
-am using the following core-configuration:
+dhcp-fwd itself has one interface with an IP of 192.168.0.6. Then I am
+using the following core-configuration:
 
 | if              eth0    true true true
 | name            eth0    ws-c
