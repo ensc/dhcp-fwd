@@ -28,7 +28,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <stdint.h>
-#include <limits.h>
+#include <sys/param.h>
 
 #include "util.h"
 #include "compat.h"
