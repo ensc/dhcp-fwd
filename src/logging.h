@@ -26,7 +26,7 @@
 #define LOG(MSG)	writeMsg(MSG, sizeof(MSG)-1)
 #define LOGSTR(MSG)	writeMsg(MSG, strlen(MSG))
 
-#ifdef ENABLE_LOGGING
+#ifdef WITH_LOGGING
 void logDHCPPackage(/*@in@*/char const *buffer, size_t len,
 		    /*@in@*/struct in_pktinfo const	*pkinfo,
 		    /*@in@*/void const			*addr)

@@ -66,7 +66,7 @@ writeMsgTimestamp()
   (void)gettimeofday(&tv, 0);
   
   {
-#ifdef ENABLE_LOGGING
+#ifdef WITH_LOGGING
     char			buffer[16];
     struct tm			tmval;
     

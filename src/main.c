@@ -696,7 +696,7 @@ execRelay()
       size = WrecvfromFlagsInet4(fdinfo->fd, buffer, len_total, &flags,
 				 &addr, &pkinfo);
 
-#ifdef ENABLE_LOGGING      
+#ifdef WITH_LOGGING
       logDHCPPackage(buffer, size, &pkinfo, &addr);
 #endif
       
