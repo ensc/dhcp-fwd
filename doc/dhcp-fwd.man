@@ -20,7 +20,7 @@
 .\" except that this permission notice may be stated in a translation
 .\" approved by the Free Software Foundation
 .\"  
-.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.3"
+.TH dhcp-fwd 1 "June 14 2002" "@PACKAGE@ 0.4"
 .\"
 .\" ====================
 .\"
@@ -32,6 +32,7 @@ dhcp-fwd \- starts the DHCP forwarding agent
 .\"
 .SH SYNOPSIS
 .B  dhcp-fwd
+.RB [ \-n ]
 .RB [ \-d ]
 .RB [ \-v ]
 .RB [ \-h ]
@@ -50,8 +51,13 @@ When called without arguments, it reads its configuration from
 and forks itself into background. An alternative configfile
 can be given by the
 .BR \-c
-option; the forking can be prevented with
-.BR \-d .
+option; the forking can be prevented with the
+.BR \-n
+switch. There exists a
+.BR \-d
+option which is indented for debugging purposes and prevents forking
+too. Currently it is just an alias for
+.BR \-n .
 
 Although the program must be started as root, it will drop its
 privileges and go into a chroot-jail after finishing the
@@ -61,9 +67,14 @@ initialization.
 .\"
 .SH OPTIONS
 .TP
+.B \-n
+Prevents daemon from going into background after initialization. This
+option may be useful when using advanced init-concepts like minit
+(http://www.fefe.de/minit/).
+.TP
 .B \-d
-Debug-mode; prevents daemon from going into background after
-initialization
+Turns on debugging mode and prevents forking; currently it is just an
+alias for \fB\-n\fR.
 .TP
 .B \-c \fI config_file
 Specifies the configfile to use; the default is
