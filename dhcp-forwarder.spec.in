@@ -3,6 +3,14 @@
 ## This package understands the following switches:
 ## --without dietlibc   ...   disable usage of dietlibc
 ## --without minit      ...   disable creation of 'minit' subpackage
+## --with    fedora     ...   enable fedora.us specific parts
+
+
+%define uid		11
+%define useradd		/usr/sbin/%{?_with_fedora:fedora-}useradd  %{?_with_fedora:%uid}
+%define groupadd	/usr/sbin/%{?_with_fedora:fedora-}groupadd %{?_with_fedora:%uid}
+%define userdel		/usr/sbin/%{?_with_fedora:fedora-}userdel
+%define groupdel	/usr/sbin/%{?_with_fedora:fedora-}groupdel
 
 
 %define	username	dhcp-fwd
@@ -22,21 +30,23 @@ URL:		http://www.tu-chemnitz.de/~ensc/dhcp-fwd
 Source0:	http://www.tu-chemnitz.de/~ensc/dhcp-fwd/files/%name-%version.tar.bz2
 BuildRoot:	%_tmppath/%name-%version-%release-root
 Requires:		init(dhcp-forwarder)
-Requires(pre):		/usr/sbin/useradd /usr/sbin/groupadd
-Requires(postun):	/usr/sbin/userdel /usr/sbin/groupdel
 
-%if %{?_without_dietlibc:0}%{!?_without_dietlibc:1}
-BuildRequires:	dietlibc
-%endif
+%{!?_without_dietlibc:BuildRequires:	dietlibc}
+
+## The Requires(...) which depend on the '--with fedora' switch
+%{!?_with_fedora:Requires(pre):		/usr/sbin/useradd /usr/sbin/groupadd}
+%{!?_with_fedora:Requires(postun):	/usr/sbin/userdel /usr/sbin/groupdel}
+%{?_with_fedora:Requires(pre):		fedora-usermgmt}
+%{?_with_fedora:Requires(postun):	fedora-usermgmt}
 
 
 %package sysv
 Summary:		SysV initscripts for dhcp-forwarder
 Group:			System Environment/Base
-Provides:		init(dhcp-forwarder)
-Requires(postun):	%name = %epoch:%version-%release
-Requires(preun):	initscripts
-Requires(postun):	initscripts
+Provides:		init(dhcp-forwarder) = sysv
+Requires:		%name = %epoch:%version-%release
+Requires(preun):	%name initscripts
+Requires(postun):	%name initscripts
 Requires(post):		/sbin/chkconfig
 Requires(preun):	/sbin/chkconfig
 
@@ -44,7 +54,7 @@ Requires(preun):	/sbin/chkconfig
 %package minit
 Summary:		minit initscripts for dhcp-forwarder
 Group:			System Environment/Base
-Provides:		init(dhcp-forwarder)
+Provides:		init(dhcp-forwarder) = minit
 Requires:		%name = %epoch:%version-%release
 Requires(pre):		minit-setup
 Requires(postun):	minit-setup
@@ -124,15 +134,15 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %pre
-/usr/sbin/groupadd -r %username &>/dev/null || :
-/usr/sbin/useradd -r -s /sbin/nologin -M -c 'DHCP Forwarder user'	\
-	 	  -d %homedir -g %username %username &>/dev/null || :
+%groupadd -r %username &>/dev/null || :
+%useradd  -r -s /sbin/nologin -M -c 'DHCP Forwarder user'	\
+	  -d %homedir -g %username %username &>/dev/null || :
 
 
 %postun
 if test "$1" = "0"; then
-	/usr/sbin/userdel  %username &>/dev/null || :
-	/usr/sbin/groupdel %username &>/dev/null || :
+	%userdel  %username &>/dev/null || :
+	%groupdel %username &>/dev/null || :
 fi
 
 
@@ -181,6 +191,9 @@ test "$1" = 0 || %_initrddir/%service condrestart &>/dev/null
 
 
 %changelog
+* Thu Aug 19 2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> - 0:0.6.1-0
+- added support for 'fedora-usermgmt' (enabled with '--with fedora' switch)
+
 * Thu Jun 17 2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> - 0:0.6.1-0
 - conditionalized build of -minit subpackage
 
