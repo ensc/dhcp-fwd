@@ -17,12 +17,13 @@ FEATURES
 
 - small memory-footprint:
   | $ ./dhcp-fwd -v; ls -l dhcp-fwd; file dhcp-fwd
-  | dhcp-forwarder 0.2.3
-  | -rwxrwxr-x    1 ensc     ensc        33400 Jul  5 14:03 dhcp-fwd
+  | dhcp-forwarder 0.2.5
+  | -rwxrwxr-x    1 ensc     ensc        29304 Jul 12 15:06 dhcp-fwd
   | dhcp-fwd: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), statically linked, stripped
 
   | # ps hu `pidof dhcp-fwd`
-  | dhcp-fwd  19809  0.0  0.1    68   68 pts/3    S    14:03   0:00 ./dhcp-fwd -c etc/x
+  | dhcp-fwd 15191  0.0  0.1    68   68 pts/3    S    15:07   0:00 ./dhcp-fwd -c etc/x
+
 
 
 INSTALLATION
