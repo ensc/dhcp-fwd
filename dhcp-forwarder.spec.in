@@ -11,6 +11,8 @@ Group:		System Environment/Daemons
 Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 URL:		http://www.tu-chemnitz.de/~ensc/dhcpfwd
 Source0:	http://www.tu-chemnitz.de/~ensc/dhcpfwd/files/%{name}-%{version}.tar.bz2
+PreReq:		/sbin/chkconfig /usr/sbin/userdel /usr/sbin/adduser
+PreReq:		/sbin/service
 BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
 
 %if %{?_without_dietlibc:0}%{!?_without_dietlibc:1}
@@ -24,7 +26,7 @@ broadcast domains. It is similar to the DHCP relay agent dhcrelay of
 ISC's DHCP, but has the following features which are important for me:
 
 * Runs as non-root in a chroot-jail
-* Uses "normal" AF_INET sockets which allows to uses packagefilters to
+* Uses "normal" AF_INET sockets which allows to uses packetfilters to
   filter incoming messages.
 * The DHCP agent IDs can be defined freely
 * Has a small memory footprint when using dietlibc
@@ -33,9 +35,11 @@ ISC's DHCP, but has the following features which are important for me:
 %prep
 %setup -q
 
+
 %build
 %configure --enable-release %{?_without_dietlibc:--disable-dietlibc}
-make
+%{__make}
+
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -43,7 +47,7 @@ rm -rf $RPM_BUILD_ROOT
 make DESTDIR=${RPM_BUILD_ROOT} install-strip install-contrib
 
 install -d ${RPM_BUILD_ROOT}%{_sysconfdir}
-install -m 644 contrib/dhcp-fwd.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/
+install -m644 -p contrib/dhcp-fwd.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/
 install -m700 -d ${RPM_BUILD_ROOT}%{homedir}
 
 
@@ -79,13 +83,19 @@ fi
 %config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
 
-## Do *NOT* add %defattr(-,dhcpfwd,dhcpfwd); the homedir is used for
+## *DO NOT* add %defattr(-,dhcpfwd,dhcpfwd); the homedir is used for
 ## the chroot() only and there is no reason why the setuid()'ed daemon
 ## needs any kind of access there
 %{homedir}
 
 
 %changelog
+* Fri Jul 12 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2.5-1
+- version 0.2.5
+- fixed some typos
+- Added some PreReq's
+- Enhanced %postun script
+
 * Mon Jun 17 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2-2
 - Described purpose of the %%{homedir} and its handling
 
