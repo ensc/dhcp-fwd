@@ -332,7 +332,7 @@ extern void
 FD_COPY (fd_set *f, /*@out@*/ fd_set *t)
   /*@modifies *t@*/;
 
-extern int /*@alt lltX_bool@*/
+extern int 
 FD_ISSET (int n, fd_set *p)
   /*@*/;
 

@@ -110,11 +110,12 @@ struct ConfigInfo {
     int					loglevel;
 
     char				pidfile_name[PATH_MAX];
-    
+
     struct InterfaceInfoList		interfaces;
     struct ServerInfoList		servers;
 
       // Commandline options
+    /*@observer@*/
     char const *			conffile_name;
     bool				do_fork;
 };
