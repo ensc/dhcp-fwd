@@ -213,7 +213,7 @@ WrecvfromInet4(int s,
     if (errno==EINTR) goto retry;
   }
 
-  if (size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
+  if (res==-1 || size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
     res = -1;
 
   return static_cast(size_t)(res);
@@ -240,7 +240,7 @@ WrecvfromFlagsInet4(int				s,
     if (errno==EINTR) goto retry;
   }
 
-  if (size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
+  if (res==-1 || size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
     res = -1;
 
   return static_cast(size_t)(res);
@@ -279,3 +279,8 @@ Wsendmsg(int s, struct msghdr const *msg, int flags)
 
 
 #endif	/* DHCP_FORWARDER_WRAPPERS_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:
