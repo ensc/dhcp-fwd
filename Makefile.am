@@ -33,7 +33,7 @@ cfg_filename		=  $(confdir)/dhcp-fwd.cfg
 
 logging_SRCS		=  src/logging.c
 
-if ENABLE_LOGGING
+if WITH_LOGGING
 pos_logging_SRCS	=  $(logging_SRCS)
 neg_logging_SRCS	=
 else
