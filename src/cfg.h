@@ -118,6 +118,7 @@ struct ConfigInfo {
     /*@observer@*/
     char const *			conffile_name;
     bool				do_fork;
+    bool				do_bindall;
 };
 
   /*@-superuser@*/

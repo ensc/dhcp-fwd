@@ -114,7 +114,7 @@ initRawFD(/*@out@*/int *fd)
 }
 
 inline static void
-initSenderFD(/*@out@*/int *fd)
+initSenderFD(/*@out@*/int *fd, char const *iface_name)
     /*@globals internalState, fileSystem@*/
     /*@modifies internalState, fileSystem, *fd@*/
     /*@requires maxRead(fd)==0 /\ maxSet(fd)==0@*/
@@ -124,6 +124,9 @@ initSenderFD(/*@out@*/int *fd)
   assert(fd!=0);
 
   *fd = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+  if (iface_name)
+    Esetsockopt(*fd, SOL_SOCKET, SO_BINDTODEVICE, iface_name, strlen(iface_name)+1);
 
   memset(&s, 0, sizeof(s));
   
@@ -205,6 +208,27 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
   scEXITFATAL("Can not get interface information");
 }
 
+static char const *
+getSenderIfaceName(struct InterfaceInfoList const * const ifs,
+		   bool                    		  do_it)
+{
+  struct InterfaceInfo const *	res = 0;
+  struct InterfaceInfo const *	ptr = ifs->len==0 ? 0 : ifs->dta + ifs->len;
+  
+  if (!do_it) return 0;
+
+  while (ptr>ifs->dta) {
+    --ptr;
+    if (ptr->has_servers) {
+      if (res) return 0;	// there are more than one sender...
+      else     res = ptr;
+    }
+  }
+
+  if (ptr) return ptr->name;
+  else     return 0;
+}
+
 inline static void
 initFDs(/*@out@*/struct FdInfoList 		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
@@ -215,7 +239,8 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   size_t					i, idx;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
 
-  initSenderFD(&fds->sender_fd);
+  initSenderFD(&fds->sender_fd,
+	       getSenderIfaceName(ifs, !cfg->do_bindall));
   initRawFD(&fds->raw_fd);
   
   fds->len = ifs->len;
@@ -391,6 +416,7 @@ initializeSystem(int argc, char *argv[],
 
   cfg.conffile_name = CFG_FILENAME;
   cfg.do_fork       = true;
+  cfg.do_bindall    = false;
 
   parseCommandline(argc, argv, &cfg);
 

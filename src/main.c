@@ -63,7 +63,7 @@ typedef enum {
 } OptionFillAction;
 
 /*@checkmod@*/static struct ServerInfoList	servers;
-/*@checkmod@*/static struct FdInfoList	fds;
+/*@checkmod@*/static struct FdInfoList		fds;
 
 inline static void
 fillFDSet(/*@out@*/fd_set			*fdset,
