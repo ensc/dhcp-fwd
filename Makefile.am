@@ -55,6 +55,10 @@ EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 		 	   contrib/dhcp-fwd.init contrib/dhcp-fwd.conf		\
 			   doc/dhcp-fwd.man
 
+%.1:			%.man
+			$(MAKE) substrule VARS='sysconfdir sbindir PACKAGE VERSION' INFILE='$<' OUTFILE='$@'
+
+
 install-contrib:
 			$(mkinstalldirs) $(DESTDIR)/etc/init.d
 			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init $(DESTDIR)/etc/init.d/dhcp-fwd
@@ -80,19 +84,9 @@ sftp.cmds:		$(WWW_FILES_ROOT) $(WWW_FILES_FILES)
 			done >>$@.tmp
 			mv -f $@.tmp $@
 
-%.1:			%.man
-			@$(mkinstalldirs) "`dirname $@`"
-			rm -f $@
-			sed -e 's!@'sysconfdir'@!${sysconfdir}!g;			\
-                                s!@'sbindir'@!${sbindir}!g;				\
-				s!@'PACKAGE'@!${PACKAGE}!g;				\
-				s!@'VERSION'@!${VERSION}!g;'				\
-			$< >$@
-			test -z "$(CHMOD_REFERENCE)" || $(CHMOD_REFERENCE) $< $@
-			chmod a-w $@
-
 
 include $(top_srcdir)/m4/validate.am
 include $(top_srcdir)/m4/changelog.am
 include $(top_srcdir)/m4/diet.am
 include $(top_srcdir)/m4/gpgsig.am
+include $(top_srcdir)/m4/substrule.am
