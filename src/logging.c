@@ -20,6 +20,8 @@
 #  include <config.h>
 #endif
 
+#include "splint.h"
+
 #include <time.h>
 #include <errno.h>
 #include <stdio.h>
@@ -38,9 +40,9 @@ logDHCPPackage(char const *data, size_t	len,
 	       struct in_pktinfo const		*pkinfo,
 	       void const			*addr)
 {
-  char				buffer[256];	/* see max. calculation below */
+  /*@temp@*/char		buffer[256];	/* see max. calculation below */
   char				addr_buffer[128];	/* adjust if needed */
-  char const			*msg = 0;
+  /*@dependent@*/char const	*msg = 0;
   struct tm			tm;
   struct timeval		tv;
   int				error = errno;
@@ -48,14 +50,14 @@ logDHCPPackage(char const *data, size_t	len,
   struct DHCPHeader const	*header = reinterpret_cast(struct DHCPHeader const *)(data);
   
 
-  gettimeofday(&tv, 0);
-  localtime_r(&tv.tv_sec, &tm);
+  (void)gettimeofday(&tv, 0);
+  (void)localtime_r(&tv.tv_sec, &tm);
   
-  strftime(buffer, sizeof buffer, "%T", &tm);			/*   8 chars */
-  sprintf(buffer+strlen(buffer), ".%06lu: ", tv.tv_usec);	/*  +7 chars
-								 => 15 chars */
+  if (strftime(buffer, sizeof buffer, "%T", &tm)==-1) goto err;			/*   8 chars */
+  if (sprintf(buffer+strlen(buffer), ".%06lu: ", tv.tv_usec)==-1) goto err;	/*  +7 chars
+										    => 15 chars */
   
-  write(2, buffer, strlen(buffer));
+  (void)write(2, buffer, strlen(buffer));
 
   if (len==-1) {
     msg = strerror(error);
@@ -74,7 +76,7 @@ logDHCPPackage(char const *data, size_t	len,
     }
 
       /* max 14 + 48 + 10 = 72 chars */
-    sprintf(buffer, "from %s (if #%u): ", addr_buffer, pkinfo->ipi_ifindex);
+    sprintf(buffer, "from %s (if #%i): ", addr_buffer, pkinfo->ipi_ifindex);
     
     if (len<sizeof(struct DHCPHeader)) {
 	/* + max 14 + 10 = 24 chars  ==> max 96 chars */
@@ -82,6 +84,7 @@ logDHCPPackage(char const *data, size_t	len,
     }
     else {
       struct in_addr		ip;
+      bool			is_faulty = false;
 
 	/* + 8 chars */
       sprintf(buffer+strlen(buffer), "%08x ", header->xid);
@@ -97,19 +100,24 @@ logDHCPPackage(char const *data, size_t	len,
 	default:
 	    /* + max 12 + 10 = 22 chars */
 	  sprintf(buffer+strlen(buffer), "<UNKNOWN> (%u), ", header->op);
+	  is_faulty = true;
 	  break;
       }
 
 	/* + max 15 chars ==> max 117 chars */
-      strcat(buffer, inet_ntoa(ip));
+      if (!is_faulty) {
+	assertDefined(&ip);
+	strcat(buffer, inet_ntoa(ip));
+      }
     }
 
     msg = buffer;
   }
   
-  write(2, msg, strlen(msg));
-  write(2, "\n", 1);
-  
+  (void)write(2, msg, strlen(msg));
+  (void)write(2, "\n", 1);
+
+  err:
   errno = error;
 }
 
