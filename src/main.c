@@ -133,18 +133,19 @@ determineMaxMTU()
 
 inline static bool
 isValidHeader(/*@in@*/struct DHCPHeader *header)
-    /*@*/
+    /*@globals internalState@*/
+    /*@modifies internalState@*/
 {
   char const		*reason = 0;
 
     /*@-strictops@*/
-  if ((header->flags&~flgDHCP_BCAST)!=0) { reason = "Invalid flags field\n"; }
+  if ((header->flags&~flgDHCP_BCAST)!=0) { reason = "Invalid flags field"; }
     /*@=strictops@*/
-  else if (header->hops>=MAX_HOPS)       { reason = "Looping detected\n"; }
+  else if (header->hops>=MAX_HOPS)       { reason = "Looping detected"; }
 #if 0  
   else switch (header->htype) {
     case ARPHRD_ETHER	:
-      if (header->hlen!=ETH_ALEN) {  reason = "Invalid hlen for ethernet\n"; }
+      if (header->hlen!=ETH_ALEN) {  reason = "Invalid hlen for ethernet"; }
       break;
     default		:
       break;	// Not active handled by us; will be forwarded as-is
@@ -156,7 +157,7 @@ isValidHeader(/*@in@*/struct DHCPHeader *header)
   if (reason==0) switch (header->op) {
     case opBOOTREPLY	:
     case opBOOTREQUEST	:  break;
-    default		:  reason = "Unknown operation\n"; break;
+    default		:  reason = "Unknown operation"; break;
   };
 
   if (reason!=0) LOGSTR(reason);
@@ -584,7 +585,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
     header->giaddr = fd->iface->if_ip;
   
     if (!isValidOptions(options, options_len)) {
-      LOG("Invalid options\n");
+      LOG("Invalid options");
       return;
     }
 
@@ -609,12 +610,12 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 
   switch (header->op) {
     case opBOOTREPLY	:
-      if      (!iface_orig->has_servers) LOG("BOOTREPLY request from interface without servers\n");
-      else if (!fd->iface->has_clients)  LOG("BOOTREPLY request for interface without clients\n");
+      if      (!iface_orig->has_servers) LOG("BOOTREPLY request from interface without servers");
+      else if (!fd->iface->has_clients)  LOG("BOOTREPLY request for interface without clients");
       else sendToClient(fd, header, buffer, size);
       break;
     case opBOOTREQUEST	:
-      if (!iface_orig->has_clients)      LOG("BOOTREQUEST request from interface without clients\n");
+      if (!iface_orig->has_clients)      LOG("BOOTREQUEST request from interface without clients");
       else sendToServer(buffer, size);
       break;
       
@@ -641,15 +642,15 @@ execRelay()
   assert(fds.dta!=0 || fds.len==0);
 
   while (true) {
-    fd_set			fd_set;
+    fd_set			fdset;
     int				max;
       /*@-nullptrarith@*/
     struct FdInfo const *	fdinfo;
     struct FdInfo const * const end_fdinfo = fds.dta+fds.len;
       /*@=nullptrarith@*/
     
-    fillFDSet(&fd_set, &max);
-    if /*@-type@*/(Wselect(max+1, &fd_set, 0, 0, 0)==-1)/*@=type@*/ continue;
+    fillFDSet(&fdset, &max);
+    if /*@-type@*/(Wselect(max+1, &fdset, 0, 0, 0)==-1)/*@=type@*/ continue;
 
     for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
       size_t				size;
@@ -659,7 +660,7 @@ execRelay()
 
       assert(fdinfo!=0);
       
-      if (!FD_ISSET(fdinfo->fd, &fd_set)) /*@innercontinue@*/continue;
+      if (!FD_ISSET(fdinfo->fd, &fdset)) /*@innercontinue@*/continue;
 
 	/* Is this really correct? Can we receive fragmented IP datagrams being
 	 * assembled larger than the MTU of the attached interfaces? */
@@ -671,12 +672,13 @@ execRelay()
 #endif
       
       if (static_cast(ssize_t)(size)==-1) {
-	int		error = errno;
-	LOG("recvfrom(): ");
-	LOGSTR(strerror(error));
+	char const *	msg = strerror(errno);
+	  
+	LOG("recvfrom() failed");
+	LOGSTR(msg);
       }
       else if (size < szDHCPHDR) {
-	LOG("Malformed package\n");
+	LOG("Malformed package");
       }
       else {
 	struct InterfaceInfo const * const	iface_orig = fdinfo->iface;
@@ -690,9 +692,9 @@ execRelay()
 	if (pkinfo.ipi_addr.s_addr!=INADDR_BROADCAST)
 	  fd_real = lookupFD(pkinfo.ipi_addr);
 
-	if (fd_real==0) LOG("Received package on unknown interface\n");
+	if (fd_real==0) LOG("Received package on unknown interface");
 	else if (size > fd_real->iface->if_mtu) {
-	  LOG("Unexpected large packet\n");
+	  LOG("Unexpected large packet");
 	}
 	else 
 	  handlePacket(fd_real, iface_orig, buffer, size);

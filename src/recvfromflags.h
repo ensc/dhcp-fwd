@@ -23,15 +23,16 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-extern ssize_t
+ssize_t
 recvfrom_flags(int fd,
 	       /*@out@*//*@dependent@*/void *ptr, size_t nbytes,
 	       int *flagsp,
 	       /*@out@*/struct sockaddr *sa, socklen_t *salenptr,
 	       /*@out@*/struct in_pktinfo *pktp)
-  /*@globals errno@*/
-  /*@modifies *ptr, *flagsp, *sa, *salenptr, *pktp, errno@*/
-  /*@requires maxSet(ptr) >= nbytes@*/ ;
+  /*:requires maxSet(ptr) >= nbytes@*/
+  /*@globals errno, internalState@*/
+  /*@modifies errno, internalState, *ptr, *flagsp, *sa, *salenptr, *pktp@*/
+  ;
 
 
 #endif	/* H_DHCP_FORWARDER_SRC_RECVFROMFLAGS_H */

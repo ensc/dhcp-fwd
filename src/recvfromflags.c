@@ -14,7 +14,7 @@
 #include <sys/uio.h>
 
 #include "util.h"
-#include "recvfromflags.h"
+#include "wrappers.h"
 
 ssize_t
 recvfrom_flags(int fd, void *ptr, size_t nbytes,

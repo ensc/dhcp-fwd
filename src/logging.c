@@ -22,13 +22,11 @@
 
 #include "splint.h"
 
-#include <time.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -36,13 +34,20 @@
 #include "logging.h"
 #include "dhcp.h"
 
-static void WRITE(int FD, /*@sef@*//*@observer@*/char const MSG[])
+
+static void WRITE(/*@sef@*//*@observer@*/char const STR[])
+  /*@globals internalState@*/
+  /*@modifies internalState@*/ ;
+
+static void WRITESTR(/*@sef@*//*@observer@*/char const *STR)
   /*@globals internalState@*/
   /*@modifies internalState@*/ ;
 
   /*@-sizeofformalarray@*/
-#define WRITE(FD, MSG)	(void)write(FD, (MSG), sizeof(MSG)-1)
+#define WRITE(STR)	writeMsgStr((STR), sizeof(STR)-1)
   /*@=sizeofformalarray@*/
+#define WRITESTR(STR)	writeMsgStr((STR), strlen(STR))
+
 
 inline static char *
 Xinet_ntop(sa_family_t af, /*@in@*/void const *src,
@@ -72,14 +77,14 @@ Xsnprintf(/*@out@*/char_outptr * const buffer, size_t * const len,
   
   va_start(ap, format);
   l = vsnprintf(*buffer, *len, format, ap);
-  if (l==-1 || l>*len) {
-    WRITE(2, "\n\nBuffer not large enough for snprintf(\"");
-    (void)write(2, format, strlen(format)-1);
-    WRITE(2, "\");\nthere are ");
-    (void)writeUInt(2, *len);
-    WRITE(2, " chars available but ");
-    writeUInt(2, static_cast(unsigned int)(l));
-    WRITE(2, " required\n\n");
+  if (l<0 || static_cast(unsigned int)(l)>*len) {
+    WRITE("\n\nBuffer not large enough for snprintf(\"");
+    WRITESTR(format);
+    WRITE("\");\nthere are ");
+    writeMsgUInt(*len);
+    WRITE(" chars available but ");
+    writeMsgUInt(static_cast(unsigned int)(l));
+    WRITE(" required\n\n");
   }
   else {
     *len    -= l;
@@ -106,36 +111,26 @@ logDHCPPackage(char const *data, size_t	len,
 	       struct in_pktinfo const		*pkinfo,
 	       void const			*addr)
 {
+  int				error = errno;
   /*@temp@*/char		buffer[256];
   char 				*buffer_ptr;
   char				addr_buffer[128];	/* adjust if needed */
   /*@dependent@*/char const	*msg = 0;
-  struct tm			tmval;
-  struct timeval		tv;
   size_t			avail;
-  int				error = errno;
   struct sockaddr const		*saddr = reinterpret_cast(struct sockaddr const *)(addr);
   struct DHCPHeader const	*header = reinterpret_cast(struct DHCPHeader const *)(data);
   
+  writeMsgTimestamp();
+  WRITESTR(": ");
 
-  (void)gettimeofday(&tv, 0);
-  (void)localtime_r(&tv.tv_sec, &tmval);
-  
-  if (strftime(buffer, sizeof buffer, "%T", &tmval)==-1) goto err;	/*   8 chars */
-  avail      = sizeof(buffer)-strlen(buffer);
-  buffer_ptr = buffer + strlen(buffer);
-  Xsnprintf(&buffer_ptr, &avail, ".%06li: ", tv.tv_usec);
-  
-  (void)write(2, buffer, strlen(buffer));
-
-  if (len==-1) {
+  if (len==static_cast(size_t)(-1)) {
     msg = strerror(error);
   }
   else {
     void const		*ptr;
     switch (saddr->sa_family) {
-      case AF_INET	 : ptr = &reinterpret_cast(struct sockaddr_in  *)(addr)->sin_addr;  break;
-      case AF_INET6	:  ptr = &reinterpret_cast(struct sockaddr_in6 *)(addr)->sin6_addr; break;
+      case AF_INET	 : ptr = &reinterpret_cast(struct sockaddr_in const  *)(addr)->sin_addr;  break;
+      case AF_INET6	:  ptr = &reinterpret_cast(struct sockaddr_in6 const *)(addr)->sin6_addr; break;
       default		:  ptr = saddr->sa_data; break;
     }
 
@@ -166,11 +161,11 @@ logDHCPPackage(char const *data, size_t	len,
       Xsnprintf(&buffer_ptr, &avail, "%08x ", header->xid);
       switch (header->op) {
 	case opBOOTREQUEST:
-	  Xstrncat(buffer, "BOOTREQUEST from ", &avail);
+	  Xstrncat(buffer_ptr, "BOOTREQUEST from ", &avail);
 	  ip.s_addr = header->ciaddr;
 	  break;
 	case opBOOTREPLY:
-	  Xstrncat(buffer, "BOOTREPLY to ", &avail);
+	  Xstrncat(buffer_ptr, "BOOTREPLY to ", &avail);
 	  ip.s_addr = header->yiaddr;
 	  break;
 	default:
@@ -181,18 +176,18 @@ logDHCPPackage(char const *data, size_t	len,
 
       if (!is_faulty) {
 	assertDefined(&ip);
-	Xstrncat(buffer, inet_ntoa(ip), &avail);
+	Xstrncat(buffer_ptr, inet_ntoa(ip), &avail);
       }
     }
 
+    assertDefined(buffer);
     msg = buffer;
   }
   
-  (void)write(2, msg, strlen(msg));
-  (void)write(2, "\n", 1);
+  writeMsgStr(msg, strlen(msg));
+  writeMsgStr("\n", 1);
 
-  err:
-  errno = error;
+  /*@-mods@*/errno = error;/*@=mods@*/
 }
 
   // Local Variables:

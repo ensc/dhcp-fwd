@@ -21,15 +21,17 @@
 
 #include <netinet/in.h>
 
-#define LOG(MSG)	((void)write(2, MSG, sizeof(MSG)))
-#define LOGSTR(MSG)	((void)write(2, MSG, strlen(MSG)))
+#include "output.h"
+
+#define LOG(MSG)	writeMsg(MSG, sizeof(MSG)-1)
+#define LOGSTR(MSG)	writeMsg(MSG, strlen(MSG))
 
 #ifdef ENABLE_LOGGING
 void logDHCPPackage(/*@in@*/char const *buffer, size_t len,
 		    /*@in@*/struct in_pktinfo const	*pkinfo,
 		    /*@in@*/void const			*addr)
-  /*@globals internalState, errno@*/
-  /*@modifies internalState, errno@*/ ;
+  /*@globals internalState@*/
+  /*@modifies internalState@*/ ;
 #endif
 
 #endif	//  DHCP_FORWARDER_LOGGING_H
