@@ -96,6 +96,7 @@ isValidHeader(struct DHCPHeader *header)
  
   if      (mbz!=0)                 { reason = "Invalid flags field\n"; }
   else if (header->hops>=MAX_HOPS) { reason = "Looping detected\n"; }
+#if 0  
   else switch (header->htype) {
     case ARPHRD_ETHER	:
       if (header->hlen!=ETH_ALEN) {  reason = "Invalid hlen for ethernet\n"; }
@@ -103,6 +104,7 @@ isValidHeader(struct DHCPHeader *header)
     default		:
       break;	// Not active handled by us; will be forwarded as-is
   }
+#endif  
   if (reason==0) switch (header->op) {
     case opBOOTREPLY	:
     case opBOOTREQUEST	:  break;
@@ -338,7 +340,7 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
     /* Check whether header contains an ethernet MAC or something else (e.g. a
      * PPP tag). In the first case send to this MAC, in the latter one, send a
      * ethernet-broadcast message */
-  if (header->htype==ARPHRD_ETHER)
+  if (header->htype==ARPHRD_ETHER && header->hlen==ETH_ALEN)
     memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
   else
     memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
