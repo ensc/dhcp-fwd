@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <assert.h>
-
+#include <stdlib.h>
 
 #include <parser.h>
 #include <cfg.h>
@@ -50,6 +50,8 @@ int main(int argc, char const *argv[])
 {
   struct ConfigInfo		cfg;
   size_t			i;
+
+  if (argc!=2) exit(1);
 
   memset(&cfg, 0, sizeof cfg);
   parse(argv[1], &cfg);
