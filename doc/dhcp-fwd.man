@@ -115,6 +115,29 @@ The file where the pid of the daemon will be written into.
 Beside the mandatory options above, the following options are
 possible:
 .TP
+.B ulimit \fIresource limit
+Sets a maximum \fIlimit\fR for the given \fIresource\fR by calling
+\fBsetrlimit()\fR appropriately. Possible values for \fIresource\fR
+are
+.B stack\fR,
+.B data\fR,
+.B core\fR,
+.B rss\fR,
+.B nproc\fR,
+.B nofile\fR,
+.B memlock\fR,
+.B as
+and (if supported by your OS)
+.B locks\fR.
+For the meaning of this values see setrlimit(2).
+
+\fIlimit\fR may be plain unsigned number, a number followed by 'k'
+(*1000), 'K' (*1024), 'm' (*1000k), 'M' (*1024K) or '-1' to
+remove the limit for this resource.
+.\"
+.\" ----
+.\"
+.TP
 .B if \fIifname has_clients has_servers allow_bcast
 Declares an interface and sets parameter of the network topology. When
 an interfacename is used in one of the other options, it must have
