@@ -271,6 +271,10 @@ extern void
 FD_ZERO (fd_set /*@out@*/ *p)
   /*@modifies *p@*/;
 
+int vsnprintf(/*@out@*/char *str, size_t size,
+	      /*@in@*/const char *format, va_list ap)
+  /*@requires (maxSet(str)+1) >= size@*/ ;
+
 
 extern ssize_t
 recvmsg(int s, /*@special@*/struct msghdr *msg, int flags)
