@@ -14,10 +14,11 @@ ulimits={9, data={
   memlock   -> (10000000, 10000000)
   as        -> (16, 16)
   locks     -> (8, 8)}}
-interfaces={len=3, data={
+interfaces={len=4, data={
   'eth0', 'eth0-name', 1, 0, 0, 192.168.42.23
   'eth1', 'X', 0, 0, 1, 255.255.255.255
-  'eth2', '', 1, 1, 0, 10.0.0.2}}
+  'eth2', '', 1, 1, 0, 10.0.0.2
+  'eth3.1', '', 1, 1, 1, 255.255.255.255}}
 servers={len=2, data={
   UNICAST, 192.168.31.41
   BROADCAST, &eth0}}
