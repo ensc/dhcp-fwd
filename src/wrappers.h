@@ -36,7 +36,6 @@
 #include "util.h"
 #include "recvfromflags.h"
 
-
 /*@unused@*/
 inline static void
 FatalErrnoError(bool condition, int retval, char const msg[])
@@ -55,6 +54,7 @@ FatalErrnoError(bool condition, int retval, char const msg[])
 
   exit(retval);
 }
+
 
 /*@unused@*/
 inline static struct group const *
@@ -193,7 +193,7 @@ Wrecv(int s,
     if (errno==EINTR) goto retry;
   }
 
-  return reinterpret_cast(size_t)(res);
+  return static_cast(size_t)(res);
 }
 
 /*@unused@*/
@@ -214,9 +214,9 @@ WrecvfromInet4(int s,
   }
 
   if (size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
-    return -1;
+    res = -1;
 
-  return reinterpret_cast(size_t)(res);
+  return static_cast(size_t)(res);
 }
 
 /*@unused@*/
@@ -241,9 +241,9 @@ WrecvfromFlagsInet4(int				s,
   }
 
   if (size!=sizeof(struct sockaddr_in) || from->sin_family!=AF_INET)
-    return -1;
+    res = -1;
 
-  return reinterpret_cast(size_t)(res);
+  return static_cast(size_t)(res);
 }
 
 /*@unused@*/
