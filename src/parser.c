@@ -212,6 +212,19 @@ newInterface(struct InterfaceInfoList *ifs)
   result        = &ifs->dta[ifs->len - 1];
   result->if_ip = INADDR_NONE;
 
+  memset(result->name, 0, sizeof result->name);
+  memset(result->aid,  0, sizeof result->aid);
+  result->has_clients = false;
+  result->has_servers = false;
+  result->allow_bcast = false;
+  result->need_mac    = false;
+  result->if_idx      = 0;
+  memset(&result->if_real_ip, 0, sizeof result->if_real_ip);
+  result->if_ip       = INADDR_NONE;
+  result->if_mtu      = 0;
+  memset(result->if_mac, 0, sizeof result->if_mac);
+  result->if_maclen   = 0;
+  
   return result;
 }
 
@@ -220,14 +233,18 @@ newServer(struct ServerInfoList *servers)
     /*@modifies *servers@*/
 {
   size_t		new_len;
+  struct ServerInfo	*result;
   
   ++servers->len;
   new_len      = servers->len * (sizeof(*servers->dta));
   servers->dta = static_cast(struct ServerInfo *)(Erealloc(servers->dta, new_len));
 
   assert(servers->dta!=0);
+  result	 = &servers->dta[servers->len - 1];
+  result->type   = svUNICAST;
+  memset(&result->info, 0, sizeof result->info);
   
-  return &servers->dta[servers->len - 1];
+  return result;
 }
 
 inline static /*@exposed@*/ struct UlimitInfo *
