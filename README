@@ -88,3 +88,4 @@ BUGS
   or failures in the following areas:
   * cooperation within an IPv6 network or
   * running on a big-endian host (will probably fail)
+  * IP fragmentation
