@@ -23,6 +23,7 @@ WWW_DIR			=  public_html/dhcpfwd
 WWW_FILES_ROOT		=  $(srcdir)/doc/index.html
 WWW_FILES_FILES		=  $(distdir).tar.bz2 $(distdir).tar.bz2.asc $(srcdir)/README $(srcdir)/NEWS
 
+man_MANS		=  doc/dhcp-fwd.1
 
 SUBDIRS			=  .
 DIST_SUBDIRS		=  $(SUBDIRS) m4
@@ -48,8 +49,11 @@ noinst_HEADERS		=  src/compat.h src/config.h src/dhcp.h src/inet.h	\
 			   src/util.h src/wrappers.h src/assertions.h		\
 			   src/parser.h src/output.h src/logging.h
 
+CLEANFILES		=  doc/dhcp-fwd.1
+
 EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
-		 	   contrib/dhcp-fwd.init contrib/dhcp-fwd.conf
+		 	   contrib/dhcp-fwd.init contrib/dhcp-fwd.conf		\
+			   doc/dhcp-fwd.man
 
 install-contrib:
 			$(mkinstalldirs) $(DESTDIR)/etc/init.d
@@ -76,6 +80,16 @@ sftp.cmds:		$(WWW_FILES_ROOT) $(WWW_FILES_FILES)
 			done >>$@.tmp
 			mv -f $@.tmp $@
 
+%.1:			%.man
+			@$(mkinstalldirs) "`dirname $@`"
+			rm -f $@
+			sed -e 's!@'sysconfdir'@!${sysconfdir}!g;			\
+                                s!@'sbindir'@!${sbindir}!g;				\
+				s!@'PACKAGE'@!${PACKAGE}!g;				\
+				s!@'VERSION'@!${VERSION}!g;'				\
+			$< >$@
+			test -z "$(CHMOD_REFERENCE)" || $(CHMOD_REFERENCE) $< $@
+			chmod a-w $@
 
 
 include $(top_srcdir)/m4/validate.am
