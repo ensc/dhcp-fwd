@@ -264,11 +264,13 @@ Esetrlimit(int resource, /*@in@*/struct rlimit const *rlim)
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno@*/
 {
+  FatalErrnoError(setrlimit(
 #if (defined(__GLIBC__) && __GLIBC__>=2) && defined(__cplusplus) && defined(_GNU_SOURCE)
-  FatalErrnoError(setrlimit(static_cast(__rlimit_resource)(resource), rlim)==-1, 1, "setrlimit()");
+		    static_cast(__rlimit_resource)(resource),
 #else  
-  FatalErrnoError(setrlimit(resource, rlim)==-1, 1, "setrlimit()");
-#endif  
+		    resource,
+#endif
+		    rlim)==-1, 1, "setrlimit()");
 }
 
 /*@unused@*/
