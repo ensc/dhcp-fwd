@@ -525,7 +525,7 @@ sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
     /*@modifies internalState@*/
 {
   struct DHCPllPacket		frame;
-  struct InterfaceInfo const	*iface = server->info.iface;
+  struct InterfaceInfo const	*iface = server->iface;
 
   memset(&frame, 0, sizeof frame);
   memset(frame.eth.ether_dhost, 255, sizeof frame.eth.ether_dhost);
@@ -552,10 +552,10 @@ sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
   memset(&sock, 0, sizeof sock);
   sock.sin_family = AF_INET;
 
-  sock.sin_addr = server->info.ip;
+  sock.sin_addr = server->info.unicast.ip;
   sock.sin_port = htons(DHCP_PORT_SERVER);
 	      
-  Wsendto(fds.sender_fd, buffer, size, 0,
+  Wsendto(server->info.unicast.fd, buffer, size, 0,
 	  reinterpret_cast(struct sockaddr *)(&sock),
 	  sizeof sock);
 }
