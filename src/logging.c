@@ -135,9 +135,8 @@ logDHCPPackage(char const *data, size_t	len,
 
     (void)Xinet_ntop(saddr->sa_family, ptr, addr_buffer, sizeof addr_buffer);
 
-    buffer_ptr    = buffer;
-    avail         = sizeof(buffer)-1;
-    buffer[avail] = '\0';
+    buffer_ptr = buffer;
+    avail      = sizeof(buffer)-1;
     
 #if 1
     Xsnprintf(&buffer_ptr, &avail, "from %s (", addr_buffer) ;
@@ -181,7 +180,8 @@ logDHCPPackage(char const *data, size_t	len,
     }
 
     assertDefined(buffer);
-    msg = buffer;
+    buffer[sizeof(buffer)-1] = '\0';
+    msg                      = buffer;
   }
   
   writeMsgStr(msg, strlen(msg));
