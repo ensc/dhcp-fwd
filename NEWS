@@ -1,9 +1,10 @@
-Version 0.1.3
--------------
+Version 0.2
+-----------
 	- Small fixes in the build-system (WWW distribution rules,
   	  requirements for automake 1.6
 	- Fixed broken '--disable-dietlibc' and enhanced this option
 	- Added doc
+	- Added man-page
 	
   
 Version 0.1
