@@ -1,4 +1,4 @@
-._usr_local-up-to-date
+._*-up-to-date
 .deps
 .gdb_history
 .www-timestamp
@@ -7,6 +7,7 @@ aclocal.m4
 autom4te-2.53.cache
 autoscan.log
 compile
+config.cache
 config.h
 config.log
 config.status
