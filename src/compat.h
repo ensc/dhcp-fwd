@@ -59,6 +59,10 @@
 #endif
 
 #ifndef __GLIBC__
+typedef uint32_t	in_addr_t;
+#endif
+
+#ifndef __GLIBC__
 struct ether_header
 {
   uint8_t  ether_dhost[ETH_ALEN];      /* destination eth addr */
@@ -77,3 +81,8 @@ struct ether_header
 #endif
 
 #endif	/* DHCP_FORWARDER_COMPAT_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:

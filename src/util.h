@@ -23,11 +23,6 @@
 #  include <config.h>
 #endif
 
-#ifndef __GLIBC__
-typedef uint32_t	in_addr_t;
-#endif
-
-
 #ifndef __cplusplus
 #  define _cAsT_(X)		(X))
 #  define reinterpret_cast(X)	((X) _cAsT_
@@ -48,3 +43,8 @@ enum {false = 0, true = 1 };
 #endif
 
 #endif	/* DHCP_FORWARDER_UTIL_H */
+
+  // Local Variables:
+  // compile-command: "make -C .. -k"
+  // fill-column: 80
+  // End:
