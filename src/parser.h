@@ -16,18 +16,17 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_PARSER_H
-#define DHCP_FORWARDER_PARSER_H
+#ifndef H_DHCP_FORWARDER_SRC_PARSER
+#define H_DHCP_FORWARDER_SRC_PARSER
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
-void		parse(/*@in@*/char const		*filename,
+extern void	parse(/*@in@*/char const		*filename,
 		      /*@in@*/struct ConfigInfo		*cfg);
 
-
-#endif	//  DHCP_FORWARDER_PARSER_H
+#endif	//  H_DHCP_FORWARDER_SRC_PARSER
 
   // Local Variables:
   // compile-command: "make -C .. -k"

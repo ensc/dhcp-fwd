@@ -16,8 +16,8 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_SPLINT_RECVFROMFLAGS_H
-#define DHCP_FORWARDER_SPLINT_RECVFROMFLAGS_H
+#ifndef H_DHCP_FORWARDER_SRC_RECVFROMFLAGS_H
+#define H_DHCP_FORWARDER_SRC_RECVFROMFLAGS_H
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -38,7 +38,7 @@ recvfrom_flags(int fd,
   /*@requires maxSet(ptr) >= nbytes@*/ ;
 
 
-#endif	/* DHCP_FORWARDER_SPLINT_RECVFROMFLAGS_H */
+#endif	/* H_DHCP_FORWARDER_SRC_RECVFROMFLAGS_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"

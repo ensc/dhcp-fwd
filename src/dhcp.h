@@ -94,7 +94,7 @@ enum {
   agREMOTEID	= 2u
 };
 
-
+/*@unused@*/
 inline static size_t
 DHCP_getOptionLength(struct DHCPSingleOption const *opt)
 {
@@ -105,6 +105,7 @@ DHCP_getOptionLength(struct DHCPSingleOption const *opt)
   }
 }
 
+/*@unused@*/
 inline static void
 DHCP_zeroOption(struct DHCPSingleOption *opt)
 {
@@ -119,6 +120,7 @@ DHCP_zeroOption(struct DHCPSingleOption *opt)
   }
 }
 
+/*@unused@*/
 inline static struct DHCPSingleOption *
 DHCP_nextSingleOption(/*@returned@*/struct DHCPSingleOption *opt)
 {
@@ -128,6 +130,7 @@ DHCP_nextSingleOption(/*@returned@*/struct DHCPSingleOption *opt)
 	  (reinterpret_cast(char *)(opt) + cnt));
 }
 
+/*@unused@*/
 inline static struct DHCPSingleOption const *
 DHCP_nextSingleOptionConst(/*@returned@*/struct DHCPSingleOption const *opt)
 {

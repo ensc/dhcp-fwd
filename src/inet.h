@@ -25,8 +25,11 @@
 
 #include "splint_compat.h"
 
+#ifndef S_SPLINT_S
+#  include <netinet/ip.h>
+#endif
+
 #include <netinet/ether.h>
-#include <netinet/ip.h>
 #include <netinet/udp.h>
 
 #include "compat.h"

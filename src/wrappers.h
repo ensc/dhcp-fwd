@@ -23,6 +23,8 @@
 #  include <config.h>
 #endif
 
+#include "splint.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -249,8 +251,8 @@ WrecvfromFlagsInet4(int					s,
 		    /*@out@*//*@dependent@*/void	*buf,
 		    size_t				len,
 		    int					*flags,
-		    struct sockaddr_in			*from,
-		    struct in_pktinfo			*pktp)
+		    /*@out@*/struct sockaddr_in		*from,
+		    /*@out@*/struct in_pktinfo		*pktp)
     /*@requires maxSet(buf) >= len@*/
 {
   register ssize_t		res;
@@ -264,6 +266,8 @@ WrecvfromFlagsInet4(int					s,
   if (res==-1) {
     if (errno==EINTR) goto retry;
   }
+
+  assertDefined(from);
 
   if (res==-1 || size!=sizeof(struct sockaddr_in) ||
       /*@-type@*/from->sin_family!=AF_INET/*@=type@*/)
@@ -292,7 +296,8 @@ Wsendto(int s,
 
 /*@unused@*/
 inline static void
-Wsendmsg(int s, struct msghdr const *msg, int flags)
+Wsendmsg(int s, /*@dependent@*//*@in@*/struct msghdr const *msg, int flags)
+    /*@modifies errno, fileSystem@*/
 {
   register ssize_t		res;
 

@@ -16,8 +16,10 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_SRC_COMPAT_H
-#define DHCP_FORWARDER_SRC_COMPAT_H
+  /*@-macromatchname@*/
+#ifndef H_DHCP_FORWARDER_SRC_COMPAT_H
+#define H_DHCP_FORWARDER_SRC_COMPAT_H
+  /*@=macromatchname@*/
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -82,16 +84,16 @@ struct ether_header
 } __attribute__ ((__packed__));
 #endif
 
-#ifndef TEMP_FAILURE_RETRY
-# define TEMP_FAILURE_RETRY(expression) \
-  (__extension__                                                              \
-    ({ long int __result;                                                     \
-       do __result = (long int) (expression);                                 \
-       while (__result == -1L && errno == EINTR);                             \
-       __result; }))
+#if !defined(TEMP_FAILURE_RETRY ) && !defined(S_SPLINT_S)
+#  define TEMP_FAILURE_RETRY(expression)		\
+   (__extension__					\
+     ({ long int m_result;				\
+        do m_result = (long int) (expression);		\
+        while (m_result == -1L && errno == EINTR);	\
+        m_result; }))
 #endif
 
-#endif	/* DHCP_FORWARDER_SRC_COMPAT_H */
+#endif	/* H_DHCP_FORWARDER_SRC_COMPAT_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"

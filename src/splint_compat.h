@@ -16,23 +16,20 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_SPLINT_COMPAT_H
-#define DHCP_FORWARDER_SPLINT_COMPAT_H
+#ifndef H_DHCP_FORWARDER_SRC_SPLINT_COMPAT_H
+#define H_DHCP_FORWARDER_SRC_SPLINT_COMPAT_H
+
 #ifdef S_SPLINT_S
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
-
-#include "../config.h"
+/*@-incondefs@*/
 
 typedef int		__socklen_t;
 typedef __socklen_t	socklen_t;
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#define TEMP_FAILURE_RETRY(X)	X
 
 typedef /*@integraltype@*/	bool;
 /*@constant bool false@*/
@@ -43,21 +40,24 @@ typedef uint8_t			u_int8_t;
 typedef uint16_t		u_int16_t;
 typedef uint32_t		u_int32_t;
 
-#include <netinet/ip.h>
+/*@+allmacros@*//*@-macromatchname@*/
+#define __arr
+/*@=allmacros@*//*@=macromatchname@*/
 
-#define IP_PKTINFO		2
-
-#define __arr		xxx
-#define PATH_MAX	42
-#define CFG_FILENAME	"42"
-
+/*@constant char const PACKAGE_BUGREPORT[]@*/
+/*@constant char const PACKAGE_STRING[]@*/
+/*@constant char const CFG_FILENAME[]@*/
+/*@constant int IP_PKTINFO@*/
 /*@constant size_t PATH_MAX=42@*/
+/*@constant size_t IFNAMSIZ@*/
 
 
 typedef uint16_t in_port_t; /* An unsigned integral type of exactly 16 bits. */
 typedef uint32_t in_addr_t; /* An unsigned integral type of exactly 32 bits. */
 
 /*@constant int MSG_CTRUNC@*/
+
+/*@constant size_t ETH_ALEN@*/
 
 /*@constant int AF_INET@*/
 /*@constant int AF_INET6@*/
@@ -83,8 +83,6 @@ typedef uint32_t in_addr_t; /* An unsigned integral type of exactly 32 bits. */
 
 typedef /*@abstract@*/ fd_set;
 
-extern size_t	CMSG_SPACE(size_t);
-#define CMSG_SPACE(X)		X
 
 typedef /*@integraltype@*/	sa_family_t;
 
@@ -94,10 +92,26 @@ struct cmsghdr {
   int cmsg_type;		/* protocol-specific type */
 } ;
 
+size_t	CMSG_SPACE(size_t);
 /*@exposed@*/ unsigned char *CMSG_DATA (/*@sef@*/ struct cmsghdr *) /*@*/ ;
 /*@null@*/ /*@exposed@*/ struct cmsghdr *CMSG_NXTHDR (/*@in@*/struct msghdr *,
 						      /*@in@*/struct cmsghdr *) /*@*/ ;
 /*@null@*/ /*@exposed@*/ struct cmsghdr *CMSG_FIRSTHDR (/*@in@*/struct msghdr *) /*@*/ ;
+
+struct iphdr
+{
+    unsigned int ihl:4;
+    unsigned int version:4;
+    u_int8_t tos;
+    u_int16_t tot_len;
+    u_int16_t id;
+    u_int16_t frag_off;
+    u_int8_t ttl;
+    u_int8_t protocol;
+    u_int16_t check;
+    u_int32_t saddr;
+    u_int32_t daddr;
+};
 
   /* Internet address. */
 struct in_addr {
@@ -152,18 +166,19 @@ struct iovec {
 };
 
 struct msghdr {
-    /*@dependent@*/
+      /*@dependent@*//*@null@*/
     void         * msg_name;     /* optional address */
     socklen_t    msg_namelen;    /*: maxSet (msg_name) >= msg_namelen */
-    /*@dependent@*/
+      /*@dependent@*/
     struct iovec * msg_iov;      /* scatter/gather array */
     size_t       msg_iovlen;     /*: maxSet (msg_iov) >= msg_iovlen */
-    /*@dependent@*/
+    /*@dependent@*//*@null@*/
     void         * msg_control;  /* ancillary data, see below */
     socklen_t    msg_controllen; /*: maxSet (msg_control) >= msg_controllen */
     int          msg_flags;      /* flags on received message */
 };
 
+long int /*@alt int@*/ TEMP_FAILURE_RETRY(long int /*@alt int@*/);
 
 in_addr_t htonl (in_addr_t hostlong) /*@*/ ;
 in_port_t htons (in_port_t hostshort) /*@*/ ;
@@ -226,8 +241,6 @@ sendmsg (int s, const struct msghdr *msg, int flags)
   /*@modifies errno@*/;
 
 
-#include <sys/select.h>
-
 #undef FD_ZERO
 #undef FD_CLR
 #undef FD_SET
@@ -255,8 +268,6 @@ FD_ZERO (fd_set /*@out@*/ *p)
   /*@modifies *p@*/;
 
 
-
-#if 1
 extern ssize_t
 recvmsg(int s, /*@special@*/struct msghdr *msg, int flags)
     /*:errorcode -1:*/
@@ -267,14 +278,11 @@ recvmsg(int s, /*@special@*/struct msghdr *msg, int flags)
     /*@modifies *msg->msg_iov->iov_base, *msg->msg_control,
                 msg->msg_controllen, msg->msg_flags, fileSystem, errno@*/
   ;
-#else
-extern ssize_t
-recvmsg (int s, struct msghdr *msg, int flags)
-	/*@modifies msg->msg_iov->iov_base[], errno, fileSystem@*/;
-#endif
+
+/*@=incondefs@*/
 
 #endif
-#endif
+#endif	/* H_DHCP_FORWARDER_SRC_SPLINT_COMPAT_H */
 
   // Local Variables:
   // compile-command: "make -C .. -k"

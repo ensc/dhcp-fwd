@@ -16,22 +16,15 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //  
 
-#ifndef DHCP_FORWARDER_SPLINT_H
-#define DHCP_FORWARDER_SPLINT_H
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#ifndef H_DHCP_FORWARDER_SPLINT_H
+#define H_DHCP_FORWARDER_SPLINT_H
 
 #include "splint_compat.h"
 
 extern void assertDefined (/*@out@*/ /*@sef@*/ /*@unused@*/ void *p_x) ;
 
-/*@+allmacros@*/
-/*@-mustdefine@*/
-#define assertDefined(x) ;
-/*@=mustdefine@*/
-/*@=allmacros@*/
+#ifndef S_SPLINT_S
+#  define assertDefined(x)
+#endif
 
-
-#endif	//  DHCP_FORWARDER_SPLINT_H
+#endif	//  H_DHCP_FORWARDER_SPLINT_H

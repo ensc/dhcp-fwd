@@ -36,6 +36,7 @@ extern void 	dhcpsingleoption_not_2();
 extern void	dhcpllpacket_not_42();
 #endif
 
+/*@unused@*/
 inline static void
 checkCompileTimeAssertions()
 {

@@ -41,11 +41,13 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
   msg.msg_iovlen     = 0;
 
   n = recvmsg(fd, &msg, *flagsp);
+    /*@-compdef@*/
   assertDefined(msg.msg_iov[0].iov_base);
   assertDefined(ptr);
   assertDefined(msg.msg_name);
   assertDefined(msg.msg_control);
-
+    /*@=compdef@*/
+  
     /*@-mustdefine@*/
   if (n<0) return(n);
     /*@=mustdefine@*/
