@@ -16,4 +16,6 @@ int main()
   for (i=0; i<sizeof(NUMS)/sizeof(NUMS[0]); ++i) {
     writeUInt(1, NUMS[i]); write(1, "\n", 1);
   }
+
+  return EXIT_SUCCESS;
 }
