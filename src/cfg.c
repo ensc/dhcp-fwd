@@ -283,7 +283,7 @@ showVersion() /*@*/
 inline static void
 showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
-  char const	msg[] = (" [-v] [-h] [-c <filename>] [-d]\n\n"
+  char const	msg[] = (" [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
 			 "  -v              show version\n"
 			 "  -h              show help\n"
 			 "  -c <filename>   read configuration from <filename>\n"
