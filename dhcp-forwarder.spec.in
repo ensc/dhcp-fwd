@@ -2,15 +2,15 @@
 
 %define		homedir		%{_var}/lib/dhcpfwd
 
-Summary:	An DHCP relay agent
+Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	1
+Release:	2
 License:	GPL
 Group:		System Environment/Daemons
 Packager:	Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 URL:		http://www.tu-chemnitz.de/~ensc/dhcpfwd
-Source0:	%{name}-%{version}.tar.bz2
+Source0:	http://www.tu-chemnitz.de/~ensc/dhcpfwd/files/%{name}-%{version}.tar.bz2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-buildroot
 
 %if %{?_without_dietlibc:0}%{!?_without_dietlibc:1}
@@ -66,6 +66,8 @@ fi
 %postun
 if test "$1" = "0"; then
 	/usr/sbin/userdel dhcpfwd &>/dev/null || true
+elif test "$1" -ge 1; then
+	/sbin/service dhcpfwd condrestart >/dev/null
 fi
 
 
@@ -76,10 +78,17 @@ fi
 %config /etc/init.d/*
 %config(noreplace) %{_sysconfdir}/dhcp-fwd.conf
 %{_sbindir}/*
+
+## Do *NOT* add %defattr(-,dhcpfwd,dhcpfwd); the homedir is used for
+## the chroot() only and there is no reason why the setuid()'ed daemon
+## needs any kind of access there
 %{homedir}
 
 
 %changelog
+* Mon Jun 17 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2-2
+- Described purpose of the %%{homedir} and its handling
+
 * Fri Jun 14 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de> 0.2-1
 - Added manpage
 
