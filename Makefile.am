@@ -18,6 +18,12 @@
 
 ACLOCAL_AMFLAGS		=  -I m4
 
+WWW_HOST		=  janus
+WWW_DIR			=  public_html/dhcpfwd
+WWW_FILES_ROOT		=  $(srcdir)/doc/index.html
+WWW_FILES_FILES		=  $(distdir).tar.bz2 $(distdir).tar.bz2.asc $(srcdir)/README $(srcdir)/NEWS
+
+
 SUBDIRS			=  .
 DIST_SUBDIRS		=  $(SUBDIRS) m4
 
@@ -51,6 +57,26 @@ install-contrib:
 
 uninstall-contrib:
 			rm -f $(DESTDIR)/etc/init.d/dhcp-fwd
+
+www:			.www-timestamp
+
+.www-timestamp:		sftp.cmds
+			sftp -b $< $(WWW_HOST)
+			touch $@
+
+sftp.cmds:		$(WWW_FILES_ROOT) $(WWW_FILES_FILES)
+			@echo 'chdir $(WWW_DIR)' >$@.tmp
+			list="$(WWW_FILES_ROOT)"; for f in $$list; do			\
+				test $$f -ot $@ || echo "put -P $$f";			\
+			done >>$@.tmp
+
+			@echo 'chdir files' >>$@.tmp
+			list="$(WWW_FILES_FILES)"; for f in $$list; do			\
+				test $$f -ot $@ || echo "put -P $$f";			\
+			done >>$@.tmp
+			mv -f $@.tmp $@
+
+
 
 include $(top_srcdir)/m4/validate.am
 include $(top_srcdir)/m4/changelog.am
