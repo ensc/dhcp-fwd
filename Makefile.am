@@ -16,6 +16,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #  
 
+SUBDIRS			=
+DIST_SUBDIRS		=  $(SUBDIRS) m4
+
+ACLOCAL_AMFLAGS		=  -I m4
+
 DIET			=  @DIET@
 CC			=  $(DIET) @CC@
 
@@ -33,3 +38,8 @@ noinst_HEADERS		=  src/compat.h src/config.h src/dhcp.h src/inet.h	\
 			   src/recvfromflags.h src/splint_compat.h		\
 			   src/util.h src/wrappers.h src/assertions.h		\
 			   src/parser.h
+
+EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am
+
+include $(top_srcdir)/m4/validate.am
+include $(top_srcdir)/m4/changelog.am
