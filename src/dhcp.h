@@ -128,6 +128,26 @@ DHCP_getOptionLength(/*@sef@*//*@in@*/struct DHCPSingleOption const *opt)
 
 /*@unused@*/
 inline static void
+DHCP_removeOption(struct DHCPSingleOption *opt,
+		  struct DHCPSingleOption const *end_opt)
+    /*@requires opt <= end_opt@*/
+    /*@modifies *opt@*/
+{
+  size_t		len = DHCP_getOptionLength(opt);
+  char * const		start = reinterpret_cast(char *)(opt);
+  char const * const	end   = reinterpret_cast(char const *)(end_opt);
+  
+  assert(opt <= end_opt);
+  if (start+len > end) return;		// TODO: broken option-list ... what to do?
+
+    // end-start  -->  character count between opt and end_opt without end_opt
+    // -len       -->  size of the option to be removed
+    // +1         -->  the end_opt
+  memmove(start, start+len, end-start - len + 1);
+}
+
+/*@unused@*/
+inline static void
 DHCP_zeroOption(struct DHCPSingleOption *opt)
     /*@modifies *opt@*/
 {
