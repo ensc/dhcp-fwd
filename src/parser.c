@@ -41,6 +41,9 @@ static char const	*filename = 0;
 
 #define EXITFATAL(msg)	exitFatal(msg, sizeof(msg))
 
+static void
+exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn));
+  
 inline static void
 exitFatal(char const msg[], register size_t len)
 {
@@ -88,8 +91,8 @@ match(char c)
 {
   register int		got = getLookAhead();
   
-  if (got==-1)                        EXITFATAL("unexpected EOF while parsing");
-  if (reinterpret_cast(char)(got)!=c) EXITFATAL("unexpected symbol");
+  if (got==-1)                   EXITFATAL("unexpected EOF while parsing");
+  if (static_cast(char)(got)!=c) EXITFATAL("unexpected symbol");
 
   look_ahead = -1;
 }
@@ -104,8 +107,12 @@ matchStr(char const *str)
 inline static struct InterfaceInfo *
 newInterface(struct InterfaceInfoList *ifs)
 {
+  size_t		new_len;
+  
   ++ifs->len;
-  ifs->dta = Erealloc(ifs->dta, ifs->len * (sizeof(ifs->dta[0])));
+  
+  new_len  = ifs->len * (sizeof(ifs->dta[0]));
+  ifs->dta = static_cast(struct InterfaceInfo*)(Erealloc(ifs->dta, new_len));
   
   return ifs->dta + ifs->len - 1;
 }
@@ -113,8 +120,11 @@ newInterface(struct InterfaceInfoList *ifs)
 inline static struct ServerInfo *
 newServer(struct ServerInfoList *servers)
 {
+  size_t		new_len;
+  
   ++servers->len;
-  servers->dta = Erealloc(servers->dta, servers->len * (sizeof(servers->dta[0])));
+  new_len      = servers->len * (sizeof(servers->dta[0]));
+  servers->dta = static_cast(struct ServerInfo *)(Erealloc(servers->dta, new_len));
   
   return servers->dta + servers->len - 1;
 }
@@ -202,7 +212,7 @@ readName(char buffer[], size_t len)
 {
   register char		*ptr = buffer;
   
-  while (ptr-buffer+1 < len) {
+  while (ptr+1 < buffer + len) {
     char	c = getLookAhead();
 
     if ( (c>='a' && c<='z') || (c>='A' && c<='Z') ||
