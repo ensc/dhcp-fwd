@@ -80,9 +80,9 @@ splint:
 				$(dhcp_fwd_SOURCES) $(neg_SRCS)
 
 install-contrib:
-			$(mkinstalldirs) $(DESTDIR)/etc/init.d $(DESTDIR)/etc/sysconfig
-			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init      $(DESTDIR)/etc/init.d/dhcp-fwd
-			$(INSTALL_DATA)   contrib/dhcp-fwd.sysconfig $(DESTDIR)/etc/sysconfig/dhcp-fwd
+			$(mkinstalldirs) $(DESTDIR)$(sysconfdir)/init.d $(DESTDIR)$(sysconfdir)/sysconfig
+			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init      $(DESTDIR)$(sysconfdir)/init.d/dhcp-fwd
+			$(INSTALL_DATA)   contrib/dhcp-fwd.sysconfig $(DESTDIR)$(sysconfdir)/sysconfig/dhcp-fwd
 
 uninstall-contrib:
 			rm -f $(DESTDIR)/etc/init.d/dhcp-fwd
