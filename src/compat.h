@@ -73,7 +73,7 @@
   typedef uint32_t	in_addr_t;
 #endif
 
-#ifndef __GLIBC__
+#if defined(__dietlibc__) && !defined(DIET_HAS_STRUCT_ETHER_HEADER)
 struct ether_header
 {
   uint8_t  ether_dhost[ETH_ALEN];      /* destination eth addr */
