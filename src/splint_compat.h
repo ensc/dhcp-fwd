@@ -55,6 +55,9 @@ typedef uint32_t		u_int32_t;
 typedef uint16_t in_port_t; /* An unsigned integral type of exactly 16 bits. */
 typedef uint32_t in_addr_t; /* An unsigned integral type of exactly 32 bits. */
 
+/*@constant int RLIMIT_AS@*/
+/*@constant int RLIMIT_LOCKS@*/
+
 /*@constant int MSG_CTRUNC@*/
 
 /*@constant size_t ETH_ALEN@*/
@@ -75,6 +78,7 @@ typedef uint32_t in_addr_t; /* An unsigned integral type of exactly 32 bits. */
 /*@constant int SO_BROADCAST@*/
 /*@constant int SO_BINDTODEVICE@*/
 
+/*@constant in_addr_t INADDR_NONE@*/
 /*@constant in_addr_t INADDR_ANY@*/
 /*@constant in_addr_t INADDR_BROADCAST@*/
 
