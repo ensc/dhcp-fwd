@@ -1,6 +1,6 @@
 *.lcd
-.X_usr_local-up-to-date
 ._*-up-to-date
+.X_*-up-to-date
 .deps
 .gdb_history
 .www-timestamp
