@@ -209,9 +209,10 @@ newInterface(struct InterfaceInfoList *ifs)
 
   assert(ifs->dta!=0);
   
-  result        = &ifs->dta[ifs->len - 1];
+  result            = &ifs->dta[ifs->len - 1];
   memset(result, 0, sizeof result);
-  result->if_ip = INADDR_NONE;
+  result->if_ip     = INADDR_NONE;
+  result->sender_fd = -1;
   
   return result;
 }
@@ -912,11 +913,23 @@ parse(/*@in@*/char const		fname[],
 	break;
 
       case 0x311	:
+	if (isCharType(c, chrBLANK)) readBlanks();
+	if (isCharType(c, chrNL)) ifname[0] = '\0';
+	else                      readIfname(ifname);
+	state = 0x315;
+	break;
+
+      case 0x315	:
       {
 	struct ServerInfo	*server = newServer(&cfg->servers);
+	struct InterfaceInfo	*iface  = 0;
 
-	server->type    = svUNICAST;
-	server->info.ip = ip;
+	if (ifname[0]!='\0')
+	  iface = searchInterface(&cfg->interfaces, ifname);
+
+	server->type            = svUNICAST;
+	server->iface           = iface;
+	server->info.unicast.ip = ip;
 	
 	state = 0xFFFE;
 	break;
@@ -940,7 +953,7 @@ parse(/*@in@*/char const		fname[],
 	iface              = searchInterface(&cfg->interfaces, ifname);
 	iface->need_mac    = true;
 	server->type       = svBCAST;
-	server->info.iface = iface;
+	server->iface      = iface;
 	
 	state = 0xFFFE;
 	break;
