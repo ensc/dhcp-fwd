@@ -41,7 +41,8 @@ struct InterfaceInfo {
     bool	allow_bcast;	//< honor bcast-flag and send to bcast address?
 
     unsigned int	if_idx;		//< interface index
-    in_addr_t		if_ip;		//< associated ip
+    in_addr_t		if_real_ip;	//< ip got by recvmsg()
+    in_addr_t		if_ip;		//< ip to be set in 'giaddr' field
     size_t		if_mtu;		//< MTU
     uint8_t		if_mac[16];	//< MAC
     size_t		if_maclen;	//< length of MAC
