@@ -16,7 +16,8 @@ name eth1	X
 ip eth0		192.168.42.23
 ip eth2		10.0.0.2
 
-server		ip 192.168.31.41
+server		ip 192.168.31.41 eth2
+server		ip 192.168.31.42 eth2
 server		bcast eth0
 
 ulimit stack	0x10

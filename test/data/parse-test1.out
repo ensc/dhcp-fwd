@@ -19,6 +19,7 @@ interfaces={len=4, data={
   'eth1', 'X', 0, 0, 1, 255.255.255.255
   'eth2', '', 1, 1, 0, 10.0.0.2
   'eth3.1', '', 1, 1, 1, 255.255.255.255}}
-servers={len=2, data={
+servers={len=3, data={
   UNICAST, 192.168.31.41
+  UNICAST, 192.168.31.42
   BROADCAST, &eth0}}
