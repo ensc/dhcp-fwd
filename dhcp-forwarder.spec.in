@@ -35,10 +35,12 @@
 %define minitsvcdir	%minitdir/services/dhcp-fwd
 %define service		dhcp-fwd
 
+%{!?release_func:%define release_func() %1}
+
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
 Version:	@VERSION@
-Release:	0
+Release:	%release_func 0
 Epoch:		0
 License:	GPL
 Group:		System Environment/Daemons
