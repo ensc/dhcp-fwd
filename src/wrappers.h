@@ -64,8 +64,17 @@ inline static /*@observer@*/ struct group const *
 Egetgrnam(char const *name)
    /*@*/
 {
-  /*@observer@*/struct group const	*res = getgrnam(name);
-  FatalErrnoError(res==0, 1, "getgrnam()");
+  /*@observer@*/struct group const	*res;
+
+  errno = 0;
+  res   = getgrnam(name);
+  FatalErrnoError(res==0 && errno!=0, 1, "getgrnam()");
+  if (res==0) {
+    write(2, "getgrnam(\"", 10);
+    write(2, name, strlen(name));
+    write(2, "\"): no such group\n", 18);
+    exit(1);
+  }
 
     /*@-freshtrans@*/
     /*@-mustfreefresh@*/
@@ -79,8 +88,16 @@ inline static /*@observer@*/ struct passwd const *
 Egetpwnam(char const *name)
     /*@*/
 {
-  struct passwd const	*res = getpwnam(name);
-  FatalErrnoError(res==0, 1, "getpwnam()");
+  struct passwd const	*res;
+  errno = 0;
+  res   = getpwnam(name);
+  FatalErrnoError(res==0 && errno!=0, 1, "getpwnam()");
+  if (res==0) {
+    write(2, "getpwnam(\"", 10);
+    write(2, name, strlen(name));
+    write(2, "\"): no such user\n", 17);
+    exit(1);
+  }
 
   return res;
 }
