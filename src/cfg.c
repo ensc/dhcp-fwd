@@ -344,15 +344,16 @@ showVersion() /*@*/
 inline static void
 showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
-  char const	msg[] = (" [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
-			 "  -v              show version\n"
-			 "  -h              show help\n"
-			 "  -c <filename>   read configuration from <filename>\n"
-			 "  -n              do not fork separate process\n"
-			 "  -d              debug-mode; same as '-n'\n\n"
-			 "Report bugs to Enrico Scholz <"
-			 PACKAGE_BUGREPORT
-			 ">\n");
+  char const	msg[] =
+    " [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
+    "  -v              show version\n"
+    "  -h              show help\n"
+    "  -c <filename>   read configuration from <filename>\n"
+    "  -n              do not fork separate process\n"
+    "  -d              debug-mode; same as '-n'\n\n"
+    "Report bugs to Enrico Scholz <"
+    PACKAGE_BUGREPORT
+    ">\n";
 
   showVersion();
   (void)write(1, "\nusage: ", 8	);
