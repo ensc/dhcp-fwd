@@ -626,7 +626,7 @@ parse(/*@in@*/char const		fname[],
   struct {
       int		code;
       rlim_t		val;
-  }			ulimit;
+  }			ulimit = { 0,0 };
   
 
   filename = fname;
