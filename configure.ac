@@ -42,17 +42,17 @@ AC_PATH_PROGS(SPLINT, splint)
 ENSC_STANDARD_TOOLS
 ENSC_RELEASE(IS_RELEASE)
 
-ENSC_DIET
+ENSC_ENABLE_DIETLIBC(USE_DIETLIBC)
 ENSC_INITRDDIR(initrddir)
 
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
-LF_CHECK_CC_FLAG(${RELEASE_CFLAGS})
-LF_CHECK_CC_FLAG([-Wall -W -Wno-unused-function])
+ENSC_CHECK_CC_FLAG(${RELEASE_CFLAGS})
+ENSC_CHECK_CC_FLAG([-Wall -W -Wno-unused-function])
 
 if test x"${ensc_use_dietlibc}" != xyes; then
 	dnl dietlibc <= 0.17 does not compile with -std=c99... :(
-	LF_CHECK_CC_FLAG([-std=c99 -pedantic])
+	ENSC_CHECK_CC_FLAG([-std=c99 -pedantic])
 elif which $CC gcc &>/dev/null; then
 	dnl Fix cross-compiler detection of dietlibc since it is
 	dnl broken when using names like i386-redhat-linux-gcc
@@ -141,5 +141,5 @@ AH_BOTTOM([
 #endif	/* H_DHCP_FORWARDER_TOP_CONFIG_H */
 ])
 
-AC_CONFIG_FILES([Makefile m4/Makefile test/Makefile dhcp-forwarder.spec])
+AC_CONFIG_FILES([Makefile test/Makefile dhcp-forwarder.spec])
 AC_OUTPUT
