@@ -28,4 +28,4 @@ inp=${base}.in
 out=${base}.out
 
 set -e
-./$2 ${inp} | cmp ${out}
+${DEBUG} ./$2 ${inp} | cmp ${out}
