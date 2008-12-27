@@ -29,6 +29,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <sys/mman.h>
 
 #include "parser.h"
 #include "cfg.h"
@@ -108,9 +109,10 @@ isCharType(/*@sef@*/int c, /*@sef@*/unsigned int type) /*@*/
 }
 
 /*@unchecked@*/static int		look_ahead = tkEOF;
-/*@checkmod@*/static int		fd;
 /*@unchecked@*/static unsigned int	line_nr, col_nr;
 /*@null@*/static char const		*filename = 0;
+char const				*cfg_ptr;
+char const				*cfg_end;
 
   /*@noreturn@*//*@unused@*/
 static void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
@@ -146,21 +148,20 @@ setNext()
     /*@modifies col_nr, line_nr, look_ahead@*/
 {
   char			c;
-  int			cnt;
 
   ++col_nr;
-  cnt = TEMP_FAILURE_RETRY(read(fd, &c, 1));
-  if (cnt==-1) scEXITFATAL("read() failed");
+  if (cfg_ptr == cfg_end)
+    look_ahead = tkEOF;
+  else {
+    c = *cfg_ptr;
+    ++cfg_ptr;
 
-  if (cnt>0) {
     switch (c) {
       case '\n'	:  ++line_nr; col_nr = 0; break;
       case '\t'	:  col_nr = (col_nr+7)/8 * 8;
     }
     look_ahead = static_cast(int)(c);
   }
-  else if (cnt==0) look_ahead = tkEOF;
-  else { assert(false); }
 }
 
 inline static int
@@ -627,6 +628,8 @@ parse(/*@in@*/char const		fname[],
       int		code;
       rlim_t		val;
   }			ulimit = { 0,0 };
+  int			fd;
+  struct stat		st;
   
 
   filename = fname;
@@ -638,6 +641,19 @@ parse(/*@in@*/char const		fname[],
     perror("open()");
     exit(1);
   }
+
+  if (fstat(fd, &st)<0) {
+    perror("fstat()");
+    exit(1);
+  }
+
+  cfg_ptr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if (!cfg_ptr) {
+    perror("mmap()");
+    exit(1);
+  }
+
+  cfg_end = cfg_ptr + st.st_size;
 
   initCharacterClassification(chrs);
   
@@ -965,6 +981,7 @@ parse(/*@in@*/char const		fname[],
     }
   }
 
+  munmap(const_cast(void*)(cfg_ptr), st.st_size);
   Eclose(fd);
   return;
 
