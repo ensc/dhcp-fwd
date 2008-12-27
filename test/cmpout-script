@@ -28,4 +28,16 @@ inp=${base}.in
 out=${base}.out
 
 set -e
-${DEBUG} ./$2 ${inp} | cmp ${out}
+export TEST_IF0=iface0
+export TEST_IF1=iface1
+export TEST_IP0=192.168.0.1
+export TEST_IP1=10.1.1.1
+export TEST_IP2=10.1.2.1
+export TEST_FILE0=file0
+export TEST_FILE1=file1
+export TEST_NAME0=name0
+export TEST_NAME1=name1
+
+: ${CMP:=cmp ${out}}
+
+${DEBUG} ./$2 ${inp} | $CMP
