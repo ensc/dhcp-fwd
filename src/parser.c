@@ -671,6 +671,7 @@ parse(/*@in@*/char const		fname[],
   }			ulimit = { 0,0 };
   int			fd;
   struct stat		st;
+  char			*cfg_start;
 
 
   filename = fname;
@@ -688,13 +689,14 @@ parse(/*@in@*/char const		fname[],
     exit(1);
   }
 
-  cfg_ptr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (!cfg_ptr) {
+  cfg_start = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if (!cfg_start) {
     perror("mmap()");
     exit(1);
   }
 
-  cfg_end = cfg_ptr + st.st_size;
+  cfg_ptr = cfg_start;
+  cfg_end = cfg_start + st.st_size;
 
   initCharacterClassification(chrs);
 
@@ -1022,7 +1024,7 @@ parse(/*@in@*/char const		fname[],
     }
   }
 
-  munmap(const_cast(void*)(cfg_ptr), st.st_size);
+  munmap(cfg_start, st.st_size);
   Eclose(fd);
   return;
 
