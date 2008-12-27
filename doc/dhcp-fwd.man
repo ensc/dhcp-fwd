@@ -219,6 +219,28 @@ source-tarball.
 .\"
 .\" ====================
 .\"
+.SH VARIABLE EXPANSION
+It is possible to use \fI$VAR\fR style variable expansion for path,
+file and interface names, and for ip addresses.  Value of \fI$VAR\fR
+will be taken from the corresponding environment variable which must
+be defined. Quoting of leading \`\fI$\fR\' characters is possible by
+prepending a single backslash.
+.
+.P
+Examples:
+.RS
+.PD 0
+.LP
+pidfile $PIDFILE
+.LP
+if $IFACE t t t
+.LP
+ip $IFACE $IP
+.PD
+.RE
+.\"
+.\" ====================
+.\"
 .SH FILES
 .TP
 .B @sysconfdir@/dhcp-fwd.conf

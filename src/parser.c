@@ -57,9 +57,12 @@ static unsigned int	*CHARACTERS;
 #define chrIFNAME	0x400u
 #define chrFILENAME	0x800u
 #define chrBASEMOD	0x1000u
+#define chrVARNAME	0x2000u
 
 #define ensc_DHCP_FORWARDER_ULIMIT_H_I_KNOW_WHAT_I_DO
 #include "ulimit_codes.h"
+
+enum { MAX_VARNAME_SZ = 32 };
 
 inline static void
 initCharacterClassification(/*@out@*/unsigned int *chrs)
@@ -76,17 +79,17 @@ initCharacterClassification(/*@out@*/unsigned int *chrs)
 
   /*@+charintliteral@*/
   for (c='0'; c<='9'; ++c) chrs[c] |= (chrDIGIT | chrNUMBER | chrIP |
-				       chrSYS | chrUSERNAME);
-  for (c='A'; c<='Z'; ++c) chrs[c] |= chrUPPERALPHA | chrSYS | chrUSERNAME;
-  for (c='a'; c<='z'; ++c) chrs[c] |= chrLOWALPHA   | chrSYS | chrUSERNAME;
+				       chrSYS | chrUSERNAME | chrVARNAME);
+  for (c='A'; c<='Z'; ++c) chrs[c] |= chrUPPERALPHA | chrSYS | chrUSERNAME | chrVARNAME;
+  for (c='a'; c<='z'; ++c) chrs[c] |= chrLOWALPHA   | chrSYS | chrUSERNAME | chrVARNAME;
   chrs['\r'] |= chrNL;
   chrs['\n'] |= chrNL;
   
   chrs['\t'] |= chrBLANK;
   chrs[' ']  |= chrBLANK;
-  chrs['.']  |= chrSYS | chrUSERNAME | chrIP;
-  chrs['_']  |= chrSYS | chrUSERNAME;
-  chrs['-']  |= chrSYS | chrUSERNAME;
+  chrs['.']  |= chrSYS | chrUSERNAME | chrIP | chrVARNAME;
+  chrs['_']  |= chrSYS | chrUSERNAME | chrVARNAME;
+  chrs['-']  |= chrSYS | chrUSERNAME | chrVARNAME;
   chrs[':']  |= chrSYS;
   chrs['/']  |= chrFILENAME;
 
@@ -382,12 +385,50 @@ readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
 }
 /*@=charintliteral@*/
 
+inline static size_t
+readStringExpanded(/*@out@*/char *buffer, size_t len, unsigned int char_class)
+{
+  int		c = getLookAhead();
+  if (c == '\\')
+    match(c);
+  else if (c == '$') {
+    size_t	l;
+    size_t	i;
+    char	var[MAX_VARNAME_SZ+1];
+    char const	*tmp;
+    match(c);
+    l = readString(var, sizeof var, chrVARNAME);
+
+    if (l==0)
+      scEXITFATAL("empty variable name");
+
+    tmp = getenv(var);
+
+    if (!tmp)
+      scEXITFATAL("failed not expand variable");
+
+    l = strlen(tmp);
+    if (l >= len)
+      scEXITFATAL("expanded value too long");
+
+    memcpy(buffer, tmp, l+1);
+    for (i = 0; i < l; ++i) {
+      if (!isCharType(buffer[i], char_class))
+	scEXITFATAL("bad chars in expanded variable");
+    }
+
+    return l;
+  }
+
+  return readString(buffer, len, char_class);
+}
+
 inline static void
 readFileName(/*@out@*/char buffer[], size_t len)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
 {
-  if (readString(buffer, len, chrFILENAME)==0)
+  if (readStringExpanded(buffer, len, chrFILENAME)==0)
     scEXITFATAL("Invalid filename");
 }
 
@@ -530,7 +571,7 @@ readIfname(/*@out@*/char *iface)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *iface@*/
 {
-  if (readString(iface, IFNAMSIZ, chrIFNAME)==0)
+  if (readStringExpanded(iface, IFNAMSIZ, chrIFNAME)==0)
     scEXITFATAL("Invalid interface name");
 }
 
@@ -541,7 +582,7 @@ readIp(/*@out@*/struct in_addr	*ip)
     /*@modifies look_ahead, *ip@*/
 {
   char			buffer[1024];
-  (void)readString(buffer, sizeof buffer, chrIP);
+  (void)readStringExpanded(buffer, sizeof buffer, chrIP);
 
   assertDefined(buffer);	// ptr is an alias for buffer
   if (inet_aton(buffer, ip)==0) scEXITFATAL("Invalid IP");
