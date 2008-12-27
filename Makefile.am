@@ -71,13 +71,12 @@ EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 			$(MAKE) substvar VARS='sysconfdir sbindir PACKAGE VERSION' INFILE='$<' OUTFILE='$@'
 
 $(PACKAGE).lcd:		Makefile.am splint.conf $(noinst_HEADERS)
-			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -dump $@.tmp -f splint.conf $(noinst_HEADERS)
+			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -dump $@.tmp -f $(filter-out %Makefile.am,$^)
 			-rm -f $@
 			mv $@.tmp $@
 
-splint:
-			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -f splint.conf 	\
-				$(dhcp_fwd_SOURCES) $(neg_SRCS)
+splint:			splint.conf $(dhcp_fwd_SOURCES) $(neg_SRCS)
+			$(SPLINT) $(DEFAULT_INCLUDES) $(INCLUDES) -f $^
 
 www:			.www-timestamp
 
