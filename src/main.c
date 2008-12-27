@@ -1,20 +1,20 @@
 // $Id$    --*- c++ -*--
 
 // Copyright (C) 2002,2003,2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
-//  
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+//
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -57,9 +57,9 @@ typedef enum {
   acREMOVE_ID,		//< Remove an already existing agent-id field
   acADD_ID		//< Add an agent-id field if such a field does not
 			//< already exists
-#ifdef ENABLE_AGENT_REPLACE  
+#ifdef ENABLE_AGENT_REPLACE
   ,acREPLACE_ID		//< Replace an already existing agent-id field
-#endif  
+#endif
 } OptionFillAction;
 
 /*@checkmod@*/static struct ServerInfoList	servers;
@@ -83,7 +83,7 @@ fillFDSet(/*@out@*/fd_set			*fdset,
 
   for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
     assert(fdinfo!=0);
-    
+
     *max = MAX(*max, fdinfo->fd);
     FD_SET(fdinfo->fd, fdset);
   }
@@ -99,10 +99,10 @@ lookupFD(/*@in@*/struct in_addr const addr)
     /*@=nullptrarith@*/
 
   assert(fds.dta!=0 || fds.len==0);
-  
+
   for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
     assert(fdinfo!=0);
-    
+
       /* We must check for both the real and "faked" giaddr IP here */
     if (fdinfo->iface->if_real_ip==addr.s_addr ||
 	fdinfo->iface->if_ip     ==addr.s_addr) return fdinfo;
@@ -123,10 +123,10 @@ determineMaxMTU()
     /*@=nullptrarith@*/
 
   assert(fds.dta!=0 || fds.len==0);
-  
+
   for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
     assert(fdinfo!=0);
-    
+
     result = MAX(result, fdinfo->iface->if_mtu);
   }
 
@@ -144,7 +144,7 @@ isValidHeader(/*@in@*/struct DHCPHeader *header)
   if ((header->flags&~flgDHCP_BCAST)!=0) { reason = "Invalid flags field"; }
     /*@=strictops@*/
   else if (header->hops>=MAX_HOPS)       { reason = "Looping detected"; }
-#if 0  
+#if 0
   else switch (header->htype) {
     case ARPHRD_ETHER	:
       if (header->hlen!=ETH_ALEN) {  reason = "Invalid hlen for ethernet"; }
@@ -155,7 +155,7 @@ isValidHeader(/*@in@*/struct DHCPHeader *header)
 #else
   else {}
 #endif
-  
+
   if (reason==0) switch (header->op) {
     case opBOOTREPLY	:
     case opBOOTREQUEST	:  break;
@@ -163,7 +163,7 @@ isValidHeader(/*@in@*/struct DHCPHeader *header)
   };
 
   if (reason!=0) LOGSTR(reason);
-    
+
   return reason==0;
 }
 
@@ -189,7 +189,7 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 
     opt = DHCP_nextSingleOptionConst(opt);
   } while (opt < end_options);
-  
+
   return (seen_end && opt==end_options);
 }
 
@@ -200,7 +200,7 @@ addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
     /*@modifies *end_opt@*/
 {
     /* Replace the end-tag
-       
+
      *  - - - - - - -----
      * |           | END |
      *  - - - - - - -----
@@ -210,9 +210,9 @@ addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
      * |           |     |     | opt | len |            |     |
      *  - - - - - - ----- ----- ----- ----- ------------ -----
      * */
-  
+
   assert(strlen(iface->aid)<=IFNAMSIZ);
-    
+
     /* Add space needed for our RFC 3046 agent id. See figure above for
      * details. */
   len += 4 + strlen(iface->aid);
@@ -255,7 +255,7 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
   size_t	str_len = strlen(iface->aid);
 
   assert(relay_opt!=0);
-  
+
   if (str_len+4<=opt_len) {
     relay_opt->len     = str_len + 2;
     relay_opt->data[1] = static_cast(uint8_t)(str_len);
@@ -281,13 +281,13 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 
 inline static size_t
 removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
-		  struct DHCPSingleOption const 		*end_opt,
+		  struct DHCPSingleOption const		*end_opt,
 		  size_t					len)
     /*@requires (opt+1) <= end_opt@*/
     /*@modifies *opt@*/
 {
   size_t	opt_len = DHCP_getOptionLength(opt);
-  
+
   if (opt_len < len) {
     DHCP_removeOption(opt, end_opt);
     len -= opt_len;
@@ -304,7 +304,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 	    OptionFillAction				action)
     /*@modifies *option_ptr@*/
 {
-  /*@dependent@*/struct DHCPSingleOption 	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
+  /*@dependent@*/struct DHCPSingleOption	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
   /*@dependent@*/struct DHCPSingleOption	*end_opt   = 0;
   /*@dependent@*/struct DHCPSingleOption	*relay_opt = 0;
   size_t			len;
@@ -338,7 +338,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
     case acADD_ID	:
       if (relay_opt==0) len = addAgentOption(iface, end_opt, len);
       break;
-#ifdef ENABLE_AGENT_REPLACE      
+#ifdef ENABLE_AGENT_REPLACE
     case acREPLACE_ID	:
       if (relay_opt==0) len = addOption(end_opt, len);
       else              len = replaceAgentOption(iface, relay_opt, end_opt, len);
@@ -347,7 +347,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
     case acIGNORE	:  break;
     default		:  assert(false);
   }
-      
+
   return len;
 }
   /*@=mustmod@*/
@@ -360,9 +360,9 @@ calculateCheckSum(/*@in@*/void const * const	dta,
 {
   size_t		i;
   uint16_t const	*data = reinterpret_cast(uint16_t const *)(dta);
-  
+
   for (i=0; i<size/2; ++i) sum += ntohs(data[i]);
-  
+
   if (size%2 != 0) {
     union {
 	uint8_t		aval[2];
@@ -377,7 +377,7 @@ calculateCheckSum(/*@in@*/void const * const	dta,
 
   while ( (sum>>16)!=0 )
     sum = (sum & 0xFFFF) + (sum >> 16);
-  
+
   return sum;
 }
 
@@ -438,7 +438,7 @@ sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
     /* We support ethernet only and the config-part shall return ethernet-macs
      * only... */
   assert(iface->if_maclen == sizeof(frame->eth.ether_dhost));
-  
+
   memset(&sock, 0, sizeof sock);
   sock.sll_family    = static_cast(sa_family_t)(AF_PACKET);
   sock.sll_ifindex   = static_cast(int)(iface->if_idx);
@@ -446,7 +446,7 @@ sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
      * dst-hwaddr et.al. are determined by the ethernet-frame defined below */
 
   memcpy(frame->eth.ether_shost, iface->if_mac,  iface->if_maclen);
-  
+
   frame->ip.version  = 4u;
   frame->ip.ihl      = sizeof(frame->ip)/4u;
   frame->ip.tos      = 0;
@@ -466,7 +466,7 @@ sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
   iovec_data[0].iov_len  = sizeof(*frame);
   iovec_data[1].iov_base = const_cast(char *)(buffer);
   iovec_data[1].iov_len  = size;
-  
+
   msg.msg_name       = &sock;
   msg.msg_namelen    = sizeof(sock);
   msg.msg_iov        = iovec_data;
@@ -503,14 +503,14 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
     memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
   else
     memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
-  
+
   if ((header->flags&flgDHCP_BCAST)!=0 && header->ciaddr!=0)
     frame.ip.daddr  = header->ciaddr;
   else if (iface->allow_bcast)
     frame.ip.daddr  = INADDR_BROADCAST;
   else
     return;	//< \todo
-  
+
   frame.udp.source  = htons(DHCP_PORT_SERVER);
   frame.udp.dest    = htons(DHCP_PORT_CLIENT);
 
@@ -533,10 +533,10 @@ sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
   frame.eth.ether_type = htons(ETHERTYPE_IP);
 
   frame.ip.daddr       = INADDR_BROADCAST;
-  
+
   frame.udp.source     = htons(DHCP_PORT_CLIENT);
   frame.udp.dest       = htons(DHCP_PORT_SERVER);
-  
+
   sendEtherFrame(iface, &frame, buffer, size);
 }
 
@@ -554,7 +554,7 @@ sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
 
   sock.sin_addr = server->info.unicast.ip;
   sock.sin_port = htons(DHCP_PORT_SERVER);
-	      
+
   Wsendto(server->info.unicast.fd, buffer, size, 0,
 	  reinterpret_cast(struct sockaddr *)(&sock),
 	  sizeof sock);
@@ -575,7 +575,7 @@ sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
 
   for (server=servers.dta; server<end_server; ++server) {
     assert(server!=0);
-    
+
     switch (server->type) {
       case svUNICAST	:
 	sendServerUnicast(server, buffer, size);
@@ -600,7 +600,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
   struct DHCPHeader * const	header  = reinterpret_cast(struct DHCPHeader *)(buffer);
   struct DHCPOptions * const	options = reinterpret_cast(struct DHCPOptions *)(&buffer[sizeof(*header)]);
   size_t			options_len = size - sizeof(*header);
-  
+
 
     /* Discard broken header (e.g. too much hops or bad values) */
   if (!isValidHeader(header)) return;
@@ -611,7 +611,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
      * packet */
   if (header->giaddr==0 || header->giaddr==fd->iface->if_ip) {
     header->giaddr = fd->iface->if_ip;
-  
+
     if (!isValidOptions(options, options_len)) {
       LOG("Invalid options");
       return;
@@ -626,7 +626,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 	case opBOOTREQUEST	:  action = acADD_ID;    break;
 	default			:  assert(false); action = acIGNORE; break;
       }
-      
+
 	/* Fill agent-info and adjust size-information */
       options_len  = fillOptions(fd->iface, options->data, action);
       options_len += sizeof(options->cookie);
@@ -646,10 +646,10 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
       if (!iface_orig->has_clients)      LOG("BOOTREQUEST request from interface without clients");
       else sendToServer(buffer, size);
       break;
-      
+
 	/* isValidHeader() checked the correctness of header->op already and it
 	 * should be impossible to reach this code... */
-    default		:  assert(false); 
+    default		:  assert(false);
   }
 }
 
@@ -677,7 +677,7 @@ execRelay()
     struct FdInfo const *	fdinfo;
     struct FdInfo const * const end_fdinfo = fds.dta+fds.len;
       /*@=nullptrarith@*/
-    
+
     fillFDSet(&fdset, &max);
     if /*@-type@*/(Wselect(max+1, &fdset, 0, 0, 0)==-1)/*@=type@*/ continue;
 
@@ -688,7 +688,7 @@ execRelay()
       int				flags = 0;
 
       assert(fdinfo!=0);
-      
+
       if (!FD_ISSET(fdinfo->fd, &fdset)) /*@innercontinue@*/continue;
 
 	/* Is this really correct? Can we receive fragmented IP datagrams being
@@ -699,10 +699,10 @@ execRelay()
 #ifdef WITH_LOGGING
       logDHCPPackage(buffer, size, &pkinfo, &addr);
 #endif
-      
+
       if (static_cast(ssize_t)(size)==-1) {
 	char const *	msg = strerror(errno);
-	  
+
 	LOG("recvfrom() failed");
 	LOGSTR(msg);
       }
@@ -712,7 +712,7 @@ execRelay()
       else {
 	struct InterfaceInfo const * const	iface_orig = fdinfo->iface;
 	struct FdInfo const *			fd_real    = fdinfo;
-	
+
 	  /* Broadcast messages are designated for the interface, so lookup the
 	   * "real" dest-interface for unicast-messages only.
 	   *
@@ -725,7 +725,7 @@ execRelay()
 	else if (size > fd_real->iface->if_mtu) {
 	  LOG("Unexpected large packet");
 	}
-	else 
+	else
 	  handlePacket(fd_real, iface_orig, buffer, size);
       }
     }
@@ -750,7 +750,7 @@ main(int argc, char *argv[])
     case 0	:  execRelay();
     default	:  return 0;
   }
-    /*@=compdestroy@*/  
+    /*@=compdestroy@*/
 }
 
   // Local Variables:

@@ -1,16 +1,16 @@
 // $Id$    --*- c -*--
 
 // Copyright (C) 2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
-//  
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
@@ -64,7 +64,7 @@ showRlimit(struct rlimit const *val)
   else                              writeUInt(1, val->rlim_cur);
 
   write(1, ", ", 2);
-  
+
   if (val->rlim_max==RLIM_INFINITY) write(1, "INF", 3);
   else                              writeUInt(1, val->rlim_max);
 }
@@ -102,7 +102,7 @@ int main(int argc, char const *argv[])
   for (i=0; i<cfg.ulimits.len; ++i) {
     size_t		j;
     char const		*name = 0;
-    
+
     write(1, "\n  ", 3);
     for (j=0; name==0 && j<sizeof(ULIMIT_CODES)/sizeof(ULIMIT_CODES[0]); ++j) {
       if (ULIMIT_CODES[j].code==cfg.ulimits.dta[i].code)
@@ -118,7 +118,7 @@ int main(int argc, char const *argv[])
       write(1, name,  len);
       if (len<10) write(1, "           ", 10-len);
     }
-    
+
     write(1, "-> (", 4);
     showRlimit(&cfg.ulimits.dta[i].rlim);
     write(1, ")", 1);
@@ -132,7 +132,7 @@ int main(int argc, char const *argv[])
     struct InterfaceInfo	*iface = &cfg.interfaces.dta[i];
     char			*aux;
     struct in_addr		in;
-    
+
     write(1, "\n  '", 4);
     write(1, iface->name, strlen(iface->name));
     write(1, "', '", 4);
@@ -151,14 +151,14 @@ int main(int argc, char const *argv[])
     else         write(1, aux, strlen(aux));
   }
   write(1, "}}\n", 3);
-  
+
   write(1, "servers={len=", 13);
   writeUInt(1, cfg.servers.len);
   write(1, ", data={", 8);
   for (i=0; i<cfg.servers.len; ++i) {
     struct ServerInfo	*svr = &cfg.servers.dta[i];
     char			*aux;
-    
+
     write(1, "\n  ", 3);
     switch (svr->type) {
       case svUNICAST	:

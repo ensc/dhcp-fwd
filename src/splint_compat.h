@@ -1,20 +1,20 @@
 // $Id$    --*- c++ -*--
 
 // Copyright (C) 2002,2003 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
-//  
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+//
 
 #ifndef H_DHCP_FORWARDER_SRC_SPLINT_COMPAT_H
 #define H_DHCP_FORWARDER_SRC_SPLINT_COMPAT_H
@@ -24,7 +24,7 @@
   /*@-incondefs@*//*@-isoreserved@*//*@-export@*//*@-cppnames@*//*@-protoparamname@*/
   /*@-declundef@*//*@-fcnuse@*//*@-typeuse@*/
   /*@-redef@*//*@-redecl@*//*@-protoparammatch@*/
-  
+
 typedef int		__socklen_t;
 typedef __socklen_t	socklen_t;
 
@@ -102,8 +102,8 @@ typedef /*@unsignedintegraltype@*/	rlim_t;
 int /*@alt integraltype@*/MAX(int/*@sef@*/a, int/*@sef@*/b) /*@*/;
 
 struct rlimit {
-        rlim_t  rlim_cur;
-        rlim_t  rlim_max;
+	rlim_t  rlim_cur;
+	rlim_t  rlim_max;
 };
 
 struct cmsghdr {
@@ -145,17 +145,17 @@ struct ifreq {
 #define ifr_addr        ifr_ifru.ifru_addr
 #define ifr_dstaddr     ifr_ifru.ifru_dstaddr
 #define ifr_broadaddr   ifr_ifru.ifru_broadaddr
-#define ifr_netmask     ifr_ifru.ifru_netmask  
-#define ifr_flags       ifr_ifru.ifru_flags    
-#define ifr_metric      ifr_ifru.ifru_ivalue   
-#define ifr_mtu         ifr_ifru.ifru_mtu      
-#define ifr_map         ifr_ifru.ifru_map      
-#define ifr_slave       ifr_ifru.ifru_slave    
-#define ifr_data        ifr_ifru.ifru_data     
-#define ifr_ifindex     ifr_ifru.ifru_ivalue   
-#define ifr_bandwidth   ifr_ifru.ifru_ivalue   
-#define ifr_qlen        ifr_ifru.ifru_ivalue   
-#define ifr_newname     ifr_ifru.ifru_newname  
+#define ifr_netmask     ifr_ifru.ifru_netmask
+#define ifr_flags       ifr_ifru.ifru_flags
+#define ifr_metric      ifr_ifru.ifru_ivalue
+#define ifr_mtu         ifr_ifru.ifru_mtu
+#define ifr_map         ifr_ifru.ifru_map
+#define ifr_slave       ifr_ifru.ifru_slave
+#define ifr_data        ifr_ifru.ifru_data
+#define ifr_ifindex     ifr_ifru.ifru_ivalue
+#define ifr_bandwidth   ifr_ifru.ifru_ivalue
+#define ifr_qlen        ifr_ifru.ifru_ivalue
+#define ifr_newname     ifr_ifru.ifru_newname
 
 struct iphdr
 {
@@ -181,16 +181,16 @@ struct udphdr {
 
   /* Internet address. */
 struct in_addr {
-    uint32_t      s_addr;     /* address in network byte order */
+    uint32_t		s_addr;		/* address in network byte order */
 };
 
 struct in6_addr {
-    unsigned char   s6_addr[16];/* IPv6 address */
+    unsigned char	s6_addr[16];	/* IPv6 address */
 };
 
 struct sockaddr {
-    sa_family_t		sa_family;		/* address family */
-    char        	sa_data[];		/* variable length */
+    sa_family_t		sa_family;	/* address family */
+    char		sa_data[];	/* variable length */
 };
 
 struct sockaddr_in {
@@ -272,7 +272,7 @@ struct tm *localtime_r(/*@in@*/const time_t *,
 int chroot (/*@notnull@*/ /*@nullterminated@*/ const char *)
     /*@globals internalState, errno@*/
     /*@modifies internalState, errno@*/
-    /*:errorcode -1:*/ 
+    /*:errorcode -1:*/
   /*@warn superuser "Only super-user processes may call chroot."@*/ ;
 
 int		socket(int, int, int)
@@ -332,7 +332,7 @@ extern void
 FD_COPY (fd_set *f, /*@out@*/ fd_set *t)
   /*@modifies *t@*/;
 
-extern int 
+extern int
 FD_ISSET (int n, fd_set *p)
   /*@*/;
 
@@ -354,11 +354,11 @@ recvmsg(int s, /*@special@*/struct msghdr *msg, int flags)
     /*:errorcode -1:*/
     /*@globals fileSystem, errno@*/
     /*@requires (maxSet(msg->msg_iov)+1) >= msg->msg_iovlen
-             /\ (maxSet(msg->msg_iov->iov_base)+1) == msg->msg_iov->iov_len@*/
+	     /\ (maxSet(msg->msg_iov->iov_base)+1) == msg->msg_iov->iov_len@*/
     /*@requires dependent msg->msg_iov->iov_base@*/
     /*@sets msg->msg_namelen, msg->msg_iovlen, msg->msg_controllen@*/
     /*@modifies *msg->msg_iov->iov_base, *msg->msg_control,
-                msg->msg_controllen, msg->msg_flags, fileSystem, errno@*/
+		msg->msg_controllen, msg->msg_flags, fileSystem, errno@*/
   ;
 
 extern /*@null@*//*@temp@*//*@only@*/ void *

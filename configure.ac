@@ -1,16 +1,16 @@
 dnl $Id$
 
 dnl Copyright (C) 2002,2003,2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-dnl  
+dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
 dnl the Free Software Foundation; version 2 of the License.
-dnl  
+dnl
 dnl This program is distributed in the hope that it will be useful,
 dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
 dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 dnl GNU General Public License for more details.
-dnl  
+dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
 dnl Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
@@ -59,7 +59,7 @@ elif which $CC gcc &>/dev/null; then
 	if test x"$CC" != xgcc; then
 		i1=`ls -i $(which $CC) | { read a b; echo $a; }`
 		i2=`ls -i $(which gcc) | { read a b; echo $a; }`
-	
+
 		AC_MSG_CHECKING([whether to use gcc instead of $CC])
 		if test $i1 = $i2; then
 			CC=gcc
@@ -83,7 +83,7 @@ AC_ARG_ENABLE(logging,
 		 yes|no)  enable_logging="${enableval}";;
 		 *)       AC_MSG_ERROR([bad value ${enableval} for '--enable-logging']);;
 	       esac],
-              [enable_logging=${enable_logging_default}])
+	      [enable_logging=${enable_logging_default}])
 AC_MSG_RESULT(${enable_logging})
 
 if test x"${enable_logging}" = xyes; then

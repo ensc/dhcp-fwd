@@ -1,20 +1,20 @@
 // $Id$    --*- c++ -*--
 
 // Copyright (C) 2002,2003,2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
-//  
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+//
 
 #ifndef H_DHCP_FORWARDER_SRC_CONFIG_H
 #define H_DHCP_FORWARDER_SRC_CONFIG_H
@@ -63,7 +63,7 @@ struct ServerInfo {
     ServerInfoType			type;
       /*@observer@*/
     struct InterfaceInfo *		iface;
-    
+
     union {
 	struct {
 	    struct in_addr		ip;
@@ -110,7 +110,7 @@ struct ConfigInfo {
     gid_t				gid;
     char				chroot_path[PATH_MAX];
     struct UlimitInfoList		ulimits;
-    
+
     char				logfile_name[PATH_MAX];
     int					loglevel;
 
@@ -135,11 +135,11 @@ extern int	initializeSystem(int argc, /*@in@*/char *argv[],
   /*@globals errno, fileSystem, internalState@*/
   /*@modifies *ifs, *servers, *fds, fileSystem, errno, internalState@*/
   /*@requires (maxRead(argv)+1)==argc
-           /\ maxSet(ifs)==0
+	   /\ maxSet(ifs)==0
 	   /\ maxSet(servers)==0
 	   /\ maxRead(fds)==0@*/  ;
   /*@=superuser@*/
-    
+
 #endif	// H_DHCP_FORWARDER_SRC_CONFIG_H
 
   // Local Variables:

@@ -1,20 +1,20 @@
 // $Id$    --*- c++ -*--
 
 // Copyright (C) 2002,2003,2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
-//  
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+//
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -84,7 +84,7 @@ initCharacterClassification(/*@out@*/unsigned int *chrs)
   for (c='a'; c<='z'; ++c) chrs[c] |= chrLOWALPHA   | chrSYS | chrUSERNAME | chrVARNAME;
   chrs['\r'] |= chrNL;
   chrs['\n'] |= chrNL;
-  
+
   chrs['\t'] |= chrBLANK;
   chrs[' ']  |= chrBLANK;
   chrs['.']  |= chrSYS | chrUSERNAME | chrIP | chrVARNAME;
@@ -128,7 +128,7 @@ exitFatal(/*@observer@*/char const msg[],
 	  register size_t len) __attribute__ ((noreturn)) /*@*/ ;
 
 inline static void
-exitFatal(char const msg[], register size_t len) 
+exitFatal(char const msg[], register size_t len)
 {
     /*@-internalglobs@*//*@-globs@*/
   if (filename!=0) (void)write(2, filename, strlen(filename));
@@ -183,7 +183,7 @@ match(char /*@alt int@*/ c)
     /*@modifies look_ahead@*/
 {
   register int		got = getLookAhead();
-  
+
   if (got==tkEOF) scEXITFATAL("unexpected EOF while parsing");
   if (got!=c)     scEXITFATAL("unexpected symbol");
 
@@ -205,19 +205,19 @@ newInterface(struct InterfaceInfoList *ifs)
 {
   size_t		new_len;
   struct InterfaceInfo	*result;
-  
+
   ++ifs->len;
-  
+
   new_len  = ifs->len * (sizeof(*ifs->dta));
   ifs->dta = static_cast(struct InterfaceInfo*)(Erealloc(ifs->dta, new_len));
 
   assert(ifs->dta!=0);
-  
+
   result            = &ifs->dta[ifs->len - 1];
   memset(result, 0, sizeof result);
   result->if_ip     = INADDR_NONE;
   result->sender_fd = -1;
-  
+
   return result;
 }
 
@@ -227,7 +227,7 @@ newServer(struct ServerInfoList *servers)
 {
   size_t		new_len;
   struct ServerInfo	*result;
-  
+
   ++servers->len;
   new_len      = servers->len * (sizeof(*servers->dta));
   servers->dta = static_cast(struct ServerInfo *)(Erealloc(servers->dta, new_len));
@@ -236,7 +236,7 @@ newServer(struct ServerInfoList *servers)
   result	 = &servers->dta[servers->len - 1];
   result->type   = svUNICAST;
   memset(&result->info, 0, sizeof result->info);
-  
+
   return result;
 }
 
@@ -307,23 +307,23 @@ matchEOL()
     /*@modifies look_ahead@*/
 {
   register int		state = 0xFF00;
-  
+
   while (state!=0xFFFF) {
     int			c = getLookAhead();
-    
+
     switch (state) {
       case 0xFF00	:
 	if      (isCharType(c, chrBLANK)) {}
 	else if (isCharType(c, chrNL))    { state = 0; }
 	else goto err;
-	
+
 	match(c);
 	break;
-	
+
       case 0		:
 	if (isCharType(c, chrNL)) match(c);
 	else                      state = 0xFFFF;
-	
+
 	break;
 
       default		:  assert(false); goto err;
@@ -448,7 +448,7 @@ readLimit()
 {
   char		buffer[128];
   size_t	i;
-  
+
   (void)readString(buffer, sizeof buffer, chrALPHA);
   for (i=0; i<sizeof(ULIMIT_CODES)/sizeof(ULIMIT_CODES[0]); ++i) {
     if (strcmp(ULIMIT_CODES[i].name, buffer)==0) return ULIMIT_CODES[i].code;
@@ -472,12 +472,12 @@ readLong()
   while (state!=0xFFFF && ptr+2<&value[sizeof(value)]) {
     /*@=ptrarith@*/
     int		c = getLookAhead();
-    
+
     switch (state) {
       case 0		:
       {
 	bool		do_match = true;
-	
+
 	switch (c) {
 	  case '-'	:  break;
 	  case '0'	:  state = 0x0200; break;
@@ -523,7 +523,7 @@ readLong()
 
   assert(ptr<&value[sizeof(value)]);
   assertDefined(value);
-  
+
   *ptr   = '\0';
   result = strtol(value, &ptr, 0);
   if (*ptr!='\0') goto err;
@@ -598,7 +598,7 @@ readBool(/*@out@*/bool *val)
 
   while (state!=0xFFFF) {
     int		c = getLookAhead();
-    
+
     switch (state) {
       case 0	:
 	switch (c) {
@@ -671,12 +671,12 @@ parse(/*@in@*/char const		fname[],
   }			ulimit = { 0,0 };
   int			fd;
   struct stat		st;
-  
+
 
   filename = fname;
   line_nr  = 1u;
   col_nr   = 1u;
-  
+
   fd = open(filename, O_RDONLY);
   if (fd==-1) {
     perror("open()");
@@ -697,7 +697,7 @@ parse(/*@in@*/char const		fname[],
   cfg_end = cfg_ptr + st.st_size;
 
   initCharacterClassification(chrs);
-  
+
   while (state!=0xFFFF) {
     int		c = getLookAhead();
 
@@ -710,7 +710,7 @@ parse(/*@in@*/char const		fname[],
 	break;
 
       case 0xFFFE	:  matchEOL(); state=0; break;
-	  
+
       case 0		:
 	if      (isCharType(c, chrBLANK)) match(c);
 	else if (isCharType(c, chrNL))    matchEOL();
@@ -739,7 +739,7 @@ parse(/*@in@*/char const		fname[],
 	readFileName(cfg->pidfile_name, sizeof(cfg->pidfile_name));
 	state = 0xFFFE;
 	break;
-	
+
       case 0x0700	:
 	matchStr("og");
 	++state;
@@ -763,7 +763,7 @@ parse(/*@in@*/char const		fname[],
 	cfg->loglevel = readInteger();
 	state = 0xFFFE;
 	break;
-	
+
       case 0x0400	:
 	switch (c) {
 	  case 's'	:  state = 0x1401; break;
@@ -808,7 +808,7 @@ parse(/*@in@*/char const		fname[],
 
 	  // can be reached only from state 0x0501 where 'name' was read
 	assertDefined(name);
-	
+
 	nr = strtol(name, &err_ptr, 0);
 	if (*err_ptr!='\0') state += 0x11;
 	else                state += 0x01;
@@ -819,7 +819,7 @@ parse(/*@in@*/char const		fname[],
       case 0x0403	:
 	  // Can be reached from state 0x0402 only
 	assertDefined(&nr);
-	
+
 	cfg->uid = nr;
 	state = 0xFFFE;
 	break;
@@ -827,7 +827,7 @@ parse(/*@in@*/char const		fname[],
       case 0x0413	:
 	  // Can be reached from state 0x0402 only
 	assertDefined(name);
-	
+
 	cfg->uid = Egetpwnam(name)->pw_uid;
 	state = 0xFFFE;
 	break;
@@ -835,7 +835,7 @@ parse(/*@in@*/char const		fname[],
       case 0x0503	:
 	  // Can be reached from state 0x0502 only
 	assertDefined(&nr);
-	
+
 	cfg->gid = nr;
 	state = 0xFFFE;
 	break;
@@ -843,7 +843,7 @@ parse(/*@in@*/char const		fname[],
       case 0x0513	:
 	  // Can be reached from state 0x0502 only
 	assertDefined(name);
-	
+
 	cfg->gid = Egetgrnam(name)->gr_gid;
 	state = 0xFFFE;
 	break;
@@ -878,7 +878,7 @@ parse(/*@in@*/char const		fname[],
 	readBool(&allow_bcast);
 	state = 0x110;
 	break;
-	
+
       case 0x110	:
       {
 	struct InterfaceInfo *	iface = newInterface(&cfg->interfaces);
@@ -888,8 +888,8 @@ parse(/*@in@*/char const		fname[],
 	assertDefined(&has_clients);
 	assertDefined(&has_servers);
 	assertDefined(&allow_bcast);
-	
-	
+
+
 	strcpy(iface->name, ifname);
 	iface->aid[0]      = '\0';
 	iface->has_clients = has_clients;
@@ -916,19 +916,19 @@ parse(/*@in@*/char const		fname[],
 	  // Reachable from state 0x0120 only
 	assertDefined(ifname);
 	assertDefined(&ip);
-	iface = searchInterface(&cfg->interfaces, ifname);	
+	iface = searchInterface(&cfg->interfaces, ifname);
 
 	iface->if_ip = ip.s_addr;
 	state = 0xFFFE;
 	break;
       }
 
-	
+
       case 0x200	:
 	matchStr("ame");      readBlanks();
 	state = 0x201;
 	break;
-	
+
       case 0x201	:
 	readIfname(ifname);   readBlanks();
 	readIfname(agent_id);
@@ -989,7 +989,7 @@ parse(/*@in@*/char const		fname[],
 	server->type            = svUNICAST;
 	server->iface           = iface;
 	server->info.unicast.ip = ip;
-	
+
 	state = 0xFFFE;
 	break;
       }
@@ -1013,7 +1013,7 @@ parse(/*@in@*/char const		fname[],
 	iface->need_mac    = true;
 	server->type       = svBCAST;
 	server->iface      = iface;
-	
+
 	state = 0xFFFE;
 	break;
       }

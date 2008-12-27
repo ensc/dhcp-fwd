@@ -1,20 +1,20 @@
 // $Id$    --*- c++ -*--
 
 // Copyright (C) 2002,2003,2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; version 2 of the License.
-//  
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+//
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -49,7 +49,7 @@ exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
   /*@*/ ;
 
   /*@noreturn@*/
-static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/; 
+static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/;
 #define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
 
@@ -84,7 +84,7 @@ initClientFD(struct FdInfo *fd,
   int const		ON = 1;
 
   assert(fd!=0 && iface!=0);
-  
+
   fd->iface = iface;
   fd->fd    = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -93,7 +93,7 @@ initClientFD(struct FdInfo *fd,
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name, strlen(iface->name)+1);
 
   memset(&s, 0, sizeof(s));
-  
+
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
   s.sin_port        = htons(DHCP_PORT_SERVER);
@@ -131,7 +131,7 @@ initSenderFD(struct InterfaceInfo const *iface)
 		iface->name, strlen(iface->name)+1);
 
   memset(&s, 0, sizeof(s));
-  
+
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
   s.sin_port        = htons(DHCP_PORT_CLIENT);
@@ -155,7 +155,7 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
     case ARPHRD_EETHER	:
     case ARPHRD_IEEE802	:
     case ARPHRD_ETHER	:  *len = ETH_ALEN; break;
-    default		:  scEXITFATAL("Unsupported hardware-type"); 
+    default		:  scEXITFATAL("Unsupported hardware-type");
   }
 
   assert(*len <= ETH_ALEN);
@@ -202,7 +202,7 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     if (ifinfo->if_ip==INADDR_NONE)
       ifinfo->if_ip = ifinfo->if_real_ip;
   }
-  
+
   Eclose(fd);
 
   return;
@@ -213,11 +213,11 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
 
 static char const /*@null@*//*@observer@*/ *
 getSenderIfaceName(struct InterfaceInfoList const * const ifs,
-		   bool                    		  do_it)
+		   bool		  do_it)
 {
   struct InterfaceInfo const *	res = 0;
   struct InterfaceInfo const *	ptr = (ifs->len==0 || ifs->dta==0) ? 0 : ifs->dta + ifs->len;
-  
+
   if (!do_it) return 0;
 
   while (ptr>ifs->dta) {
@@ -234,7 +234,7 @@ getSenderIfaceName(struct InterfaceInfoList const * const ifs,
 }
 
 inline static void
-initFDs(/*@out@*/struct FdInfoList 		*fds,
+initFDs(/*@out@*/struct FdInfoList		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
     /*@globals internalState, fileSystem@*/
     /*@modifies internalState, fileSystem, *fds, cfg->servers@*/
@@ -246,7 +246,7 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   int						bind_all_fd = -1;
 
   assert(cfg->servers.dta==0 || cfg->servers.len!=0);
-  
+
   for (servers = cfg->servers.dta;
        /*@-nullptrarith@*/servers < cfg->servers.dta + cfg->servers.len/*@=nullptrarith@*/;
        ++servers) {
@@ -275,18 +275,18 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   }
 
   initRawFD(&fds->raw_fd);
-  
+
   fds->len = ifs->len;
   fds->dta = static_cast(struct FdInfo*)(Emalloc(fds->len *
 						 (sizeof(*fds->dta))));
 
   assert(fds->dta!=0 || fds->len==0);
   assert(ifs->dta!=0 || ifs->len==0);
-  
+
   for (idx=0, i=0; i<ifs->len; ++i, ++idx) {
     assert(ifs->dta!=0);
     assert(fds->dta!=0);
-    
+
     initClientFD(&fds->dta[idx], &ifs->dta[i]);
   }
 }
@@ -297,13 +297,13 @@ getConfig(/*@in@*/char const				*filename,
     /*@globals internalState, fileSystem@*/
     /*@modifies *cfg, internalState, fileSystem@*/
     /*@requires maxRead(cfg)>=0
-             /\ PATH_MAX >= 1
+	     /\ PATH_MAX >= 1
 	     /\ maxRead(cfg->conffile_name)>=1
-             /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
+	     /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
 	     /\ (maxSet(cfg->logfile_name)+1) == PATH_MAX
 	     /\ (maxSet(cfg->pidfile_name)+1) == PATH_MAX@*/
     /*@ensures  maxRead(cfg->chroot_path)>=0
-             /\ maxRead(cfg->logfile_name)>=0
+	     /\ maxRead(cfg->logfile_name)>=0
 	     /\ maxRead(cfg->pidfile_name)>=0
 	     /\ maxRead(cfg->servers.dta)>=0
 	     /\ maxRead(cfg->interfaces.dta)>=0@*/
@@ -325,7 +325,7 @@ getConfig(/*@in@*/char const				*filename,
   cfg->loglevel        = 0;
 
   cfg->pidfile_name[0] = '\0';
-  
+
   parse(filename, cfg);
     /*@-boundsread@*/
   fillInterfaceInfo(&cfg->interfaces);
@@ -370,7 +370,7 @@ limitResources(/*@in@*/struct UlimitInfoList const *limits)
   size_t			i;
 
   assert(limits->len==0 || limits->dta!=0);
-  
+
   for (i=0; i<limits->len; ++i) {
     assert(limits->dta!=0);
     Esetrlimit(limits->dta[i].code, &limits->dta[i].rlim);
@@ -394,18 +394,18 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
     /*@modifies fileSystem, internalState@*/
 {
   assert(cfg!=0);
-  
+
   if (cfg->do_fork) (void)Esetsid();
 
   Eclose(1);
-      
+
   if (cfg->chroot_path[0]!='\0') {
     Echdir (cfg->chroot_path);
       /*@-superuser@*/
     Echroot(cfg->chroot_path);
       /*@=superuser@*/
   }
-  
+
   Esetgroups(1, &cfg->gid);
   Esetgid(cfg->gid);
   Esetuid(cfg->uid);
@@ -441,7 +441,7 @@ parseCommandline(int argc, char *argv[],
 	scEXITFATAL("Use '-h' to get help about possible options");
     }
   }
-  
+
   if (argv[optind]!=0) scEXITFATAL("No extra-args allowed; use '-h' to get help.");
 }
 
@@ -467,7 +467,7 @@ initializeSystem(int argc, char *argv[],
 
   pidfile_fd = Eopen(cfg.pidfile_name, O_WRONLY|O_CREAT, 0444);
   openMsgfile(cfg.logfile_name);
-  
+
   *ifs     = cfg.interfaces;
   *servers = cfg.servers;
 
@@ -484,7 +484,7 @@ initializeSystem(int argc, char *argv[],
       pidfile_pid = initializeDaemon(&cfg);
 	/*@=usereleased@*/
       break;
-      
+
     case -1	:  perror("fork()");  break;
     default	:  pidfile_pid = pid; break;
   }
@@ -493,7 +493,7 @@ initializeSystem(int argc, char *argv[],
     writeUInt(pidfile_fd, pidfile_pid);
     (void)write(pidfile_fd, "\n", 1);
   }
-	  
+
   freeLimitList(&cfg.ulimits);
 
     /* It is too late to handle an error here. So just ignore it... */
