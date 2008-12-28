@@ -119,7 +119,7 @@ struct ConfigInfo {
       // Commandline options
     /*@observer@*/
     char const *			conffile_name;
-    bool				do_fork;
+    enum { dmFORK, dmFG, dmSTOP }	daemon_mode;
     bool				do_bindall;
 };
 

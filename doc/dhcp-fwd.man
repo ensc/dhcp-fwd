@@ -33,6 +33,7 @@ dhcp-fwd \- starts the DHCP forwarding agent
 .SH SYNOPSIS
 .B  dhcp-fwd
 .RB [ \-n ]
+.RB [ \-N ]
 .RB [ \-d ]
 .RB [ \-v ]
 .RB [ \-h ]
@@ -71,6 +72,11 @@ initialization.
 Prevents daemon from going into background after initialization. This
 option may be useful when using advanced init-concepts like minit
 (http://www.fefe.de/minit/).
+.TP
+.B \-N
+Like \fB-n\fR but program sends a SIGSTOP signal to itself when
+initialization has been finished.  This is interpreted e.g. by the
+upstart init system.
 .TP
 .B \-d
 Turns on debugging mode and prevents forking; currently it is just an

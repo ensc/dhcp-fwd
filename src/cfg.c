@@ -26,6 +26,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include <arpa/inet.h>
 #include <sys/param.h>
@@ -342,11 +343,12 @@ inline static void
 showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
   char const	msg[] =
-    " [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
+    " [-v] [-h] [-c <filename>] [-n] [-N] [-d]\n\n"
     "  -v              show version\n"
     "  -h              show help\n"
     "  -c <filename>   read configuration from <filename>\n"
     "  -n              do not fork separate process\n"
+    "  -N              do not fork and raise SIGSTOP signal\n"
     "  -d              debug-mode; same as '-n'\n\n"
     "Report bugs to Enrico Scholz <"
     PACKAGE_BUGREPORT
@@ -392,7 +394,7 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
 {
   assert(cfg!=0);
 
-  if (cfg->do_fork) (void)Esetsid();
+  if (cfg->daemon_mode == dmFORK) (void)Esetsid();
 
   Eclose(1);
 
@@ -409,8 +411,10 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
 
   limitResources(&cfg->ulimits);
 
-  if (cfg->do_fork) return 0;
-  else              return getpid();
+  if (cfg->daemon_mode == dmFORK)
+    return 0;
+  else
+    return getpid();
 }
 
 inline static void
@@ -421,14 +425,15 @@ parseCommandline(int argc, char *argv[],
   assert(cfg!=0);
 
   while (true) {
-    int c = getopt(argc, argv, "vhdnc:-");
+    int c = getopt(argc, argv, "vhdnNc:-");
     if (c==-1) break;
 
     switch (c) {
       case 'v'	:  showVersion();     exit(0);
       case 'h'	:  showHelp(argv[0]); exit(0);
       case 'd'	:
-      case 'n'	:  cfg->do_fork       = false;  break;
+      case 'n'	:  cfg->daemon_mode   = dmFG;   break;
+      case 'N'	:  cfg->daemon_mode   = dmSTOP; break;
       case 'c'	:  cfg->conffile_name = optarg; break;
       case '-'	:
 	if (strcmp(argv[optind], "--version")==0) { showVersion();     exit(0); }
@@ -454,7 +459,7 @@ initializeSystem(int argc, char *argv[],
   int				pidfile_fd;
 
   cfg.conffile_name = CFG_FILENAME;
-  cfg.do_fork       = true;
+  cfg.daemon_mode   = dmFORK;
   cfg.do_bindall    = false;
 
   parseCommandline(argc, argv, &cfg);
@@ -470,8 +475,10 @@ initializeSystem(int argc, char *argv[],
 
   Eclose(0);
 
-  if (cfg.do_fork) pid = fork();
-  else             pid = 0;
+  if (cfg.daemon_mode == dmFORK)
+    pid = fork();
+  else
+    pid = 0;
 
   pidfile_pid = 0;
 
@@ -495,6 +502,10 @@ initializeSystem(int argc, char *argv[],
 
     /* It is too late to handle an error here. So just ignore it... */
   (void)close(pidfile_fd);
+
+  if (cfg.daemon_mode == dmSTOP)
+    raise(SIGSTOP);
+
   return pid;
 }
   /*@=superuser@*/

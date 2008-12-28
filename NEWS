@@ -4,6 +4,8 @@ Version 0.7.1 (2004-12-23)
 	- implemented $VAR expansion in configuration file
 	- moved to git
 	- fixed build on big-endian systems
+	- implemented better support for upstart init system by raising
+	  SIGSTOP signal after initialization
 
 Version 0.7 (2004-08-19)
 ------------------------
