@@ -20,7 +20,7 @@ AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
 
 AM_MAINTAINER_MODE
-ENSC_CHANGELOG([trunk])
+ENSC_CHANGELOG([master],[git])
 
 # Default settings
 
