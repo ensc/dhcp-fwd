@@ -1,0 +1,20 @@
+#! /bin/sh
+
+set -e
+
+c=$(pwd)
+d=$ENSC_SESSIONDIR/tmp/dhcp-fwd
+t=BUILD.$(hostname -s)
+test -d "$d" || mkdir "$d"
+rm -f $t
+ln -s "$d" $t
+
+echo $d
+cd -P $d
+
+$c/configure \
+    --enable-maintainer-mode \
+    --prefix=`pwd`/inst \
+    CPPFLAGS='-Wp,-D_FORTIFY_SOURCE=2' \
+    CFLAGS='-O0 -g3 -pipe -Wall -W -Werror -Wno-unused-parameter -fexceptions -fstack-protector --param=ssp-buffer-size=4' \
+    "$@"
