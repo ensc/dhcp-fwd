@@ -1,5 +1,3 @@
-// $Id$    --*- c++ -*--
-
 /* Based on advio/recvfromflags.c in W.R.Stevens's "Unix Network Programming,
  * Vol I", section 20.2 */
 

@@ -1,5 +1,3 @@
-dnl $Id$
-
 dnl Copyright (C) 2002, 2003, 2004, 2008
 dnl               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 dnl

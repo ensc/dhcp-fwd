@@ -1,5 +1,3 @@
-// $Id$    --*- c++ -*--
-
 // Copyright (C) 2002, 2008
 //               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 //  
