@@ -25,7 +25,7 @@ WWW_FILES_FILES		=  $(distdir).tar.bz2 $(distdir).tar.bz2.asc $(srcdir)/README $
 man_MANS		=  doc/dhcp-fwd.1
 
 SUBDIRS			=  . test
-DIST_SUBDIRS		=  $(SUBDIRS) m4
+DIST_SUBDIRS		=  $(SUBDIRS)
 
 confdir			=  $(sysconfdir)
 cfg_filename		=  $(confdir)/dhcp-fwd.cfg
