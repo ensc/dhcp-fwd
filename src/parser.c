@@ -34,6 +34,7 @@
 #include "wrappers.h"
 #include "compat.h"
 #include "output.h"
+#include "inet.h"
 
 #define tkEOF			(256)
 
@@ -213,6 +214,8 @@ newInterface(struct InterfaceInfoList *ifs)
   result            = &ifs->dta[ifs->len - 1];
   memset(result, 0, sizeof result);
   result->if_ip     = INADDR_NONE;
+  result->port_client = htons(DHCP_PORT_CLIENT);
+  result->port_server = htons(DHCP_PORT_SERVER);
   result->sender_fd = -1;
 
   return result;
@@ -539,6 +542,38 @@ readInteger()
   return static_cast(int)(readLong());
 }
 
+inline static int
+readIntegerExpanded()
+{
+  char			buffer[1024];
+  char			*err_ptr;
+  long			res;
+
+  (void)readStringExpanded(buffer, sizeof buffer, chrNUMBER);
+
+  res = strtol(buffer, &err_ptr, 10);
+  if (res == LONG_MIN || res == LONG_MAX)
+    scEXITFATAL("conversion under/overflow");
+
+  if (err_ptr == buffer || *err_ptr)
+    scEXITFATAL("failed to convert number");
+
+  return res;
+}
+
+inline static uint16_t
+readPort(uint16_t dflt)
+{
+  int			res = readIntegerExpanded();
+
+  if (res < 0 || res >= (1<<16))
+    scEXITFATAL("port number out of range");
+  else if (res == 0)
+    res = dflt;
+
+  return res;
+}
+
 inline static rlim_t
 readLimitVal()
     /*@globals fd, look_ahead@*/
@@ -661,6 +696,8 @@ parse(/*@in@*/char const		fname[],
   struct in_addr	ip;
   bool			has_clients;
   bool			has_servers;
+  uint16_t		port_client;
+  uint16_t		port_server;
   bool			allow_bcast;
   struct {
       int		code;
@@ -722,12 +759,46 @@ parse(/*@in@*/char const		fname[],
 	  case 'g'	:  state = 0x0500; break;
 	  case 'c'	:  state = 0x0600; break;
 	  case 'l'	:  state = 0x0700; break;
-	  case 'p'	:  state = 0x0800; break;
+	  case 'p'	:  state = 0x0890; break;
 	  case tkEOF	:  state = 0xFFFF; break;
 	  default	:  goto err;
 	}
 	if (state!=0 && state!=0xFFFF) match(c);
 	break;
+
+      case 0x0890:
+	switch (c) {
+	  case 'i':  state = 0x0800; break; /* pidfile */
+	  default:
+	  case 'o':  state = 0x0850; break; /* ports */
+	}
+	break;
+
+      case 0x0850:
+	matchStr("orts");   readBlanks();
+	readIfname(ifname); readBlanks();
+	port_client = readPort(DHCP_PORT_CLIENT); readBlanks();
+	port_server = readPort(DHCP_PORT_SERVER);
+	++state;
+	break;
+
+      case 0x0851: {
+	struct InterfaceInfo	*iface;
+
+	// Reachable from state 0x0850 only
+	assertDefined(ifname);
+	assertDefined(port_client);
+	assertDefined(port_server);
+
+	iface = searchInterface(&cfg->interfaces, ifname);
+	if (port_client)
+	  iface->port_client = htons(port_client);
+	if (port_server)
+	  iface->port_server = htons(port_server);
+
+	state = 0xFFFE;
+	break;
+      }
 
       case 0x0800	:
 	matchStr("idfile"); readBlanks();

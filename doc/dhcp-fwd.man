@@ -185,6 +185,30 @@ affects messages to clients only; when specifying a bcast-server, this
 option will be ignored.
 .\"
 .TP
+.B ports \fIifname client-port server-port
+Declares the ports which are used on the specified interface
+\fIifname\fR for client resp. server functionality.
+
+dhcp-fwd acts as client only, when the \fIhas_servers\fR flag has been
+set and sends from \fIclient-port\fR then. Interface will be listen on
+\fIserver-port\fR when the \fIhas_clients\fR and/or \fIhas_servers\fR
+flags of the interface have been set.
+
+Omitting this option for an interface or using a value of "0" for the
+port arguments uses default values.  These are port 68/udp (bootpc)
+for \fIclient-port\fR and port 67/udp (bootps) for \fIserver-port\fR
+by default.
+
+.B NOTE:
+This option exists to avoid conflicts with already running dhcp
+servers, clients or relay agents which do not bind to specific
+interfaces.  The DHCP/BOOTP protocol relies on the 67/udp + 68/udp
+ports and you have e.g. to configure iptable rules which rewrite your
+custom port numbers to the expected ones.
+
+See BUGS below for further restrictions.
+.\"
+.TP
 .B name \fIifname agent-id
 specifies the RFC 3046 agent-id for the given interface. When not used
 explicitly, the interfacename will be assumed as the agent-id.
@@ -244,6 +268,13 @@ if $IFACE t t t
 ip $IFACE $IP
 .PD
 .RE
+.\"
+.\" ====================
+.\"
+.SH BUGS
+The ports set up by the \fIports\fR configuration option are used for
+binding sockets only.  The default DHCP port numbers (67 + 68) appear
+in the UDP headers of the relayed DHCP responses.
 .\"
 .\" ====================
 .\"

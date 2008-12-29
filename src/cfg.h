@@ -32,6 +32,14 @@ struct InterfaceInfo {
     char	aid[IFNAMSIZ];	//< agent id
     bool	has_clients;	//< tells if DHCP clients are on this interface
     bool	has_servers;	//< tells if DHCP servers are on this interface
+    uint16_t	port_server;	/** port on which for client requests will be
+				    listened.  Value will be stored in network
+				    byte order. Interesting both for has_clients
+				    and for has_servers case. */
+    uint16_t	port_client;	/** port from which requests to servers will be
+				    sended out.  Value will be stored in network
+				    byte order. Interesting for has_servers case
+				    only. */
     bool	allow_bcast;	//< honor bcast-flag and send to bcast address?
 
     bool	need_mac;	//< tells if MAC will be required

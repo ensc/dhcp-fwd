@@ -15,6 +15,10 @@ if \eth3.1	true	true	true
 if $TEST_IF0	true	true	true
 if $TEST_IF1	true	true	true
 
+ports eth0	680	    670
+ports $TEST_IF0	$TEST_IF0_C $TEST_IF0_S
+ports $TEST_IF1	682	    672
+
 name eth0	eth0-name
 name eth1	X
 name $TEST_IF0	$TEST_NAME0

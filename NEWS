@@ -6,6 +6,8 @@ Version 0.7.1 (2004-12-23)
 	- fixed build on big-endian systems
 	- implemented better support for upstart init system by raising
 	  SIGSTOP signal after initialization
+	- added 'ports' configuration option to specify client/server
+	  ports to be used on the specified interface
 
 Version 0.7 (2004-08-19)
 ------------------------

@@ -94,7 +94,7 @@ initClientFD(struct FdInfo *fd,
 
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
-  s.sin_port        = htons(DHCP_PORT_SERVER);
+  s.sin_port        = iface->port_server;
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
   Ebind(fd->fd, &s);
@@ -132,7 +132,7 @@ initSenderFD(struct InterfaceInfo const *iface)
 
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
-  s.sin_port        = htons(DHCP_PORT_CLIENT);
+  s.sin_port        = iface ? iface->port_client : htons(DHCP_PORT_CLIENT);
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
   Ebind(fd, &s);

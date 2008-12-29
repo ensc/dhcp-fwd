@@ -141,6 +141,10 @@ int main(int argc, char const *argv[])
     write(1, ", ", 2);
     writeUInt(1, iface->allow_bcast);
     write(1, ", ", 2);
+    writeUInt(1, ntohs(iface->port_client));
+    write(1, ", ", 2);
+    writeUInt(1, ntohs(iface->port_server));
+    write(1, ", ", 2);
 
     in.s_addr = iface->if_ip;
     aux = inet_ntoa(in);
