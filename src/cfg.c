@@ -238,7 +238,7 @@ initFDs(/*@out@*/struct FdInfoList		*fds,
     /*@modifies internalState, fileSystem, *fds, cfg->servers@*/
     /*@requires maxRead(fds)>=0 /\ maxSet(fds)>=0 /\ maxSet(fds->sender_fd)>=0@*/
 {
-  size_t					i, idx;
+  size_t					i;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
   struct ServerInfo *				servers;
   int						bind_all_fd = -1;
@@ -281,11 +281,16 @@ initFDs(/*@out@*/struct FdInfoList		*fds,
   assert(fds->dta!=0 || fds->len==0);
   assert(ifs->dta!=0 || ifs->len==0);
 
-  for (idx=0, i=0; i<ifs->len; ++i, ++idx) {
+  fds->len = 0;
+  for (i=0; i<ifs->len; ++i) {
     assert(ifs->dta!=0);
     assert(fds->dta!=0);
 
-    initClientFD(&fds->dta[idx], &ifs->dta[i]);
+    if (!ifs->dta[i].has_clients && !ifs->dta[i].has_servers)
+      continue;
+
+    initClientFD(&fds->dta[fds->len], &ifs->dta[i]);
+    ++fds->len;
   }
 }
 
