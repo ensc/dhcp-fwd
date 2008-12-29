@@ -211,12 +211,13 @@ newInterface(struct InterfaceInfoList *ifs)
 
   assert(ifs->dta!=0);
 
-  result            = &ifs->dta[ifs->len - 1];
+  result              = &ifs->dta[ifs->len - 1];
   memset(result, 0, sizeof result);
-  result->if_ip     = INADDR_NONE;
+
+  result->if_ip       = INADDR_NONE;
   result->port_client = htons(DHCP_PORT_CLIENT);
   result->port_server = htons(DHCP_PORT_SERVER);
-  result->sender_fd = -1;
+  result->sender_fd   = -1;
 
   return result;
 }
