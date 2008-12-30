@@ -13,7 +13,7 @@ Version 0.8 (2008-12-30)
 Version 0.7 (2004-08-19)
 ------------------------
 	- fixed compilation with dietlibc 0.27
-	
+
 Version 0.6 (2004-06-17)
 ------------------------
 	- allowed to bind sender-side sockets to one interface only; this
@@ -72,16 +72,16 @@ Version 0.3 (2002-07-12)
 	- changed default username from dhcpfwd to dhcp-fwd; using three
 	  different names (dhcp-forwarder, dhcp-fwd and dhcpfwd) in one
 	  small project is a little bit too confusing...
-	
+
 Version 0.2 (2002-06-14)
 ------------------------
 	- Small fixes in the build-system (WWW distribution rules,
-  	  requirements for automake 1.6
+	  requirements for automake 1.6
 	- Fixed broken '--disable-dietlibc' and enhanced this option
 	- Added doc
 	- Added man-page
-	
-  
+
+
 Version 0.1 (2002-06-13)
 ------------------------
 	- initial release
