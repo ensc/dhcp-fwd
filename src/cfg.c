@@ -157,6 +157,7 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
   switch (addr->sa_family) {
     case ARPHRD_EETHER	:
     case ARPHRD_IEEE802	:
+    case ARPHRD_LOOPBACK:
     case ARPHRD_ETHER	:  *len = ETH_ALEN; break;
     default		:  scEXITFATAL("Unsupported hardware-type");
   }
