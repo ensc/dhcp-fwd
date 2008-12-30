@@ -1,4 +1,4 @@
-Version 0.7.1 (2004-12-23)
+Version 0.8 (2008-12-30)
 --------------------------
 	- relicensed to GPLv3
 	- implemented $VAR expansion in configuration file
@@ -8,6 +8,7 @@ Version 0.7.1 (2004-12-23)
 	  SIGSTOP signal after initialization
 	- added 'ports' configuration option to specify client/server
 	  ports to be used on the specified interface
+	- support loopback interfaces
 
 Version 0.7 (2004-08-19)
 ------------------------
