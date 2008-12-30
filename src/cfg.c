@@ -88,7 +88,10 @@ initClientFD(struct FdInfo *fd,
 
   Esetsockopt(fd->fd, SOL_IP,     IP_PKTINFO,      &ON, sizeof ON);
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BROADCAST,    &ON, sizeof ON);
-  Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name, strlen(iface->name)+1);
+  /* workaround linux kernel bug which causes -EINVAL on short interface
+   * names */
+  Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name,
+	      MAX(strlen(iface->name)+1,sizeof(int)));
 
   memset(&s, 0, sizeof(s));
 
@@ -125,8 +128,10 @@ initSenderFD(struct InterfaceInfo const *iface)
     // used for sending only...
   Esetsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &ON, sizeof ON);
   if (iface)
+    /* workaround linux kernel bug which causes -EINVAL on short interface
+     * names */
     Esetsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,
-		iface->name, strlen(iface->name)+1);
+		iface->name, MAX(strlen(iface->name)+1, sizeof(int)));
 
   memset(&s, 0, sizeof(s));
 
