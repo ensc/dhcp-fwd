@@ -48,7 +48,7 @@ starts a DHCP forwarding agents which relays DHCP messages between
 subnets with different sublayer broadcast domains.
 
 When called without arguments, it reads its configuration from
-.BR @sysconfdir@/dhcp-fwd.cfg
+.BR @sysconfdir@/dhcp-fwd.conf
 and forks itself into background. An alternative configfile
 can be given by the
 .BR \-c
@@ -84,7 +84,7 @@ alias for \fB\-n\fR.
 .TP
 .B \-c \fI config_file
 Specifies the configfile to use; the default is
-.BR @sysconfdir@/dhcp-fwd.cfg .
+.BR @sysconfdir@/dhcp-fwd.conf .
 .TP
 .B \-v
 Shows version

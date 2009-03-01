@@ -1,3 +1,10 @@
+Version 0.8.1 (???)
+-------------------
+	- fixed inconsistencies in the naming of default configuration
+	  file; now it is named 'dhcp-fwd.conf' everywhere. Previously,
+	  'dhcp-fwd.cfg' was used at some places
+
+	
 Version 0.8 (2008-12-30)
 --------------------------
 	- relicensed to GPLv3

@@ -28,7 +28,7 @@ SUBDIRS			=  . test
 DIST_SUBDIRS		=  $(SUBDIRS)
 
 confdir			=  $(sysconfdir)
-cfg_filename		=  $(confdir)/dhcp-fwd.cfg
+cfg_filename		=  $(confdir)/dhcp-fwd.conf
 
 logging_SRCS		=  src/logging.c
 
