@@ -1,10 +1,13 @@
-Version 0.8.1 (???)
--------------------
+Version 0.9 (2010-12-14)
+------------------------
 	- fixed inconsistencies in the naming of default configuration
 	  file; now it is named 'dhcp-fwd.conf' everywhere. Previously,
 	  'dhcp-fwd.cfg' was used at some places
 
-	
+	- set SO_REUSEADDR option for client sockets; this allows
+	  dhcp-forwarder and another dhcp server to run simultaneously
+	  on the same host (patch provided by Stefan Keller)
+
 Version 0.8 (2008-12-30)
 --------------------------
 	- relicensed to GPLv3
