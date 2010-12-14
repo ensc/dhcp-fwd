@@ -1,4 +1,4 @@
-// Copyright (C) 2002, 2003, 2004, 2008
+// Copyright (C) 2002, 2003, 2004, 2008, 2010
 //               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 //
 // This program is free software; you can redistribute it and/or modify
@@ -92,6 +92,8 @@ initClientFD(struct FdInfo *fd,
    * names */
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name,
 	      MAX(strlen(iface->name)+1,sizeof(int)));
+
+  Esetsockopt(fd->fd, SOL_SOCKET, SO_REUSEADDR, &ON, sizeof ON);
 
   memset(&s, 0, sizeof(s));
 
