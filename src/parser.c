@@ -1,4 +1,4 @@
-// Copyright (C) 2002, 2003, 2004, 2008
+// Copyright (C) 2002, 2003, 2004, 2008, 2010
 //               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 //
 // This program is free software; you can redistribute it and/or modify
@@ -697,8 +697,8 @@ parse(/*@in@*/char const		fname[],
   struct in_addr	ip;
   bool			has_clients;
   bool			has_servers;
-  uint16_t		port_client;
-  uint16_t		port_server;
+  uint16_t		port_client = port_client;
+  uint16_t		port_server = port_server;
   bool			allow_bcast;
   struct {
       int		code;
