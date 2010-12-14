@@ -1,4 +1,4 @@
-dnl Copyright (C) 2002, 2003, 2004, 2008
+dnl Copyright (C) 2002, 2003, 2004, 2008, 2010
 dnl               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,7 @@ AM_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
 
 AM_MAINTAINER_MODE
+AM_SILENT_RULES
 ENSC_CHANGELOG([master],[git])
 
 # Default settings
