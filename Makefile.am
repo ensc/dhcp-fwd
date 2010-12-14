@@ -95,7 +95,6 @@ sftp.cmds:		$(WWW_FILES_ROOT) $(WWW_FILES_FILES)
 
 .PHONY:			splint
 
-include $(top_srcdir)/m4/validate.am
 include $(top_srcdir)/m4/changelog.am
 include $(top_srcdir)/m4/diet.am
 include $(top_srcdir)/m4/gpgsig.am
