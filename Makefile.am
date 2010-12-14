@@ -14,8 +14,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 ACLOCAL_AMFLAGS		=  -I m4
-CVS2CL_AMFLAGS		=  $(CVS2CL_TAG) -U cvsusers.map --show-dead --no-wrap
-CVS2CL_ALLFLAGS	       :=  $(CVS2CL_AMFLAGS) $(CVS2CL_FLAGS)
 
 WWW_HOST		=  janus
 WWW_DIR			=  public_html/dhcp-fwd
