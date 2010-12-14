@@ -17,7 +17,7 @@ dnl along with this program. If not, see http://www.gnu.org/licenses/.
 AC_INIT(dhcp-forwarder, 0.8, [enrico.scholz@informatik.tu-chemnitz.de], [dhcp-forwarder])
 AC_CONFIG_SRCDIR([THANKS])
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE([1.6.0 gnits dist-bzip2 subdir-objects])
+AM_INIT_AUTOMAKE([1.6.0 gnits dist-xz subdir-objects])
 
 AM_MAINTAINER_MODE
 AM_SILENT_RULES([no])
