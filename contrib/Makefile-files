@@ -39,7 +39,7 @@ install-contrib:	$(contrib_FILES) .install-contrib-gen
 			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init      $(DESTDIR)$(initrddir)/dhcp-fwd
 			$(INSTALL_DATA)   contrib/dhcp-fwd.sysconfig $(DESTDIR)$(rhsysconfigdir)/dhcp-fwd
 
-			ln -s $(sbindir)/dhcp-fwd                    $(DESTDIR)$(minitdir)/services/dhcp-fwd/run
+			ln -sf $(sbindir)/dhcp-fwd                   $(DESTDIR)$(minitdir)/services/dhcp-fwd/run
 			$(INSTALL_DATA) contrib/dhcp-fwd.params      $(DESTDIR)$(minitdir)/services/dhcp-fwd/params
 			touch $(DESTDIR)$(minitdir)/services/dhcp-fwd/respawn
 			chmod 0644 $(DESTDIR)$(minitdir)/services/dhcp-fwd/respawn
