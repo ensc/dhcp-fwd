@@ -496,20 +496,54 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
   memset(&frame, 0, sizeof frame);
   frame.eth.ether_type = htons(ETHERTYPE_IP);
 
+  if (g_compat_hacks & (1Lu << COMPAT_HACK_CLIENT_ADDRESSING)) {
+    /* \todo: when there are no complaints, remove me after 2015 */
+
     /* Check whether header contains an ethernet MAC or something else (e.g. a
      * PPP tag). In the first case send to this MAC, in the latter one, send a
      * ethernet-broadcast message */
-  if (header->htype==ARPHRD_ETHER && header->hlen==ETH_ALEN)
-    memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
-  else
-    memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
+    if (header->htype==ARPHRD_ETHER && header->hlen==ETH_ALEN)
+      memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
+    else
+      memset(frame.eth.ether_dhost, 255,            sizeof frame.eth.ether_dhost);
 
-  if ((header->flags&flgDHCP_BCAST)!=0 && header->ciaddr!=0)
-    frame.ip.daddr  = header->ciaddr;
-  else if (iface->allow_bcast)
-    frame.ip.daddr  = INADDR_BROADCAST;
-  else
-    return;	//< \todo
+    if ((header->flags&flgDHCP_BCAST)!=0 && header->ciaddr!=0)
+      frame.ip.daddr  = header->ciaddr;
+    else if (iface->allow_bcast)
+      frame.ip.daddr  = INADDR_BROADCAST;
+    else
+      return;	//< \todo
+  } else {
+    /*
+     * From RFC-2131:
+     *   A server or relay agent sending or relaying a DHCP message directly
+     *   to a DHCP client (i.e., not to a relay agent specified in the
+     *   'giaddr' field) SHOULD examine the BROADCAST bit in the 'flags'
+     *   field.  If this bit is set to 1, the DHCP message SHOULD be sent as
+     *   an IP broadcast using an IP broadcast address (preferably 0xffffffff)
+     *   as the IP destination address and the link-layer broadcast address as
+     *   the link-layer destination address.  If the BROADCAST bit is cleared
+     *   to 0, the message SHOULD be sent as an IP unicast to the IP address
+     *   specified in the 'yiaddr' field and the link-layer address specified
+     *   in the 'chaddr' field.  If unicasting is not possible, the message
+     *   MAY be sent as an IP broadcast using an IP broadcast address
+     *   (preferably 0xffffffff) as the IP destination address and the link-
+     *   layer broadcast address as the link-layer destination address.
+     */
+
+    /* unicast if possible */
+    if ((header->flags & flgDHCP_BCAST) == 0 &&
+	header->yiaddr != 0 &&
+	header->htype == ARPHRD_ETHER && header->hlen == ETH_ALEN) {
+      memcpy(frame.eth.ether_dhost, header->chaddr, sizeof frame.eth.ether_dhost);
+      frame.ip.daddr = header->yiaddr;
+    } else if (iface->allow_bcast) {
+      /* broadcast otherwise */
+      memset(frame.eth.ether_dhost, 255, sizeof frame.eth.ether_dhost);
+      frame.ip.daddr = INADDR_BROADCAST;
+    } else
+      return;	//< \todo
+  }
 
   frame.udp.source  = htons(DHCP_PORT_SERVER);
   frame.udp.dest    = htons(DHCP_PORT_CLIENT);

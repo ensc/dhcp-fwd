@@ -9,6 +9,13 @@ Version 0.??
 
 	- added 'compathack' configuration parameter
 
+	- changed client addressing; responses are sent now to the yiaddr
+	  instead of to the ciaddr. Generation of broadcast vs. unicast
+	  message more consistent with RFC 2131 now (non-trivial patch
+	  provided by Robin Haberkorn).
+
+	  COMPATIBILITY: old behavior can be restored by 'compathack 0'.
+
 Version 0.9 (2010-12-14)
 ------------------------
 	- fixed inconsistencies in the naming of default configuration

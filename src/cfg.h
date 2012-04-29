@@ -134,6 +134,9 @@ struct ConfigInfo {
 };
 
 extern unsigned long	g_compat_hacks;
+enum {
+  COMPAT_HACK_CLIENT_ADDRESSING	=  0
+};
 
   /*@-superuser@*/
 extern int	initializeSystem(int argc, /*@in@*/char *argv[],
