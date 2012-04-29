@@ -758,7 +758,7 @@ parse(/*@in@*/char const		fname[],
 	  case 's'	:  state = 0x0300; break;
 	  case 'u'	:  state = 0x0400; break;
 	  case 'g'	:  state = 0x0500; break;
-	  case 'c'	:  state = 0x0600; break;
+	  case 'c'	:  state = 0x0699; break;
 	  case 'l'	:  state = 0x0700; break;
 	  case 'p'	:  state = 0x0890; break;
 	  case tkEOF	:  state = 0xFFFF; break;
@@ -919,6 +919,13 @@ parse(/*@in@*/char const		fname[],
 	state = 0xFFFE;
 	break;
 
+      case 0x0699	:
+	switch (c) {
+	case 'o':  state = 0x610; break; /* --> "compathack" */
+	case 'h':  state = 0x600; break; /* --> "chroot" */
+	}
+	break;
+
       case 0x0600	:
 	matchStr("hroot"); readBlanks();
 	readFileName(name, sizeof(name));
@@ -929,6 +936,13 @@ parse(/*@in@*/char const		fname[],
 	  // can be reached from state 0x0600 only where name was read
 	assertDefined(name);
 	strcpy(cfg->chroot_path, name);
+	state = 0xFFFE;
+	break;
+
+	/* compathack <int> */
+    case 0x610:
+	matchStr("ompathack"); readBlanks();
+	cfg->compat_hacks |= (1Lu << readInteger());
 	state = 0xFFFE;
 	break;
 

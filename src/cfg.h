@@ -129,7 +129,11 @@ struct ConfigInfo {
     char const *			conffile_name;
     enum { dmFORK, dmFG, dmSTOP }	daemon_mode;
     bool				do_bindall;
+
+    unsigned long			compat_hacks;
 };
+
+extern unsigned long	g_compat_hacks;
 
   /*@-superuser@*/
 extern int	initializeSystem(int argc, /*@in@*/char *argv[],

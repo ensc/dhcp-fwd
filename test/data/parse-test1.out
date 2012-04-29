@@ -1,3 +1,4 @@
+compathacks=5
 uid=1
 gid=1
 chroot_path='/var/tmp'

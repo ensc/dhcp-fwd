@@ -1,6 +1,9 @@
 user		bin
 group		bin
 
+compathack	0
+compathack	2
+
 chroot		/var/tmp
 logfile		/var/tmp/dhcp-fwd.log
 loglevel	1

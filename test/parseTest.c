@@ -86,6 +86,7 @@ int main(int argc, char const *argv[])
       pw->pw_gid!=1 && pw->pw_gid==cfg.gid)
     cfg.gid = 1;
 
+  showUInt("compathacks", cfg.compat_hacks);
   showUInt("uid", cfg.uid);
   showUInt("gid", cfg.gid);
   showString("chroot_path", cfg.chroot_path);

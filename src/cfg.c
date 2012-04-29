@@ -474,6 +474,7 @@ initializeSystem(int argc, char *argv[],
   cfg.conffile_name = CFG_FILENAME;
   cfg.daemon_mode   = dmFORK;
   cfg.do_bindall    = false;
+  cfg.compat_hacks  = 0;
 
   parseCommandline(argc, argv, &cfg);
 
@@ -518,6 +519,8 @@ initializeSystem(int argc, char *argv[],
 
   if (cfg.daemon_mode == dmSTOP)
     raise(SIGSTOP);
+
+  g_compat_hacks = cfg.compat_hacks;
 
   return pid;
 }

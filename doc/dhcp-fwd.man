@@ -242,10 +242,21 @@ fail.
 .B server bcast \fIinterface
 the DHCP server with be assumed at interface \fIinterface\fR and
 contacted with broadcast messages.
+.\"
 .RE
+.\"
+.TP
+.B compathack \fItype hack
+Sometimes, new versions of dhcp-fwd will contain changes/fixes which
+might break existing installations. To restore old behavior,
+compatibility hacks can be activated.  These hacks are specified by
+the \R hack integer parameter.  See the NEWS file for changes are
+their corresponding \R hack value.
 
-For an example see the contrib/dhcp-fwd.conf file in the
-source-tarball.
+.RE
+For a sample configuration file see the contrib/dhcp-fwd.conf template
+in the source-tarball.
+
 .\"
 .\" ====================
 .\"

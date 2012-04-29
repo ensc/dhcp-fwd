@@ -63,6 +63,8 @@ typedef enum {
 /*@checkmod@*/static struct ServerInfoList	servers;
 /*@checkmod@*/static struct FdInfoList		fds;
 
+unsigned long	g_compat_hacks;
+
 inline static void
 fillFDSet(/*@out@*/fd_set			*fdset,
 	  /*@out@*/int				*max)
