@@ -98,7 +98,6 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h limits.h netinet/in.h stdint.h])
 AC_CHECK_HEADERS([stdlib.h string.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h])
 AC_CHECK_HEADERS([unistd.h stdbool.h])
-ENSC_HEADER_IF_PACKET
 
 # Checks for typedefs, structures, and compiler characteristics.
 ENSC_DIET_CHECK_IN_ADDR_T

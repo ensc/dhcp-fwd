@@ -1,4 +1,4 @@
-// Copyright (C) 2002, 2003, 2004, 2008
+// Copyright (C) 2002, 2003, 2004, 2008, 2012
 //               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 //
 // This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,8 @@
 #include <net/if_arp.h>
 #include <sys/ioctl.h>
 
-#include "compat/if_packet.h"
+#include <netpacket/packet.h>
+#include <net/ethernet.h> /* the L2 protocols */
 
 #include "cfg.h"
 #include "wrappers.h"
