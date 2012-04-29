@@ -1,4 +1,4 @@
-// Copyright (C) 2002, 2003, 2008
+// Copyright (C) 2002, 2003, 2008, 2012
 //               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 //
 // This program is free software; you can redistribute it and/or modify
@@ -75,7 +75,6 @@ writeMsgTimestamp()
 #endif
     {
       writeUInt(msg_fd, static_cast(unsigned int)(tv.tv_sec));
-      (void)write(msg_fd, ".", 1);
     }
   }
 
