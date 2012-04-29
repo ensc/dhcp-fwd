@@ -1,4 +1,4 @@
-dnl Copyright (C) 2002, 2003, 2004, 2008, 2010
+dnl Copyright (C) 2002, 2003, 2004, 2008, 2010, 2012
 dnl               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,15 @@ elif which $CC gcc &>/dev/null; then
 fi
 
 ENSC_MODERN_COMPILER_CHECK
+
+AC_MSG_CHECKING(for systemd unitdir)
+AC_ARG_WITH(systemd-unitdir,
+	    [AC_HELP_STRING([--with-systemd-unitdir=<dir>],
+                            [The systemd unit directory (default:
+                             <prefix>/lib/systemd/system)])],
+	    [],[with_systemd_unitdir=\${prefix}/lib/systemd/system])
+AC_MSG_RESULT(${with_systemd_unitdir})
+AC_SUBST(SYSTEMD_UNITDIR,[${with_systemd_unitdir}])
 
 AC_MSG_CHECKING(whether to enable logging)
 AC_ARG_ENABLE(logging,
