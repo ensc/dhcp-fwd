@@ -63,7 +63,7 @@ static unsigned int	*CHARACTERS;
 
 enum { MAX_VARNAME_SZ = 32 };
 
-inline static void
+static void
 initCharacterClassification(/*@out@*/unsigned int *chrs)
     /*@requires maxSet(*chrs)==257@*/
     /*@globals CHARACTERS@*/
@@ -102,7 +102,7 @@ initCharacterClassification(/*@out@*/unsigned int *chrs)
 }
 
 
-inline static bool
+static bool
 isCharType(/*@sef@*/int c, /*@sef@*/unsigned int type) /*@*/
 {
     /*@-globs@*/
@@ -117,7 +117,7 @@ char const				*cfg_ptr;
 char const				*cfg_end;
 
   /*@noreturn@*//*@unused@*/
-static void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
+void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
 #define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 #define scWRITE(msg)		(void)write(2, msg, sizeof(msg)-1)
 
@@ -126,7 +126,7 @@ static void
 exitFatal(/*@observer@*/char const msg[],
 	  register size_t len) __attribute__ ((noreturn)) /*@*/ ;
 
-inline static void
+static void
 exitFatal(char const msg[], register size_t len)
 {
     /*@-internalglobs@*//*@-globs@*/
@@ -144,7 +144,7 @@ exitFatal(char const msg[], register size_t len)
   exit(3);
 }
 
-inline static void
+static void
 setNext()
     /*@globals col_nr, line_nr, fd, look_ahead@*/
     /*@modifies col_nr, line_nr, look_ahead@*/
@@ -166,7 +166,7 @@ setNext()
   }
 }
 
-inline static int
+static int
 getLookAhead()
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
@@ -176,7 +176,7 @@ getLookAhead()
   return look_ahead;
 }
 
-inline static void
+static void
 match(char /*@alt int@*/ c)
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
@@ -189,7 +189,7 @@ match(char /*@alt int@*/ c)
   look_ahead = tkEOF;
 }
 
-inline static void
+static void
 matchStr(/*@in@*/char const *str)
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
@@ -198,7 +198,7 @@ matchStr(/*@in@*/char const *str)
   for (; *str!='\0'; ++str) match(*str);
 }
 
-inline static /*@exposed@*/ struct InterfaceInfo *
+static /*@exposed@*/ struct InterfaceInfo *
 newInterface(struct InterfaceInfoList *ifs)
     /*@modifies *ifs@*/
 {
@@ -223,7 +223,7 @@ newInterface(struct InterfaceInfoList *ifs)
   return result;
 }
 
-inline static /*@exposed@*/struct ServerInfo *
+static /*@exposed@*/struct ServerInfo *
 newServer(struct ServerInfoList *servers)
     /*@modifies *servers@*/
 {
@@ -242,7 +242,7 @@ newServer(struct ServerInfoList *servers)
   return result;
 }
 
-inline static /*@exposed@*/ struct UlimitInfo *
+static /*@exposed@*/ struct UlimitInfo *
 registerUlimit(struct UlimitInfoList *ulimits, int code, rlim_t val)
     /*@modifies *ulimits@*/
 {
@@ -281,7 +281,7 @@ registerUlimit(struct UlimitInfoList *ulimits, int code, rlim_t val)
   return result;
 }
 
-inline static /*@exposed@*/ struct InterfaceInfo *
+static /*@exposed@*/ struct InterfaceInfo *
 searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
    /*@*/
 {
@@ -303,7 +303,7 @@ searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
   return iface;
 }
 
-inline static void
+static void
 matchEOL()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -338,7 +338,7 @@ matchEOL()
   scEXITFATAL("unexpected character");
 }
 
-inline static void
+static void
 readBlanks()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -357,7 +357,7 @@ readBlanks()
 }
 
 /*@+charintliteral@*/
-inline static size_t
+static size_t
 readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
     /*@requires (maxSet(buffer)+1) >= len@*/
     /*@globals fd, look_ahead@*/
@@ -387,7 +387,7 @@ readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
 }
 /*@=charintliteral@*/
 
-inline static size_t
+static size_t
 readStringExpanded(/*@out@*/char *buffer, size_t len, unsigned int char_class)
 {
   int		c = getLookAhead();
@@ -425,7 +425,7 @@ readStringExpanded(/*@out@*/char *buffer, size_t len, unsigned int char_class)
   return readString(buffer, len, char_class);
 }
 
-inline static void
+static void
 readFileName(/*@out@*/char buffer[], size_t len)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
@@ -434,7 +434,7 @@ readFileName(/*@out@*/char buffer[], size_t len)
     scEXITFATAL("Invalid filename");
 }
 
-inline static void
+static void
 readUserName(/*@out@*/char buffer[], size_t len)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
@@ -443,7 +443,7 @@ readUserName(/*@out@*/char buffer[], size_t len)
     scEXITFATAL("Invalid user- or groupname");
 }
 
-inline static int
+static int
 readLimit()
     /*@globals fd, look_ahead, ULIMIT_CODES@*/
     /*@modifies look_ahead@*/
@@ -459,7 +459,7 @@ readLimit()
   scEXITFATAL("Unknown ulimit-specifier");
 }
 
-inline static long
+static long
 readLong()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -536,7 +536,7 @@ readLong()
   scEXITFATAL("Can not parse integer");
 }
 
-inline static int
+static int
 readInteger()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -544,7 +544,7 @@ readInteger()
   return static_cast(int)(readLong());
 }
 
-inline static int
+static int
 readIntegerExpanded()
 {
   char			buffer[1024];
@@ -563,7 +563,7 @@ readIntegerExpanded()
   return res;
 }
 
-inline static uint16_t
+static uint16_t
 readPort(uint16_t dflt)
 {
   int			res = readIntegerExpanded();
@@ -576,7 +576,7 @@ readPort(uint16_t dflt)
   return res;
 }
 
-inline static rlim_t
+static rlim_t
 readLimitVal()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
@@ -599,7 +599,7 @@ readLimitVal()
   return result;
 }
 
-inline static void
+static void
 readIfname(/*@out@*/char *iface)
     /*@requires (maxSet(iface)+1) >= IFNAMSIZ @*/
     /*@globals fd, look_ahead@*/
@@ -609,7 +609,7 @@ readIfname(/*@out@*/char *iface)
     scEXITFATAL("Invalid interface name");
 }
 
-inline static void
+static void
 readIp(/*@out@*/struct in_addr	*ip)
     /*@requires maxSet(ip) == 0@*/
     /*@globals fd, look_ahead@*/
@@ -622,7 +622,7 @@ readIp(/*@out@*/struct in_addr	*ip)
   if (inet_aton(buffer, ip)==0) scEXITFATAL("Invalid IP");
 }
 
-inline static void
+static void
 readBool(/*@out@*/bool *val)
     /*@requires maxSet(val) >= 0@*/
     /*@globals fd, look_ahead@*/

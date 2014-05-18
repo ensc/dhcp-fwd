@@ -36,7 +36,7 @@
 #define ensc_DHCP_FORWARDER_ULIMIT_H_I_KNOW_WHAT_I_DO
 #include "ulimit_codes.h"
 
-inline static void
+static void
 showUInt(char const varname[], unsigned int value)
 {
   write(1, varname, strlen(varname));
@@ -45,7 +45,7 @@ showUInt(char const varname[], unsigned int value)
   write(1, "\n", 1);
 }
 
-inline static void
+static void
 showString(char const varname[], char const value[])
 {
   write(1, varname, strlen(varname));
@@ -54,7 +54,7 @@ showString(char const varname[], char const value[])
   write(1, "'\n", 2);
 }
 
-inline static void
+static void
 showRlimit(struct rlimit const *val)
 {
   if (val->rlim_cur==RLIM_INFINITY) write(1, "INF", 3);

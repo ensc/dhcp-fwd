@@ -65,7 +65,7 @@ typedef enum {
 
 unsigned long	g_compat_hacks;
 
-inline static void
+static void
 fillFDSet(/*@out@*/fd_set			*fdset,
 	  /*@out@*/int				*max)
     /*@globals fds@*/
@@ -89,7 +89,7 @@ fillFDSet(/*@out@*/fd_set			*fdset,
   }
 }
 
-inline static /*@exposed@*//*@null@*/struct FdInfo const *
+static /*@exposed@*//*@null@*/struct FdInfo const *
 lookupFD(/*@in@*/struct in_addr const addr)
     /*@globals fds@*/
 {
@@ -111,7 +111,7 @@ lookupFD(/*@in@*/struct in_addr const addr)
   return 0;
 }
 
-inline static size_t
+static size_t
 determineMaxMTU()
     /*@globals fds@*/
     /*@modifies@*/
@@ -133,7 +133,7 @@ determineMaxMTU()
   return result;
 }
 
-inline static bool
+static bool
 isValidHeader(/*@in@*/struct DHCPHeader *header)
     /*@globals internalState@*/
     /*@modifies internalState@*/
@@ -167,7 +167,7 @@ isValidHeader(/*@in@*/struct DHCPHeader *header)
   return reason==0;
 }
 
-inline static bool
+static bool
 isValidOptions(/*@in@*/struct DHCPOptions const	*options,
 	       size_t				o_len)
     /*@*/
@@ -193,7 +193,7 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
   return (seen_end && opt==end_options);
 }
 
-inline static size_t
+static size_t
 addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 	       struct DHCPSingleOption				*end_opt,
 	       size_t						len)
@@ -244,7 +244,7 @@ addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 }
 
 #ifdef ENABLE_AGENT_REPLACE
-inline static size_t
+static size_t
 replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 		   struct DHCPSingleOption			*relay_opt,
 		   struct DHCPSingleOption			*end_opt,
@@ -279,7 +279,7 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 }
 #endif
 
-inline static size_t
+static size_t
 removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
 		  struct DHCPSingleOption const		*end_opt,
 		  size_t					len)
@@ -298,7 +298,7 @@ removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
 }
 
   /*@-mustmod@*/
-inline static size_t
+static size_t
 fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 	    /*@dependent@*/void				*option_ptr,
 	    OptionFillAction				action)
@@ -352,7 +352,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 }
   /*@=mustmod@*/
 
-inline static uint16_t
+static uint16_t
 calculateCheckSum(/*@in@*/void const * const	dta,
 		  size_t size,
 		  uint32_t sum)
@@ -381,7 +381,7 @@ calculateCheckSum(/*@in@*/void const * const	dta,
   return sum;
 }
 
-inline static void
+static void
 fixCheckSumIP(struct iphdr * const	ip)
     /*@modifies *ip@*/
 {
@@ -420,7 +420,7 @@ fixCheckSumUDP(struct udphdr * const			udp,
   udp->check = sum;
 }
 
-inline static void
+static void
 sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
 	       /*@dependent@*/struct DHCPllPacket	*frame,
 	       /*@dependent@*//*@in@*/char const	*buffer,
@@ -480,7 +480,7 @@ sendEtherFrame(/*@in@*/struct InterfaceInfo const	*iface,
   Wsendmsg(fds.raw_fd, &msg, 0);
 }
 
-inline static void
+static void
 sendToClient(/*@in@*/struct FdInfo const * const	fd,
 	     /*@in@*/struct DHCPHeader const * const	header,
 	     /*@in@*//*@dependent@*/char const * const	buffer,
@@ -551,7 +551,7 @@ sendToClient(/*@in@*/struct FdInfo const * const	fd,
   sendEtherFrame(iface, &frame, buffer, size);
 }
 
-inline static void
+static void
 sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
 		/*@dependent@*//*@in@*/char const * const	buffer,
 		size_t const					size)
@@ -574,7 +574,7 @@ sendServerBcast(/*@in@*/struct ServerInfo const	* const		server,
   sendEtherFrame(iface, &frame, buffer, size);
 }
 
-inline static void
+static void
 sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
 		  /*@in@*/char const * const			buffer,
 		  size_t const					size)
@@ -594,7 +594,7 @@ sendServerUnicast(/*@in@*/struct ServerInfo const * const	server,
 	  sizeof sock);
 }
 
-inline static void
+static void
 sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
 	     size_t const				size)
     /*@globals servers, fds, internalState@*/
@@ -623,7 +623,7 @@ sendToServer(/*@in@*//*@dependent@*/char const * const	buffer,
   }
 }
 
-inline static void
+static void
 handlePacket(/*@in@*/struct FdInfo const * const		fd,
 	     /*@in@*/struct InterfaceInfo const * const		iface_orig,
 	     /*@dependent@*/char * const			buffer,
@@ -688,7 +688,7 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
 }
 
 /*@noreturn@*/
-inline static void
+static void
 execRelay()
     /*@globals fds, servers, internalState@*/
     /*@modifies internalState@*/
