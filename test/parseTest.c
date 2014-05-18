@@ -66,6 +66,16 @@ showRlimit(struct rlimit const *val)
   else                              writeUInt(1, val->rlim_max);
 }
 
+static void writeIP(int fd, in_addr_t ip)
+{
+    char const			*aux;
+    struct in_addr		in = { .s_addr = ip };
+
+    aux = inet_ntoa(in);
+    if (aux==0)  write(fd, "<null>", 6);
+    else         write(fd, aux, strlen(aux));
+}
+
 int main(int argc, char const *argv[])
 {
   struct ConfigInfo		cfg;
@@ -128,8 +138,7 @@ int main(int argc, char const *argv[])
   write(1, ", data={", 8);
   for (i=0; i<cfg.interfaces.len; ++i) {
     struct InterfaceInfo	*iface = &cfg.interfaces.dta[i];
-    char			*aux;
-    struct in_addr		in;
+    size_t			j;
 
     write(1, "\n  '", 4);
     write(1, iface->name, strlen(iface->name));
@@ -147,10 +156,7 @@ int main(int argc, char const *argv[])
     writeUInt(1, ntohs(iface->port_server));
     write(1, ", ", 2);
 
-    in.s_addr = iface->if_ip;
-    aux = inet_ntoa(in);
-    if (aux==0)  write(1, "<null>", 6);
-    else         write(1, aux, strlen(aux));
+    writeIP(1, iface->if_ip);
   }
   write(1, "}}\n", 3);
 
@@ -159,15 +165,12 @@ int main(int argc, char const *argv[])
   write(1, ", data={", 8);
   for (i=0; i<cfg.servers.len; ++i) {
     struct ServerInfo	*svr = &cfg.servers.dta[i];
-    char			*aux;
 
     write(1, "\n  ", 3);
     switch (svr->type) {
       case svUNICAST	:
 	write(1, "UNICAST, ", 9);
-	aux = inet_ntoa(svr->info.unicast.ip);
-	if (aux==0)  write(1, "<null>", 6);
-	else         write(1, aux, strlen(aux));
+	writeIP(1, svr->info.unicast.ip.s_addr);
 
 	if (svr->iface) {
 	  write(1, ", &", 3);
