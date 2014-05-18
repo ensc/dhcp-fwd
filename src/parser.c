@@ -124,10 +124,10 @@ void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
 /*@noreturn@*/
 static void
 exitFatal(/*@observer@*/char const msg[],
-	  register size_t len) __attribute__ ((noreturn)) /*@*/ ;
+	  size_t len) __attribute__ ((noreturn)) /*@*/ ;
 
 static void
-exitFatal(char const msg[], register size_t len)
+exitFatal(char const msg[], size_t len)
 {
     /*@-internalglobs@*//*@-globs@*/
   if (filename!=0) (void)write(2, filename, strlen(filename));
@@ -181,7 +181,7 @@ match(char /*@alt int@*/ c)
     /*@globals look_ahead, fd@*/
     /*@modifies look_ahead@*/
 {
-  register int		got = getLookAhead();
+  int		got = getLookAhead();
 
   if (got==tkEOF) scEXITFATAL("unexpected EOF while parsing");
   if (got!=c)     scEXITFATAL("unexpected symbol");
@@ -285,7 +285,7 @@ static /*@exposed@*/ struct InterfaceInfo *
 searchInterface(/*@in@*/struct InterfaceInfoList *ifs, /*@in@*/char const *name)
    /*@*/
 {
-  register struct InterfaceInfo		*iface;
+  struct InterfaceInfo		*iface;
 
   assert(ifs->dta!=0 || ifs->len==0);
 
@@ -308,7 +308,7 @@ matchEOL()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
 {
-  register int		state = 0xFF00;
+  int			state = 0xFF00;
 
   while (state!=0xFFFF) {
     int			c = getLookAhead();
@@ -343,8 +343,8 @@ readBlanks()
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead@*/
 {
-  int			c   = 0;
-  register size_t	cnt = 0;
+  int		c   = 0;
+  size_t	cnt = 0;
 
   while (c!=tkEOF) {
     c = getLookAhead();
@@ -363,7 +363,7 @@ readString(/*@out@*/char *buffer, size_t len, unsigned int char_class)
     /*@globals fd, look_ahead@*/
     /*@modifies look_ahead, *buffer@*/
 {
-  register char		*ptr = buffer;
+  char		*ptr = buffer;
 
     /*@-ptrarith@*/
   while (ptr+1 < buffer+len) {

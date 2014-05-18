@@ -90,8 +90,8 @@ writeMsgTimestamp()
 void
 writeUInt(int fd, unsigned int val)
 {
-  char			buffer[32];
-  register char		*ptr = &buffer[sizeof(buffer) - 1];
+  char		buffer[32];
+  char		*ptr = &buffer[sizeof(buffer) - 1];
 
   do {
       /*@-strictops@*/

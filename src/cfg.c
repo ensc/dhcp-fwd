@@ -42,7 +42,7 @@
 
 
 /*@noreturn@*/ static void
-exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
+exitFatal(char const msg[], size_t len) __attribute__ ((noreturn))
   /*:requires maxRead(msg)+1 >= len@*/
   /*@*/ ;
 
@@ -52,7 +52,7 @@ void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/;
 
 
 static void
-exitFatal(char const msg[], register size_t len)
+exitFatal(char const msg[], size_t len)
 {
   (void)write(2, msg, len);
   (void)write(2, "\n", 1);
