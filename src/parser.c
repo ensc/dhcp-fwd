@@ -753,16 +753,16 @@ parse(/*@in@*/char const		fname[],
 	if      (isCharType(c, chrBLANK)) match(c);
 	else if (isCharType(c, chrNL))    matchEOL();
 	else switch (c) {
-	  case '#'	:  state = 0xFF00; break;
-	  case 'i'	:  state = 0x0100; break;
-	  case 'n'	:  state = 0x0200; break;
-	  case 's'	:  state = 0x0300; break;
-	  case 'u'	:  state = 0x0400; break;
-	  case 'g'	:  state = 0x0500; break;
-	  case 'c'	:  state = 0x0699; break;
-	  case 'l'	:  state = 0x0700; break;
-	  case 'p'	:  state = 0x0890; break;
-	  case tkEOF	:  state = 0xFFFF; break;
+	  case '#'	:  state = 0xFF00; break; // comment
+	  case 'i'	:  state = 0x0100; break; // interface
+	  case 'n'	:  state = 0x0200; break; // name
+	  case 's'	:  state = 0x0300; break; // server
+	  case 'u'	:  state = 0x0400; break; // uid, ulimit
+	  case 'g'	:  state = 0x0500; break; // gid
+	  case 'c'	:  state = 0x0699; break; // chroot
+	  case 'l'	:  state = 0x0700; break; // logfile, loglevel
+	  case 'p'	:  state = 0x0890; break; // pidfile, ports
+	  case tkEOF	:  state = 0xFFFF; break; // end of file
 	  default	:  goto err;
 	}
 	if (state!=0 && state!=0xFFFF) match(c);
