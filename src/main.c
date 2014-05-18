@@ -191,106 +191,137 @@ isValidOptions(/*@in@*/struct DHCPOptions const	*options,
   return (seen_end && opt==end_options);
 }
 
-static size_t
+static void *fillSuboption(struct DHCPSingleOption *out,
+			   struct DHCPSubOption const *opt)
+{
+	out->code = opt->code;
+	out->len  = opt->len;
+	memcpy(out->data, opt->data, opt->len);
+
+	return &out->data[opt->len];
+}
+
+struct DHCPOptionList {
+	struct DHCPSingleOption const	*start;
+	struct DHCPSingleOption		*cursor;
+	size_t				len;
+};
+
+static void validateDHCPOptionList(struct DHCPOptionList const *options)
+{
+  assert(options->cursor >= options->start);
+  assert(options->len >= 1u);
+  assert((uintptr_t)(options->cursor) <
+	 (uintptr_t)(options->start) + options->len);
+}
+
+static void
 addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
-	       struct DHCPSingleOption				*end_opt,
-	       size_t						len)
-    /*@modifies *end_opt@*/
+	       struct DHCPOptionList				*options)
 {
-    /* Replace the end-tag
+  struct DHCPSubOption const	*subopt = &iface->suboptions.dta[0];
+  struct DHCPSingleOption	*pos = options->cursor;
+  size_t			len = options->len;
+  size_t			i;
+  size_t			opt_len;
+  void				*ptr;
 
-     *  - - - - - - -----
-     * |           | END |
-     *  - - - - - - -----
-     * with
-     *  - - - - - - ----- ----- ----- ----- ------------ -----
-     * |           | 82  | len | sub | sub | ... id ... | END |
-     * |           |     |     | opt | len |            |     |
-     *  - - - - - - ----- ----- ----- ----- ------------ -----
-     * */
+  /* Replace the end-tag
+   *  - - - - - - -----
+   * |           | END |
+   *  - - - - - - -----
+   * with
+   *  - - - - - - ----- ----- ----- ----- ------------ -----
+   * |           | 82  | len | sub | sub | ... id ... | END |
+   * |           |     |     | opt | len |            |     |
+   *  - - - - - - ----- ----- ----- ----- ------------ -----
+   *                          \                     /
+   *                           `   repeat x times  '
+   * */
 
-  assert(strlen(iface->aid)<=IFNAMSIZ);
+  validateDHCPOptionList(options);
+  assert(pos->code == cdEND);
 
-    /* Add space needed for our RFC 3046 agent id. See figure above for
-     * details. */
-  len += 4 + strlen(iface->aid);
+  /* no suboptions specified; exit immediately */
+  if (iface->suboptions.len == 0)
+    return;
 
-    /* 'len' should now have the length of the complete option-field. RFC 2131
-     * sets a lower limit of 312 octets, so we are checking against this
-     * value. Since the function got only the real options without the
-     * magic-cookie, 4 octets must be added.
-     *
-     * Because the underlying buffer was declared to hold more than this
-     * minimum amount, we can exclude overflows here.
-     *
-     * Further versions of this software should make it possible to configure
-     * the maximum size at runtime. */
-  if (len+4 < 312) {
-      /* replace old end-tag with our information */
-    end_opt->code    = cdRELAY_AGENT;
-    end_opt->data[0] = agCIRCUITID;	/* circuit id code as specified by RFC 3046 */
-    end_opt->data[1] = static_cast(uint8_t)(strlen(iface->aid));
-    end_opt->len     = 2 + end_opt->data[1];
-    memcpy(&end_opt->data[2], iface->aid, end_opt->data[1]);
+  opt_len = 2;			       /* the two initial '82' + 'len' fields */
+  for (i = 0; i < iface->suboptions.len; ++i)
+    opt_len += 2 + subopt[i].len;
 
-      /* set new end-tag */
-    end_opt = DHCP_nextSingleOption(end_opt);
-    end_opt->code = cdEND;
+  /* 'len' should now have the length of the complete option-field. RFC 2131
+   * sets a lower limit of 312 octets, so we are checking against this
+   * value. Since the function got only the real options without the
+   * magic-cookie, 4 octets must be added.
+   *
+   * Because the underlying buffer was declared to hold more than this
+   * minimum amount, we can exclude overflows here.
+   *
+   * Further versions of this software should make it possible to configure
+   * the maximum size at runtime. */
+  if (len + opt_len + 4 >= 312 || opt_len > 255) {
+    LOG("New DHCP packet would be too large; dropping configured suboptions");
+    return;
   }
 
-  return len;
+  pos->code = cdRELAY_AGENT;
+  pos->len  = opt_len - 2;
+  ptr       = pos->data;
+
+  for (i = 0; i < iface->suboptions.len; ++i)
+    ptr = fillSuboption(ptr, &subopt[i]);
+
+  pos = DHCP_nextSingleOption(pos);
+  assert(ptr == pos);
+
+  pos->code = cdEND;
+
+  options->len += opt_len;
+  options->cursor = pos;
+
+  validateDHCPOptionList(options);
 }
 
-static size_t
-replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
-		   struct DHCPSingleOption			*relay_opt,
-		   struct DHCPSingleOption			*end_opt,
-		   size_t					len)
-    /*@requires end_opt > relay_opt@*/
-{
-  size_t	opt_len = DHCP_getOptionLength(relay_opt);
-  size_t	str_len = strlen(iface->aid);
-
-  assert(relay_opt!=0);
-
-  if (str_len+4<=opt_len) {
-    relay_opt->len     = str_len + 2;
-    relay_opt->data[1] = static_cast(uint8_t)(str_len);
-    memcpy(relay_opt->data+2, iface->aid, str_len);
-
-    if (str_len+4<opt_len)
-	// TODO: move memory; do not pad to satisfy WinNT
-      memset(relay_opt->data+2+str_len, /*@+charint@*/cdPAD/*@=charint@*/, opt_len-str_len-4);
-  }
-  else if (opt_len>=len) {
-    DHCP_removeOption(relay_opt, &end_opt);
-
-    len -= opt_len;
-    len  = addAgentOption(iface, end_opt, len);
-  }
-  else {
-    LOGSTR("Failed assertion 'opt_len < len'");
-  }
-
-  return len;
-}
-
-static size_t
-removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
-		  struct DHCPSingleOption			*end_opt,
-		  size_t					len)
+static void removeAgentOption(struct DHCPOptionList *options)
     /*@requires (opt+1) <= end_opt@*/
     /*@modifies *opt@*/
 {
-  size_t	opt_len = DHCP_getOptionLength(opt);
+  struct DHCPSingleOption const		*in = options->cursor;
+  struct DHCPSingleOption		*out = options->cursor;
+  size_t				len = options->len;
 
-  if (opt_len < len) {
-    DHCP_removeOption(opt, &end_opt);
-    len -= opt_len;
-  }
-  else LOGSTR("Failed assertion 'opt_len < len'");
+  validateDHCPOptionList(options);
+  assert(in->code == cdRELAY_AGENT);
 
-  return len;
+  do {
+    struct DHCPSingleOption const	*next;
+    size_t				l;
+
+    /* content of 'in' can be overwritten in this loop; save the pointer to the
+     * next option */
+    next = DHCP_nextSingleOptionConst(in);
+    l	 = DHCP_getOptionLength(in);
+
+    if (in->code == cdRELAY_AGENT) {
+      /* we have at least a 'cdEND' option so that 'len' should never become
+	 zero*/
+      assert(len > l);
+      len -= l;
+    } else {
+      memmove(out, in, l);
+      out = DHCP_nextSingleOption(out);
+    }
+
+    in = next;
+  } while (in->code != cdEND);
+
+  out->code = cdEND;
+
+  options->len    = len;
+  options->cursor = out;
+
+  validateDHCPOptionList(options);
 }
 
   /*@-mustmod@*/
@@ -300,15 +331,19 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 	    OptionFillAction				action)
     /*@modifies *option_ptr@*/
 {
-  /*@dependent@*/struct DHCPSingleOption	*opt       = static_cast(struct DHCPSingleOption *)(option_ptr);
+  /*@dependent@*/struct DHCPSingleOption	*opt       = option_ptr;
   /*@dependent@*/struct DHCPSingleOption	*end_opt   = 0;
   /*@dependent@*/struct DHCPSingleOption	*relay_opt = 0;
-  size_t			len;
+  struct DHCPOptionList		options = {
+	  .start	= option_ptr,
+  };
 
   do {
     switch (opt->code) {
       case cdRELAY_AGENT	:
-	if (opt->data[0]==agCIRCUITID) relay_opt = opt;
+	/* we are interested in the first relay agent option only */
+	if (!relay_opt)
+	  relay_opt = opt;
 	break;
       case cdEND		:  end_opt   = opt; break;
       default			:  break;
@@ -322,25 +357,29 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 
     /* Determine used space until end-tag and add space for the end-tag itself
      * (1 octet). */
-    /*@-strictops@*/
-  len  = (reinterpret_cast(char *)(end_opt) -
-	  static_cast(char *)(option_ptr) + 1u);
-    /*@=strictops@*/
+  options.len  = DHCP_ptrdiff(end_opt, option_ptr) + 1u;
+
+  if (relay_opt)
+    options.cursor = relay_opt;
+  else
+    options.cursor = end_opt;
 
   switch (action) {
     case acREMOVE_AGENT_INFO:
       if (relay_opt)
-	len = removeAgentOption(relay_opt, end_opt, len);
+	removeAgentOption(&options);
       break;
 
     case acADD_AGENT_INFO:
     case acREPLACE_AGENT_INFO:
-      if (!relay_opt)
-	len = addAgentOption(iface, end_opt, len);
-      else if (action == acREPLACE_AGENT_INFO)
-	len = replaceAgentOption(iface, relay_opt, end_opt, len);
-      else
+      if (!relay_opt) {
+	addAgentOption(iface, &options);
+      } else if (action == acREPLACE_AGENT_INFO) {
+	removeAgentOption(&options);
+	addAgentOption(iface, &options);
+      } else {
 	LOG("DCHP relay agent info already set");
+      }
 
       break;
 
@@ -351,7 +390,7 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
       assert(false);
   }
 
-  return len;
+  return options.len;
 }
   /*@=mustmod@*/
 

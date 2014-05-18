@@ -13,6 +13,9 @@
 /ipCRC
 /ipCRC.log
 /ipCRC.trs
+/modifyTest
+/modifyTest.log
+/modifyTest.trs
 /parseTest
 /test-suite.log
 /writeTest

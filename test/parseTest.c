@@ -31,6 +31,7 @@
 
 #include <parser.h>
 #include <cfg.h>
+#include <dhcp.h>
 #include <output.h>
 
 #define ensc_DHCP_FORWARDER_ULIMIT_H_I_KNOW_WHAT_I_DO
@@ -157,6 +158,24 @@ int main(int argc, char const *argv[])
     write(1, ", ", 2);
 
     writeIP(1, iface->if_ip);
+
+    for (j = 0; j < iface->suboptions.len; ++j) {
+      struct DHCPSubOption const	*opt = &iface->suboptions.dta[j];
+
+      write(1, ", ", 2);
+
+      writeUInt(1, opt->code);
+      write(1, ":", 1);
+
+      switch (opt->code) {
+      case agREMOTEID:
+	write(1, opt->data, opt->len);
+	break;
+
+      default:
+	assert(false);
+      }
+    }
   }
   write(1, "}}\n", 3);
 

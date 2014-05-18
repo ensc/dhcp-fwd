@@ -13,11 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-check_PROGRAMS		=  writeTest parseTest ipCRC
+check_PROGRAMS		=  writeTest parseTest modifyTest ipCRC
 
 writeTest_SOURCES	=  writeTest.c ../src/output.c
 
 parseTest_SOURCES	=  parseTest.c ../src/output.c ../src/parser.c
+
+modifyTest_SOURCES	=  modifyTest.c \
+			   ../src/output.c ../src/parser.c \
+                           ../src/cfg.c ../src/recvfromflags.c
 
 ipCRC_SOURCES		=  ipCRC.c \
 			   ../src/output.c ../src/parser.c \
@@ -34,7 +38,7 @@ test_DTA		=  data/write.out				\
 
 TESTS			=  cmpout.writeTest				\
 			   cmpout.parseTest.test1 cmpout.parseTest.test2 \
-			   ipCRC
+			   modifyTest ipCRC
 
 CLEANFILES		=  cmpout.*
 

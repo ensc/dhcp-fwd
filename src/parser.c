@@ -36,6 +36,7 @@
 #include "compat.h"
 #include "output.h"
 #include "inet.h"
+#include "dhcp.h"
 
 #define tkEOF			(256)
 
@@ -238,6 +239,34 @@ newServer(struct ServerInfoList *servers)
   result	 = &servers->dta[servers->len - 1];
   result->type   = svUNICAST;
   memset(&result->info, 0, sizeof result->info);
+
+  return result;
+}
+
+static /*@exposed@*/struct DHCPSubOption *
+newDHCPSubOption(struct DHCPSuboptionsList *suboptionlist, unsigned int code)
+    /*@modifies *suboptionlist@*/
+{
+  size_t		new_len;
+  struct DHCPSubOption	*result;
+  size_t		i;
+
+  assert(code < 0x100);
+
+  for (i = 0; i < suboptionlist->len; ++i) {
+	  if (suboptionlist->dta[i].code == code)
+		 scEXITFATAL("duplicate suboption");
+  }
+
+  ++suboptionlist->len;
+  new_len            = suboptionlist->len * (sizeof(*suboptionlist->dta));
+  suboptionlist->dta = Erealloc(suboptionlist->dta, new_len);
+
+  assert(suboptionlist->dta!=0);
+  result = &suboptionlist->dta[suboptionlist->len - 1];
+  memset(result, 0, sizeof *result);
+
+  result->code = code;
 
   return result;
 }
@@ -683,6 +712,59 @@ readBool(/*@out@*/bool *val)
   scEXITFATAL("unexpected character");
 }
 
+static struct InterfaceInfo *
+readExistingInterface(struct InterfaceInfoList *ifs)
+{
+	char			ifname[IFNAMSIZ];
+	struct InterfaceInfo	*iface;
+
+	readIfname(ifname);
+	iface = searchInterface(ifs, ifname);
+	readBlanks();
+
+	return iface;
+}
+
+static int suboptionCompare(void const *a_, void const *b_)
+{
+	struct DHCPSubOption const *a = a_;
+	struct DHCPSubOption const *b = b_;
+
+	if (a->code < b->code)
+		return -1;
+	else if (a->code > b->code)
+		return +1;
+	else
+		return 0;
+}
+
+static void finishSuboptions(struct InterfaceInfo *iface)
+{
+	struct DHCPSubOption	*opts = iface->suboptions.dta;
+	size_t			i;
+
+	if (!opts)
+		return;
+
+	qsort(opts, iface->suboptions.len, sizeof opts[0], suboptionCompare);
+
+	for (i = 0; i < iface->suboptions.len; ++i) {
+		if (opts[i].data == NULL)
+			opts[i].data = &opts[i].val;
+	}
+}
+
+static void finishInterfaces(struct InterfaceInfoList *ifaces)
+{
+	size_t		i;
+
+	for (i = 0; i < ifaces->len; ++i) {
+		struct InterfaceInfo	*iface = &ifaces->dta[i];
+
+		finishSuboptions(iface);
+	}
+}
+
 void
 parse(/*@in@*/char const		fname[],
       /*@dependent@*/struct ConfigInfo	*cfg)
@@ -692,7 +774,6 @@ parse(/*@in@*/char const		fname[],
   TokenTable		chrs;
   int			state = 0x0;
   char			ifname[IFNAMSIZ];
-  char			agent_id[IFNAMSIZ];
   char			name[PATH_MAX];
   long			nr = 0;
   struct in_addr	ip;
@@ -708,6 +789,7 @@ parse(/*@in@*/char const		fname[],
   int			fd;
   struct stat		st;
   char			*cfg_start;
+  struct DHCPSubOption	*suboption = suboption;
 
   filename = fname;
   line_nr  = 1u;
@@ -755,7 +837,7 @@ parse(/*@in@*/char const		fname[],
 	  case '#'	:  state = 0xFF00; break; // comment
 	  case 'i'	:  state = 0x0100; break; // interface
 	  case 'n'	:  state = 0x0200; break; // name
-	  case 's'	:  state = 0x0300; break; // server
+	  case 's'	:  state = 0x0300; break; // server, suboption
 	  case 'u'	:  state = 0x0400; break; // uid, ulimit
 	  case 'g'	:  state = 0x0500; break; // gid
 	  case 'c'	:  state = 0x0699; break; // chroot
@@ -1014,37 +1096,93 @@ parse(/*@in@*/char const		fname[],
 	break;
 
       case 0x201	:
-	readIfname(ifname);   readBlanks();
-	readIfname(agent_id);
-	state = 0x202;
-	break;
-
-      case 0x202	:
       {
         struct InterfaceInfo	*iface;
 
-	  // Reachable from state 0x201 only
-	assertDefined(ifname);
-	assertDefined(agent_id);
-	iface = searchInterface(&cfg->interfaces, ifname);
+	iface = readExistingInterface(&cfg->interfaces);
+	suboption = newDHCPSubOption(&iface->suboptions, agREMOTEID);
 
-	strcpy(iface->aid, agent_id);
-	state = 0xFFFE;
+	suboption->val.str = iface->aid;
+	state = 0x352;
 	break;
       }
 
       case 0x300	:
-	matchStr("erver");  readBlanks();
-	state=0x301;
+	// match option: s
+	switch (c) {
+	  case 'e' : state = 0x301; break;
+	  case 'u' : state = 0x350; break;
+	  default  : goto err;
+	}
 	break;
 
       case 0x301	:
+	// match option: server
+	matchStr("erver"); readBlanks();
+	state = 0x302;
+	break;
+
+      case 0x302	:
+	// get first parameter (ip / bcast)
 	switch (c) {
 	  case 'i'	:  state = 0x310; break;
 	  case 'b'	:  state = 0x320; break;
 	  default	:  goto err;
 	}
 	match(c);
+	break;
+
+      case 0x350	:
+      {
+	struct InterfaceInfo	*iface;
+	unsigned int		code;
+
+	/* match option: (s)uboption */
+	matchStr("uboption");
+	readBlanks();
+
+	iface = readExistingInterface(&cfg->interfaces);
+	code  = readInteger();
+
+	suboption = newDHCPSubOption(&iface->suboptions, code);
+
+	switch (code) {
+	  case agREMOTEID:
+	    suboption->val.str = iface->aid;
+	    state = 0x352;
+	    break;
+
+	  /* Unknown */
+	  default:
+	    scEXITFATAL("Unknown suboption - feel free to implement this feature by your own");
+	}
+
+	readBlanks();
+	break;
+      }
+
+      case 0x351	:
+	/* read a suboption which specifies an IPv4 address */
+	readIp(&ip);
+
+	suboption->len    = sizeof(suboption->val.ip);
+	suboption->data   = NULL;
+	suboption->val.ip = ip.s_addr;
+
+	state = 0xFFFE;
+	break;
+
+      case 0x352:
+	/* read an interface-name like suboption */
+	assertDefined(suboption->val.str);
+	readIfname(suboption->val.str);
+
+	suboption->len    = strlen(suboption->val.str);
+	suboption->data   = suboption->val.str;
+
+	suboption = NULL;		/* just for debugging... */
+
+	state = 0xFFFE;
 	break;
 
       case 0x310	:
@@ -1108,6 +1246,9 @@ parse(/*@in@*/char const		fname[],
 
   munmap(cfg_start, st.st_size);
   Eclose(fd);
+
+  finishInterfaces(&cfg->interfaces);
+
   return;
 
   err:

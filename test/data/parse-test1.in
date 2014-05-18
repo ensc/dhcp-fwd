@@ -47,3 +47,5 @@ ulimit nofile	2
 ulimit memlock	10m
 ulimit as	0x10
 ulimit locks	010
+
+suboption eth2 2	agent-id-eth2
