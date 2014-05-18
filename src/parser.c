@@ -213,7 +213,7 @@ newInterface(struct InterfaceInfoList *ifs)
   assert(ifs->dta!=0);
 
   result              = &ifs->dta[ifs->len - 1];
-  memset(result, 0, sizeof result);
+  memset(result, 0, sizeof *result);
 
   result->if_ip       = INADDR_NONE;
   result->port_client = htons(DHCP_PORT_CLIENT);
