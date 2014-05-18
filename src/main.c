@@ -263,7 +263,7 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
       memset(relay_opt->data+2+str_len, /*@+charint@*/cdPAD/*@=charint@*/, opt_len-str_len-4);
   }
   else if (opt_len>=len) {
-    DHCP_removeOption(relay_opt, end_opt);
+    DHCP_removeOption(relay_opt, &end_opt);
 
     len -= opt_len;
     len  = addAgentOption(iface, end_opt, len);
@@ -277,7 +277,7 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 
 static size_t
 removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
-		  struct DHCPSingleOption const		*end_opt,
+		  struct DHCPSingleOption			*end_opt,
 		  size_t					len)
     /*@requires (opt+1) <= end_opt@*/
     /*@modifies *opt@*/
@@ -285,7 +285,7 @@ removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
   size_t	opt_len = DHCP_getOptionLength(opt);
 
   if (opt_len < len) {
-    DHCP_removeOption(opt, end_opt);
+    DHCP_removeOption(opt, &end_opt);
     len -= opt_len;
   }
   else LOGSTR("Failed assertion 'opt_len < len'");
