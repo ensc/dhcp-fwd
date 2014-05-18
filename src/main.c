@@ -52,11 +52,11 @@
 
 typedef enum {
   acIGNORE,		//< Do nothing...
-  acREMOVE_ID,		//< Remove an already existing agent-id field
-  acADD_ID		//< Add an agent-id field if such a field does not
+  acREMOVE_AGENT_INFO,	//< Remove an already existing agent-id field
+  acADD_AGENT_INFO,	//< Add an agent-id field if such a field does not
 			//< already exists
 #ifdef ENABLE_AGENT_REPLACE
-  ,acREPLACE_ID		//< Replace an already existing agent-id field
+  acREPLACE_AGENT_INFO,	//< Replace an already existing agent-id field
 #endif
 } OptionFillAction;
 
@@ -332,14 +332,14 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
     /*@=strictops@*/
 
   switch (action) {
-    case acREMOVE_ID	:
+    case acREMOVE_AGENT_INFO:
       if (relay_opt!=0) len = removeAgentOption(relay_opt, end_opt, len);
       break;
-    case acADD_ID	:
+    case acADD_AGENT_INFO:
       if (relay_opt==0) len = addAgentOption(iface, end_opt, len);
       break;
 #ifdef ENABLE_AGENT_REPLACE
-    case acREPLACE_ID	:
+    case acREPLACE_AGENT_INFO:
       if (relay_opt==0) len = addOption(end_opt, len);
       else              len = replaceAgentOption(iface, relay_opt, end_opt, len);
       break;
@@ -656,8 +656,8 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
       OptionFillAction		action;
 
       switch (header->op) {
-	case opBOOTREPLY:	action = acREMOVE_ID; break;
-	case opBOOTREQUEST:	action = acADD_ID;    break;
+	case opBOOTREPLY:	action = acREMOVE_AGENT_INFO; break;
+	case opBOOTREQUEST:	action = acADD_AGENT_INFO;    break;
 	default:		assert(false); action = acIGNORE; break;
       }
 
