@@ -1,5 +1,12 @@
 /cmpout.parseTest.test1
+/cmpout.parseTest.test1.log
+/cmpout.parseTest.test1.trs
 /cmpout.parseTest.test2
+/cmpout.parseTest.test2.log
+/cmpout.parseTest.test2.trs
 /cmpout.writeTest
+/cmpout.writeTest.log
+/cmpout.writeTest.trs
 /parseTest
+/test-suite.log
 /writeTest

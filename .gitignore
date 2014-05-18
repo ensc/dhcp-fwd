@@ -13,6 +13,7 @@
 /dhcp-forwarder.spec
 /dhcp-fwd
 /stamp-h1
+/test-driver
 Makefile
 Makefile.in
 aclocal.m4
