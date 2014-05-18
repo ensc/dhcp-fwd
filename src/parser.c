@@ -202,8 +202,8 @@ inline static /*@exposed@*/ struct InterfaceInfo *
 newInterface(struct InterfaceInfoList *ifs)
     /*@modifies *ifs@*/
 {
-  size_t		new_len;
-  struct InterfaceInfo	*result;
+  size_t			new_len;
+  struct InterfaceInfo		*result;
 
   ++ifs->len;
 
@@ -709,7 +709,6 @@ parse(/*@in@*/char const		fname[],
   struct stat		st;
   char			*cfg_start;
 
-
   filename = fname;
   line_nr  = 1u;
   col_nr   = 1u;
@@ -1009,7 +1008,6 @@ parse(/*@in@*/char const		fname[],
 	break;
       }
 
-
       case 0x200	:
 	matchStr("ame");      readBlanks();
 	state = 0x201;
@@ -1023,7 +1021,7 @@ parse(/*@in@*/char const		fname[],
 
       case 0x202	:
       {
-	struct InterfaceInfo *	iface;
+        struct InterfaceInfo	*iface;
 
 	  // Reachable from state 0x201 only
 	assertDefined(ifname);

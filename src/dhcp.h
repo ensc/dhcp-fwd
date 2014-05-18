@@ -103,8 +103,8 @@ enum {
 };
 
 enum {
-  agCIRCUITID	= 1u,
-  agREMOTEID	= 2u
+  agCIRCUITID	  = 1u,
+  agREMOTEID	  = 2u,
 };
 #endif
 

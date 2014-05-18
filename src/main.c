@@ -656,9 +656,9 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
       OptionFillAction		action;
 
       switch (header->op) {
-	case opBOOTREPLY	:  action = acREMOVE_ID; break;
-	case opBOOTREQUEST	:  action = acADD_ID;    break;
-	default			:  assert(false); action = acIGNORE; break;
+	case opBOOTREPLY:	action = acREMOVE_ID; break;
+	case opBOOTREQUEST:	action = acADD_ID;    break;
+	default:		assert(false); action = acIGNORE; break;
       }
 
 	/* Fill agent-info and adjust size-information */
