@@ -55,9 +55,7 @@ typedef enum {
   acREMOVE_AGENT_INFO,	//< Remove an already existing agent-id field
   acADD_AGENT_INFO,	//< Add an agent-id field if such a field does not
 			//< already exists
-#ifdef ENABLE_AGENT_REPLACE
   acREPLACE_AGENT_INFO,	//< Replace an already existing agent-id field
-#endif
 } OptionFillAction;
 
 /*@checkmod@*/static struct ServerInfoList	servers;
@@ -243,7 +241,6 @@ addAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
   return len;
 }
 
-#ifdef ENABLE_AGENT_REPLACE
 static size_t
 replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 		   struct DHCPSingleOption			*relay_opt,
@@ -277,7 +274,6 @@ replaceAgentOption(/*@in@*/struct InterfaceInfo const * const	iface,
 
   return len;
 }
-#endif
 
 static size_t
 removeAgentOption(/*@dependent@*/struct DHCPSingleOption	*opt,
@@ -333,19 +329,26 @@ fillOptions(/*@in@*/struct InterfaceInfo const* const	iface,
 
   switch (action) {
     case acREMOVE_AGENT_INFO:
-      if (relay_opt!=0) len = removeAgentOption(relay_opt, end_opt, len);
+      if (relay_opt)
+	len = removeAgentOption(relay_opt, end_opt, len);
       break;
+
     case acADD_AGENT_INFO:
-      if (relay_opt==0) len = addAgentOption(iface, end_opt, len);
-      break;
-#ifdef ENABLE_AGENT_REPLACE
     case acREPLACE_AGENT_INFO:
-      if (relay_opt==0) len = addOption(end_opt, len);
-      else              len = replaceAgentOption(iface, relay_opt, end_opt, len);
+      if (!relay_opt)
+	len = addAgentOption(iface, end_opt, len);
+      else if (action == acREPLACE_AGENT_INFO)
+	len = replaceAgentOption(iface, relay_opt, end_opt, len);
+      else
+	LOG("DCHP relay agent info already set");
+
       break;
-#endif
-    case acIGNORE	:  break;
-    default		:  assert(false);
+
+    case acIGNORE:
+      break;
+
+    default:
+      assert(false);
   }
 
   return len;
