@@ -15,13 +15,11 @@
 
 check_PROGRAMS		=  writeTest parseTest
 
-writeTest_SOURCES	=  writeTest.c
-writeTest_LDADD		=  ../src/output.o
+writeTest_SOURCES	=  writeTest.c ../src/output.c
 
-parseTest_SOURCES	=  parseTest.c
-parseTest_LDADD		=  ../src/output.o ../src/parser.o
+parseTest_SOURCES	=  parseTest.c ../src/output.c ../src/parser.c
 
-AM_CPPFLAGS		=  -I $(top_srcdir)/src
+AM_CPPFLAGS		=  -I $(top_srcdir)/src -DCFG_FILENAME='"$(cfg_filename)"'
 
 test_DTA		=  data/write.out				\
 			   data/parse-test1.in data/parse-test1.out	\
