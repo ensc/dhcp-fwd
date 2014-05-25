@@ -362,21 +362,13 @@ calculateCheckSum(/*@in@*/void const * const	dta,
     /*@*/
 {
   size_t		i;
-  uint16_t const	*data = reinterpret_cast(uint16_t const *)(dta);
+  uint8_t const		*data = dta;
 
-  for (i=0; i<size/2; ++i) sum += ntohs(data[i]);
+  for (i=0; i+1 < size; i += 2)
+    sum += (data[i] << 8) + data[i + 1];
 
-  if (size%2 != 0) {
-    union {
-	uint8_t		aval[2];
-	uint16_t	ival;
-    } end_data;
-
-    end_data.ival    = 0;
-    end_data.aval[0] = reinterpret_cast(uint8_t const *)(data)[size-1];
-    end_data.aval[1] = 0;
-    sum += ntohs(end_data.ival);
-  }
+  if (size%2 != 0)
+    sum += data[size-1] << 8;
 
   while ( (sum>>16)!=0 )
     sum = (sum & 0xFFFF) + (sum >> 16);
