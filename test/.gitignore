@@ -1,3 +1,6 @@
+*.gcda
+*.gcno
+*.gcov
 /cmpout.parseTest.test1
 /cmpout.parseTest.test1.log
 /cmpout.parseTest.test1.trs

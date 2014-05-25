@@ -19,7 +19,10 @@ writeTest_SOURCES	=  writeTest.c ../src/output.c
 
 parseTest_SOURCES	=  parseTest.c ../src/output.c ../src/parser.c
 
+GCOV_FLAGS		=  -fprofile-arcs -ftest-coverage
+
 AM_CPPFLAGS		=  -I $(top_srcdir)/src -DCFG_FILENAME='"$(cfg_filename)"'
+AM_CFLAGS		=  $(GCOV_FLAGS)
 
 test_DTA		=  data/write.out				\
 			   data/parse-test1.in data/parse-test1.out	\

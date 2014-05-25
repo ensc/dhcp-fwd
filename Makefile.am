@@ -56,7 +56,7 @@ noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
 			   src/parser.h src/output.h src/logging.h		\
 			   src/ulimit_codes.h
 
-CLEANFILES		=  doc/dhcp-fwd.1
+CLEANFILES		=  doc/dhcp-fwd.1 */*.gcov */*.gcda */*.gcno
 
 EXTRA_DIST		=  dhcp-forwarder.spec Makefile.m4.am			\
 			   doc/dhcp-fwd.man
