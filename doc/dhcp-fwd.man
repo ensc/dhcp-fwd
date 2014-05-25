@@ -254,6 +254,12 @@ supported:
 .B suboption \fIinterface \fB2 \fIagent-id
 Sets the agent remote id; this is the same as "\fRname \fIinterface
 \fIagent-id".
+.TP
+.B suboption \fIinterface \fB5 \fIip
+Set the RFC3527 link selection.
+.TP
+.B suboption \fIinterface \fB11 \fIip
+Set the RFC5107 server identifier..
 .\"
 .RE
 .\"

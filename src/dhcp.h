@@ -105,6 +105,10 @@ enum {
 enum {
   agCIRCUITID	  = 1u,
   agREMOTEID	  = 2u,
+  /* Link Selection  RFC3527 */
+  agLINKSELECT	  = 5u,
+  /* Server Identifier Override Suboption Definition - RFC 5107 */
+  agREPLACESERVER = 11u,
 };
 #endif
 

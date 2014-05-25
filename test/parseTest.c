@@ -172,6 +172,13 @@ int main(int argc, char const *argv[])
 	write(1, opt->data, opt->len);
 	break;
 
+      case agLINKSELECT:
+      case agREPLACESERVER:
+	assert(opt->data == &opt->val.ip);
+	assert(opt->len == 4);
+	writeIP(1, opt->val.ip);
+	break;
+
       default:
 	assert(false);
       }

@@ -1147,6 +1147,11 @@ parse(/*@in@*/char const		fname[],
 	suboption = newDHCPSubOption(&iface->suboptions, code);
 
 	switch (code) {
+	  case agLINKSELECT:
+	  case agREPLACESERVER:
+	    state = 0x351;
+	    break;
+
 	  case agREMOTEID:
 	    suboption->val.str = iface->aid;
 	    state = 0x352;

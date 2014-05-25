@@ -19,7 +19,7 @@
 #endif
 
 #define main	main_
-#include <src/main.c>
+#include "../src/main.c"
 #undef main
 
 static struct InterfaceInfo const	iface0;
@@ -31,7 +31,7 @@ static struct DHCPSubOption		subopt0[] = {
 		.len	= 4,
 	},
 	[1] = {
-		.code	= 11,
+		.code	= agREPLACESERVER,
 		.data	= &subopt0[1].val.ip,
 		.len	= 4,
 		.val	= { .test = { 10, 11, 12, 13 } },
