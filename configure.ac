@@ -46,7 +46,7 @@ ENSC_INITRDDIR(initrddir)
 AC_DEFINE(_GNU_SOURCE, 1, [Uses GNU features])
 
 ENSC_CHECK_CC_FLAG(${RELEASE_CFLAGS})
-ENSC_CHECK_CC_FLAG([-Wall -W -Wno-unused-function])
+ENSC_CHECK_CC_FLAG([-Wall -W -Wshadow])
 
 if test x"${ensc_use_dietlibc}" != xyes; then
 	dnl dietlibc <= 0.17 does not compile with -std=c99... :(
