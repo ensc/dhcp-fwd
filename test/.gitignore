@@ -10,6 +10,9 @@
 /cmpout.writeTest
 /cmpout.writeTest.log
 /cmpout.writeTest.trs
+/ipCRC
+/ipCRC.log
+/ipCRC.trs
 /parseTest
 /test-suite.log
 /writeTest

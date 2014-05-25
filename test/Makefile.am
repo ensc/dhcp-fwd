@@ -13,11 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-check_PROGRAMS		=  writeTest parseTest
+check_PROGRAMS		=  writeTest parseTest ipCRC
 
 writeTest_SOURCES	=  writeTest.c ../src/output.c
 
 parseTest_SOURCES	=  parseTest.c ../src/output.c ../src/parser.c
+
+ipCRC_SOURCES		=  ipCRC.c \
+			   ../src/output.c ../src/parser.c \
+                           ../src/cfg.c ../src/recvfromflags.c
 
 GCOV_FLAGS		=  -fprofile-arcs -ftest-coverage
 
@@ -29,7 +33,8 @@ test_DTA		=  data/write.out				\
 			   data/parse-test2.in data/parse-test2.out
 
 TESTS			=  cmpout.writeTest				\
-			   cmpout.parseTest.test1 cmpout.parseTest.test2
+			   cmpout.parseTest.test1 cmpout.parseTest.test2 \
+			   ipCRC
 
 CLEANFILES		=  cmpout.*
 
