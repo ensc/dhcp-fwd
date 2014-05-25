@@ -108,6 +108,13 @@ enum {
 };
 #endif
 
+inline static size_t
+DHCP_ptrdiff(struct DHCPSingleOption const *a,
+	     struct DHCPSingleOption const *b)
+{
+  return reinterpret_cast(uintptr_t)(a) - reinterpret_cast(uintptr_t)(b);
+}
+
 /*@unused@*/
 inline static size_t
 DHCP_getOptionLength(/*@sef@*//*@in@*/struct DHCPSingleOption const *opt)
