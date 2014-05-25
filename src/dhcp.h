@@ -46,14 +46,14 @@ struct DHCPHeader  {
 } __attribute__((__packed__));
 
 struct DHCPOptions {
-    uint32_t			cookie;
-    __extension__ char		data __flexarr;
+    uint32_t		cookie;
+    char		data[];
 } __attribute__((__packed__));
 
 struct DHCPSingleOption {
-    uint8_t			code;
-    uint8_t			len;
-    __extension__ uint8_t	data __flexarr;
+    uint8_t		code;
+    uint8_t		len;
+    uint8_t		data[];
 } __attribute__((__packed__));
 
 

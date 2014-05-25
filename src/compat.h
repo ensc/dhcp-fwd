@@ -26,26 +26,6 @@
 #include <inttypes.h>
 #include <unistd.h>
 
-  /* Shamelessly stolen from glibc's <sys/cdefs.h> */
-#ifndef __flexarr
-/* Support for flexible arrays.  */
-# if defined(__GNUC__) && (__GNUC__>=3)
-/* GCC 2.97 supports C99 flexible array members.  */
-#  define __flexarr      []
-# else
-#  ifdef __GNUC__
-#   define __flexarr     [0]
-#  else
-#   if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
-#    define __flexarr    []
-#   else
-/* Some other non-C99 compiler.  Approximate with [1].  */
-#    define __flexarr    [1]
-#   endif
-#  endif
-# endif
-#endif
-
 #ifndef ETH_ALEN
 #  define ETH_ALEN		6
 #endif

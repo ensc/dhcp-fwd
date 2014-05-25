@@ -41,7 +41,7 @@ struct DHCPllPacket
     struct ether_header         eth;
     struct iphdr		ip;
     struct udphdr		udp;
-    __extension__ char		data __flexarr;
+    char			data[];
 } __attribute__((__packed__));
 
 #endif	/* DHCP_FORWARDER_SRC_INET_H */
