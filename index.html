@@ -1,188 +1,79 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>DHCP Forwarder</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
-    <meta name="description" content="DHCP Forwarder is an agent relaying DHCP messages between different ethernet subnets.">
-    <meta name="keywords" content="DHCP, dhcrelay, rfc 3046, rfc 2132, rfc 2131, rfc 1541">
-    <meta name="author" content="Enrico Scholz">
 
-    <style type="text/css">
-      dd.remark    { font-size:90% }
-      div.footnote { font-size:80% }
-    </style>
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="dhcp-fwd : Forwards DHCP messages between subnets" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>dhcp-fwd</title>
   </head>
 
   <body>
-    <div style="float:right"><a style="border-width:0" href="https://savannah.nongnu.org/projects/dhcp-fwd/"
-	><img style="border-width:0" src="http://www.gnu.org/graphics/meditate-tiny.jpg" alt="savannah" title="Savannah Project Page"/></a></div>
-    <h1>DHCP Forwarder</h1>
 
-    <p>This program forwards DHCP messages between subnets with
-    different sublayer broadcast domains. It is similarly to the DHCP
-    relay agent <tt>dhcrelay</tt> of <a
-    href="http://www.isc.org/products/DHCP/">ISC's DHCP</a>, but has
-    the following features which are important for me:</p>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ensc/dhcp-fwd">View on GitHub</a>
 
-    <ul>
-      <li>Runs as non-root in a chroot-jail</li>
+          <h1 id="project_title">dhcp-fwd</h1>
+          <h2 id="project_tagline">Forwards DHCP messages between subnets</h2>
 
-      <li>Uses "normal" AF_INET sockets; this allows to uses packetfilters
-      to filter incoming messages.</li>
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ensc/dhcp-fwd/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ensc/dhcp-fwd/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
 
-      <li>The DHCP agent IDs can be defined freely</li>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
-      <li>Has a small memory footprint when using <a
-      href="http://www.fefe.de/dietlibc">dietlibc</a></li>
-    </ul>
+<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
 
-    <p>It tries to be RFC 2131/2132 and 3046 compliant. Probably it
-    works with BOOTP (RFC 951) also, but since the handling of the
-    <tt>giaddr</tt> field is described misleading (see RFC 1542),
-    there may occur problems.</p>
+<pre><code>$ cd your_repo_root/repo_name
+$ git fetch origin
+$ git checkout gh-pages
+</code></pre>
 
-    <h2>News</h2>
-    <dl>
-      <dt>30 May 2014</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.11.tar.xz">0.11</a>
-	(149KiB) released
-	<small>[<a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.11.tar.xz.asc">SIG</a>]</small><small
-	>[<a href="http://git.savannah.gnu.org/gitweb/?p=dhcp-fwd.git;a=blob_plain;f=NEWS;hb=refs/tags/release-0.11">NEWS</a>]</small>
-      </dd>
+<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
 
-      <dd class="remark">This version enhances the internal handling and the setup of relay-agent information and supports new options (RFC 3527 link selection + RFC 5107 server id).  Some minor bugs and build problems were fixed too..</dd>
+<h3>
+<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
 
-      <dt>30 Apr 2012</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.10.tar.xz">0.10</a>
-	(138KiB) released
-	<small>[<a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.10.tar.xz.asc">SIG</a>]</small><small
-	>[<a href="http://git.savannah.gnu.org/gitweb/?p=dhcp-fwd.git;a=blob_plain;f=NEWS;hb=refs/tags/release-0.10">NEWS</a>]</small>
-      </dd>
+<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
 
-      <dd class="remark">Beside some build fixes, the way how clients
-      are addressed has been made more RFC compliant. There was added
-      a systemd unit too.</dd>
+<h3>
+<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
 
-      <dt>14 Dec 2010</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.9.tar.xz">0.9</a>
-	(137KiB) released
-	<small>[<a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.9.tar.xz.asc">SIG</a>]</small><small
-	>[<a href="http://git.savannah.gnu.org/gitweb/?p=dhcp-fwd.git;a=blob_plain;f=NEWS;hb=refs/tags/release-0.9">NEWS</a>]</small>
-      </dd>
+<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
 
-      <dd class="remark">Some inconsistencies in the naming of the default
-      configuration file have been fixed.  The <code>SO_REUSEADDR</code>
-      option is now set for clients which allows to use dhcp-forwarder
-      simultaneously with another dhcp server on the same system.</dd>
+<h3>
+<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
-      <dt>30 Dec 2008</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.8.tar.bz2">0.8</a>
-	(139KiB) released
-	<small>[<a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.8.tar.bz2.asc">SIG</a>]</small>
-      </dd>
-      <dd class="remark">Program is licensed under GPLv3 beginning
-      with this version.  It supports now variable expansion in the
-      configuration file and customization of used ports. There were
-      fixed build problems on big-endian system too.</dd>
+<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
 
-      <dt>19 Aug 2004</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.7.tar.bz2">0.7</a>
-	(121KiB) released
-	<small>[<a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.7.tar.bz2.sig">SIG</a>]</small>
-      </dd>
+<h3>
+<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
 
-      <dd class="remark">This version fixes compilation-issues with dietlibc 0.27.</dd>
+<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+      </section>
+    </div>
 
-      <dt>17 Jun 2004</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.6.tar.bz2">0.6</a>
-	(120KiB) released
-	<small>[<a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.6.tar.bz2.sig">SIG</a>]</small>
-      </dd>
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">dhcp-fwd maintained by <a href="https://github.com/ensc">ensc</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
 
-      <dd class="remark">This version makes it possible to run multiple
-	instances of the program on the same machine.</dd>
+    
 
-      <dt>15 Jul 2003</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.5.tar.bz2">0.5</a>
-	(113KiB) released</dd>
-
-      <dd class="remark">This version allows `.' characters in
-      interface-names to make it work with VLAN kernels.</dd>
-
-      <dt>29 Aug 2002</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.4.tar.bz2">0.4</a>
-	(107KiB) released</dd>
-
-      <dd class="remark">This release fixes broken memory-allocation
-      on low optimization-levels, fixes the daemonizing code by
-      disconnecting from controlling terminal and allows PPP
-      interfaces on server-side. Please see the <a
-      href="http://git.savannah.gnu.org/gitweb/?p=dhcp-fwd.git;a=blob_plain;f=NEWS;hb=refs/tags/release-0.4">NEWS</a> file for a full list of changes.</dd>
-
-      <dt>12 Jul 2002</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.3.tar.bz2">0.3</a>
-	(105KiB) released</dd>
-      <dd class="remark">This release contains a lot of new features
-      and several minor and major bugfixes (supplemental groups were
-      not dropped in previous versions).</dd>
-
-      <dt>14 Jun 2002</dt> <dd>Version <a
-      href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.2.tar.bz2">0.2</a>
-	(86KiB) released</dd>
-      <dd class="remark">A manpage and more documentation are the main
-      enhancements of this version.</dd>
-
-      <dt>13 Jun 2002</dt>
-      <dd>Version <a href="http://savannah.nongnu.org/download/dhcp-fwd/dhcp-forwarder-0.1.tar.bz2">0.1</a>
-	(83KiB) released</dd>
-    </dl>
-
-    <h2>Downloads</h2>
-
-    <p>Latest sources and their GPG signatures can be found <a
-    href="http://savannah.nongnu.org/download/dhcp-fwd/">here</a>. Filenames which are having the format
-    <code>dhcp-forwarder-X.Y.tar.bz2</code> are official releases;
-    such with a triple version like <code>X.Y.Z</code> are inofficial
-    snapshots. A short description and further information are given
-    in <code><a href="http://git.savannah.gnu.org/gitweb/?p=dhcp-fwd.git;a=blob_plain;f=README;hb=master">README</a></code>; user visible
-    changes in <code><a href="http://git.savannah.gnu.org/gitweb/?p=dhcp-fwd.git;a=blob_plain;f=NEWS;hb=master">NEWS</a></code></p>
-
-    <p>Binary packages are <b>not</b> provided but can be built with
-    the usual</p>
-
-    <blockquote>
-      <code>./configure &amp;&amp; make &amp;&amp; su -c make install</code>
-    </blockquote>
-
-    <p>Please look at the output of <q><code>./configure --help</code></q>
-    for further options. RPMs can be created by executing</p>
-
-    <blockquote>
-      <code>rpmbuild -tb dhcp-forwarder-&lt;<i>version</i>&gt;.tar.bz2</code>
-    </blockquote>
-
-    <hr>
-    <table width="100%">
-      <tbody>
-	<tr>
-	  <td align="left">
-	    <div>
-	      <address><a href="mailto:enrico.scholz@informatik.tu-chemnitz.de">Enrico Scholz</a></address><!--
-	      <address><a href="mailto:arppmast.bastian@cvg.de">Arppmast Bastian</a></address>
--->	      <small>
-<!-- Created: Wed Jun 12 22:33:27 CEST 2002 -->
-<!-- hhmts start -->
-Last modified: Tue Dec 14 22:55:04 CET 2010
-<!-- hhmts end -->
-	      </small>
-	    </div>
-	  </td>
-	  <td align="right">
-<a href="http://validator.w3.org/check/referer"><img style="border:0;width:88px;height:31px" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"/></a>
-<a href="http://jigsaw.w3.org/css-validator/check/referer"><img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"/></a>
-	  </td>
-	</tr>
-      </tbody>
-    </table>
   </body>
 </html>
