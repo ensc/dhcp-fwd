@@ -680,6 +680,10 @@ handlePacket(/*@in@*/struct FdInfo const * const		fd,
   if (header->giaddr==0 || header->giaddr==fd->iface->if_ip) {
     header->giaddr = fd->iface->if_ip;
 
+    if (options_len == 64 && options->cookie == 0)
+      /* DHCP/BOOTP messages without an option block; assume it as empty */
+      options_len = 0;
+
     if (!isValidOptions(options, options_len)) {
       LOG("Invalid options");
       return;
