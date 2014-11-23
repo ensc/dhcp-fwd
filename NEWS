@@ -1,3 +1,12 @@
+Version 0.11.90 (???)
+---------------------
+	- fixed handling of messages with DHCP options field (e.g. plain
+	  BOOTP replies without additional information)
+
+	- enhanced systemd supported by adding sd_notify() startup
+	  notification and triggering its watchdog
+
+
 Version 0.11 (2014-05-30)
 -------------------------
 	- implemented 'suboption' configuration tag which allows to set
