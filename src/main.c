@@ -47,6 +47,7 @@
 
 #include "assertions.h"
 #include "logging.h"
+#include "sd_notify.h"
 
   //#define ENABLE_AGENT_REPLACE		1
 
@@ -737,6 +738,7 @@ execRelay()
   size_t const			max_mtu   = determineMaxMTU();
   size_t const			len_total = max_mtu + IFNAMSIZ + 4;
   char				*buffer   = static_cast(char *)(alloca(len_total));
+  bool const			use_wdg   = sd_notify_supported();
 
   FatalErrnoError(buffer==0, 1, "alloca()");
 
@@ -749,9 +751,22 @@ execRelay()
     struct FdInfo const *	fdinfo;
     struct FdInfo const * const end_fdinfo = fds.dta+fds.len;
       /*@=nullptrarith@*/
+    int				rc;
+    struct timeval		timeout = {
+	    .tv_sec = 10,	/* \todo: allow to configure the wdg timeout? */
+    };
 
     fillFDSet(&fdset, &max);
-    if /*@-type@*/(Wselect(max+1, &fdset, 0, 0, 0)==-1)/*@=type@*/ continue;
+    rc = Wselect(max+1, &fdset, 0, 0, use_wdg ? &timeout : NULL);
+    if (rc < 0)
+	    continue;
+
+    if (use_wdg && rc == 0) {
+	    /* trigger watchdog immediately on timeout; when we get input,
+	     * handle it first and trigger watchdog later */
+	    sd_notify(0, "WATCHDOG=1");
+	    continue;
+    }
 
     for (fdinfo=fds.dta; fdinfo<end_fdinfo; ++fdinfo) {
       size_t				size;
@@ -801,6 +816,9 @@ execRelay()
 	  handlePacket(fd_real, iface_orig, buffer, size);
       }
     }
+
+    if (use_wdg)
+	    sd_notify(0, "WATCHDOG=1");
   }
 }
 
