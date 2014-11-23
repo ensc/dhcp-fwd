@@ -70,6 +70,17 @@ fi
 
 ENSC_MODERN_COMPILER_CHECK
 
+AC_MSG_CHECKING([whether to enable sd_notify()])
+AC_ARG_ENABLE([sd_notify],
+	AC_HELP_STRING([--disable-sd_notify],
+                       [Do not use systemd's sd_notify() to signal readiness (default: enabled)]),
+	[AS_CASE([${enable_sd_notify}],
+		[yes|no], [],
+		[AC_MSG_ERROR([invalid value for --enable-sd_notify])])],
+	[enable_sd_notify=yes])
+AC_MSG_RESULT([${enable_sd_notify}])
+AM_CONDITIONAL([USE_SD_NOTIFY], [test x"${enable_sd_notify}" = xyes])
+
 AC_MSG_CHECKING(for systemd unitdir)
 AC_ARG_WITH(systemd-unitdir,
 	    [AC_HELP_STRING([--with-systemd-unitdir=<dir>],

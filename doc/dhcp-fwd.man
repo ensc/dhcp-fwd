@@ -34,6 +34,7 @@ dhcp-fwd \- starts the DHCP forwarding agent
 .B  dhcp-fwd
 .RB [ \-n ]
 .RB [ \-N ]
+.RB [ \-S ]
 .RB [ \-d ]
 .RB [ \-v ]
 .RB [ \-h ]
@@ -77,6 +78,10 @@ option may be useful when using advanced init-concepts like minit
 Like \fB-n\fR but program sends a SIGSTOP signal to itself when
 initialization has been finished.  This is interpreted e.g. by the
 upstart init system.
+.TP
+.B \-S
+Use systemd's \fBsd_notify(3)\fR to signal startup completion.
+Program will not fork into background with this option.
 .TP
 .B \-d
 Turns on debugging mode and prevents forking; currently it is just an

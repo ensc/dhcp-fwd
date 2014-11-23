@@ -151,7 +151,8 @@ struct ConfigInfo {
       // Commandline options
     /*@observer@*/
     char const *			conffile_name;
-    enum { dmFORK, dmFG, dmSTOP }	daemon_mode;
+    enum { dmFORK, dmFG, dmSTOP,
+	   dmSDNOTIFY }			daemon_mode;
     bool				do_bindall;
 
     unsigned long			compat_hacks;

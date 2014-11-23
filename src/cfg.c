@@ -39,6 +39,7 @@
 #include "parser.h"
 #include "wrappers.h"
 #include "inet.h"
+#include "sd_notify.h"
 
 
 /*@noreturn@*/ static void
@@ -362,6 +363,7 @@ showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
     "  -c <filename>   read configuration from <filename>\n"
     "  -n              do not fork separate process\n"
     "  -N              do not fork and raise SIGSTOP signal\n"
+    "  -S              use systemd's sd_notify(3) and do not fork\n"
     "  -d              debug-mode; same as '-n'\n\n"
     "Report bugs to Enrico Scholz <"
     PACKAGE_BUGREPORT
@@ -438,7 +440,7 @@ parseCommandline(int argc, char *argv[],
   assert(cfg!=0);
 
   while (true) {
-    int c = getopt(argc, argv, "vhdnNc:-");
+    int c = getopt(argc, argv, "vhdnNSc:-");
     if (c==-1) break;
 
     switch (c) {
@@ -447,6 +449,7 @@ parseCommandline(int argc, char *argv[],
       case 'd'	:
       case 'n'	:  cfg->daemon_mode   = dmFG;   break;
       case 'N'	:  cfg->daemon_mode   = dmSTOP; break;
+      case 'S'	:  cfg->daemon_mode   = dmSDNOTIFY; break;
       case 'c'	:  cfg->conffile_name = optarg; break;
       case '-'	:
 	if (strcmp(argv[optind], "--version")==0) { showVersion();     exit(0); }
@@ -472,7 +475,7 @@ initializeSystem(int argc, char *argv[],
   int				pidfile_fd;
 
   cfg.conffile_name = CFG_FILENAME;
-  cfg.daemon_mode   = dmFORK;
+  cfg.daemon_mode   = sd_notify_supported() ? dmSDNOTIFY : dmFORK;
   cfg.do_bindall    = false;
   cfg.compat_hacks  = 0;
 
@@ -517,8 +520,16 @@ initializeSystem(int argc, char *argv[],
     /* It is too late to handle an error here. So just ignore it... */
   (void)close(pidfile_fd);
 
-  if (cfg.daemon_mode == dmSTOP)
-    raise(SIGSTOP);
+  switch (cfg.daemon_mode) {
+  case dmSTOP:
+	  raise(SIGSTOP);
+	  break;
+  case dmSDNOTIFY:
+	  sd_notify(0, "READY=1");
+	  break;
+  default:
+	  break;
+  }
 
   g_compat_hacks = cfg.compat_hacks;
 

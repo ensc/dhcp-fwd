@@ -4,8 +4,8 @@ Description = Agent to relay DHCP messages between two networks
 After=syslog.target network.target
 
 [Service]
-Type = simple
-ExecStart = @sbindir@/dhcp-fwd -n -c @sysconfdir@/dhcp-fwd.conf
+Type = notify
+ExecStart = @sbindir@/dhcp-fwd -c @sysconfdir@/dhcp-fwd.conf
 Restart = on-failure
 
 [Install]

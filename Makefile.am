@@ -46,7 +46,14 @@ EXTRA_dhcp_fwd_SOURCES	=  $(logging_SRCS)
 dhcp_fwd_SOURCES	=  src/parser.c src/main.c src/cfg.c src/recvfromflags.c	\
 			   src/output.c $(pos_SRCS)
 
-AM_CPPFLAGS		=  -DCFG_FILENAME='"$(cfg_filename)"'
+dhcp_fwd_CPPFLAGS	=  ${AM_CPPFLAGS} -DCFG_FILENAME='"$(cfg_filename)"'
+
+if USE_SD_NOTIFY
+dhcp_fwd_SOURCES	+= src/sd_notify.c
+dhcp_fwd_CPPFLAGS	+= -DUSE_SD_NOTIFY
+else
+EXTRA_dhcp_fwd_SOURCES  += src/sd_notify.c
+endif
 
 splint_HDRS		=  src/splint.h src/splint_compat.h
 
@@ -54,7 +61,7 @@ noinst_HEADERS		=  $(splint_HDRS) src/compat.h src/cfg.h		\
 			   src/dhcp.h src/inet.h src/recvfromflags.h		\
 			   src/util.h src/wrappers.h src/assertions.h		\
 			   src/parser.h src/output.h src/logging.h		\
-			   src/ulimit_codes.h
+			   src/ulimit_codes.h src/sd_notify.h
 
 CLEANFILES		=  doc/dhcp-fwd.1 */*.gcov */*.gcda */*.gcno
 
